@@ -1,0 +1,5 @@
+{
+  "watch": ["firmador.py"],
+  "ext": "py",
+  "exec": "dotenv -e .env -- python -m uvicorn firmador:app --host 127.0.0.1 --port 4563"
+}

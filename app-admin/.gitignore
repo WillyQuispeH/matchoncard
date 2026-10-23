@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+public/pdfjs
+.env
+.env.*
+tsconfig.tsbuildinfo
+next-env.d.ts
+coverage

@@ -1,0 +1,37 @@
+@import 'tailwindcss';
+
+/* Paleta y tipografías de MatchOnCard (las mismas del diseño anterior) */
+@theme {
+  --color-bg: #0b1116;
+  --color-surface: #141d24;
+  --color-sunken: #101820;
+  --color-deep: #070b0e;
+  --color-line: #24323c;
+  --color-line-2: #2f404c;
+  --color-ink: #e8eef1;
+  --color-ink-2: #a9b6bf;
+  --color-ink-3: #74838d;
+  --color-accent: #5db1d1;
+  --color-accent-hover: #73c0dc;
+  --color-accent-ink: #08161d;
+  --color-ok: #3fd49a;
+  --color-warn: #f1b84b;
+  --color-bad: #f2786a;
+
+  --font-sans: var(--font-plex-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-cond: var(--font-plex-cond), 'Arial Narrow', system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+}
+
+@layer base {
+  :root { color-scheme: dark; }
+  html { scroll-behavior: smooth; }
+  body { @apply bg-bg text-ink font-sans antialiased; }
+  h1, h2, h3 { @apply font-cond font-semibold leading-[1.15]; }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+}
+
+@utility tabular { font-variant-numeric: tabular-nums; }

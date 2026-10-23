@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+public/pdfjs
+.env
+.env.*
+.git
+coverage
+*.md
+.vscode
+.idea
+tsconfig.tsbuildinfo
+public/pdfjs

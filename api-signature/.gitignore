@@ -1,0 +1,8 @@
+node_modules
+__pycache__/
+.env
+.env.*
+tmp-firma/
+*.p12
+*.pem
+*.key

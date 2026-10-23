@@ -1,0 +1,233 @@
+# MatchOnCard · producción en una Linode.
+# La base es Managed PostgreSQL (Linode) y la evidencia Cloudflare R2 (no van en este archivo).
+# Solo "app" y "app-admin" (Next.js) reciben tráfico. nginx del servidor (TLS, ver nginx/) reenvía matchoncard.cl y api.matchoncard.cl a 127.0.0.1:4561
+# y admin.matchoncard.cl a 127.0.0.1:4564. Cada Next reenvía su API (/v1, /verificar/api · /admin/api) por la red interna.
+
+x-logging-api: &logging-api
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-logging-app: &logging-app
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-api-defaults: &api-defaults
+  restart: unless-stopped
+  user: "1000:1000"
+  read_only: true
+  tmpfs:
+    - /tmp:noexec,nosuid,size=100m
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  deploy:
+    resources:
+      limits:
+        cpus: "1.5"
+        memory: 768M
+      reservations:
+        cpus: "0.5"
+        memory: 256M
+  logging: *logging-api
+  networks:
+    - matchoncard-network
+
+x-app-defaults: &app-defaults
+  restart: unless-stopped
+  user: "1001:1001"
+  read_only: true
+  tmpfs:
+    - /tmp:noexec,nosuid,size=100m
+    - /app/.next/cache:noexec,nosuid,size=200m
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  deploy:
+    resources:
+      limits:
+        cpus: "1.0"
+        memory: 512M
+      reservations:
+        cpus: "0.25"
+        memory: 128M
+  logging: *logging-app
+  networks:
+    - matchoncard-network
+
+services:
+  # Next.js: landing, captura, panel y verificar + proxy a la API en el mismo origen
+  app:
+    <<: *app-defaults
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    image: matchoncard/app:1.0.0
+    container_name: matchoncard-app
+    ports:
+      - "127.0.0.1:4561:4561"
+    env_file:
+      - ./app/.env.production
+    depends_on:
+      - api
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4561/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Next.js: administración (clientes, usuarios, validaciones, documentos, webhooks, auditoría). admin.matchoncard.cl
+  app-admin:
+    <<: *app-defaults
+    build:
+      context: ./app-admin
+      dockerfile: Dockerfile
+    image: matchoncard/app-admin:1.0.0
+    container_name: matchoncard-app-admin
+    ports:
+      - "127.0.0.1:4564:4564"
+    env_file:
+      - ./app-admin/.env.production
+    depends_on:
+      - api
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4564/', (r) => {process.exit(r.statusCode < 400 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # API principal: validaciones, captura, documentos, administración (/admin/api), verificación
+  api:
+    <<: *api-defaults
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    image: matchoncard/api:1.0.0
+    container_name: matchoncard-api
+    expose:
+      - "4560"
+    env_file:
+      - ./api/.env.production
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4560
+      FIRMADOR_URL: http://api-signature:4563
+      WEBHOOK_SERVICE_URL: http://api-webhook:4562
+    volumes:
+      - ./secrets:/run/secrets:ro          # certificado CA de la base de datos
+    networks:
+      - matchoncard-network
+      - interna
+    depends_on:
+      - api-signature
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4560/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Emisor de webhooks: la API le pasa cada aviso ya firmado y él hace la llamada al cliente. Sin base de datos ni KEK.
+  api-webhook:
+    <<: *api-defaults
+    build:
+      context: ./api-webhook
+      dockerfile: Dockerfile
+    image: matchoncard/api-webhook:1.0.0
+    container_name: matchoncard-api-webhook
+    expose:
+      - "4562"
+    env_file:
+      - ./api-webhook/.env.production
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4562
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4562/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Firma de PDF (Python + pyHanko). Red interna sin salida a Internet; solo la API lo alcanza.
+  api-signature:
+    restart: unless-stopped
+    build:
+      context: ./api-signature
+      dockerfile: Dockerfile
+    image: matchoncard/api-signature:1.0.0
+    container_name: matchoncard-api-signature
+    user: "10001:10001"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    env_file:
+      - ./api-signature/.env.production    # FIRMA_P12_CLAVE (la genera deploy/crear-firma.sh si está vacía)
+    environment:
+      FIRMA_P12_PATH: /run/secrets/firma.p12
+      FIRMA_CA_PATH: /run/secrets/firma-ca.pem
+      FIRMA_ZONA: America/Santiago
+    volumes:
+      - ./firma:/run/secrets:ro
+    expose:
+      - "4563"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    logging: *logging-api
+    networks:
+      - interna
+
+networks:
+  matchoncard-network:
+    driver: bridge
+  interna:
+    internal: true

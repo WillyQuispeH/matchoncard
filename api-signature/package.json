@@ -1,0 +1,18 @@
+{
+  "name": "matchoncard-api-signature",
+  "version": "1.0.0",
+  "description": "Firma de PDF (Python + pyHanko). Los scripts de yarn solo envuelven a Python para trabajar igual que en las otras APIs.",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "nodemon",
+    "build": "python -m py_compile firmador.py crear_certificado.py",
+    "start": "dotenv -e .env -- python -m uvicorn firmador:app --host 0.0.0.0 --port 4563 --no-server-header",
+    "setup": "python -m pip install -r requirements.txt",
+    "certificado": "dotenv -e .env -- python crear_certificado.py ./tmp-firma ./tmp-firma"
+  },
+  "devDependencies": {
+    "dotenv-cli": "8.0.0",
+    "nodemon": "3.1.10"
+  }
+}

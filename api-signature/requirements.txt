@@ -1,0 +1,9 @@
+pyHanko==0.25.3
+pyhanko-certvalidator==0.26.8
+fastapi==0.143.0
+uvicorn==0.46.0
+pillow==12.2.0
+cryptography==46.0.7
+pydantic==2.13.3
+asn1crypto==1.5.1
+tzdata
