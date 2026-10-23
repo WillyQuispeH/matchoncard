@@ -126,6 +126,8 @@ services:
     container_name: matchoncard-api
     ports:
       - "127.0.0.1:4560:4560"
+    expose:
+      - "4560"
     env_file:
       - ./api/.env.production
     environment:
