@@ -1,7 +1,8 @@
 # MatchOnCard · producción en una Linode.
 # La base es Managed PostgreSQL (Linode) y la evidencia Cloudflare R2 (no van en este archivo).
-# Solo "app" y "app-admin" (Next.js) reciben tráfico. nginx del servidor (TLS, ver nginx/) reenvía matchoncard.cl y api.matchoncard.cl a 127.0.0.1:4561
-# y admin.matchoncard.cl a 127.0.0.1:4564. Cada Next reenvía su API (/v1, /verificar/api · /admin/api) por la red interna.
+# nginx del servidor (TLS, ver nginx/) reenvía matchoncard.cl a 127.0.0.1:4561 (app), admin.matchoncard.cl a 127.0.0.1:4564 (app-admin)
+# y api.matchoncard.cl a 127.0.0.1:4560 (api), salvo /captura/<token>, que es la página de app (4561).
+# Cada Next reenvía su API (/v1, /verificar/api · /admin/api) por la red interna.
 
 x-logging-api: &logging-api
   driver: json-file
@@ -123,8 +124,8 @@ services:
       dockerfile: Dockerfile
     image: matchoncard/api:1.0.0
     container_name: matchoncard-api
-    expose:
-      - "4560"
+    ports:
+      - "127.0.0.1:4560:4560"
     env_file:
       - ./api/.env.production
     environment:

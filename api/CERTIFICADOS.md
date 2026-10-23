@@ -7,7 +7,7 @@ La API necesita dos certificados:
 | **CA de la base de datos** | Conectarse a la Managed PostgreSQL por TLS, comprobando que el servidor es el de Linode | `secrets/db-ca.crt` (en la carpeta del proyecto, fuera de git) |
 | **TLS de `api.matchoncard.cl`** | Que Portalfirma y los teléfonos de los firmantes lleguen por HTTPS | `/etc/letsencrypt/live/api.matchoncard.cl/` |
 
-`api.matchoncard.cl` apunta en nginx al contenedor `app` (`127.0.0.1:4561`), no directamente a la API. La página de captura (`/captura/<token>`) es de Next, y `app` reenvía `/v1` a la API por la red interna. La API no se publica en el servidor.
+`api.matchoncard.cl` apunta en nginx a la API (`127.0.0.1:4560`). La excepción es la página de captura (`/captura/<token>`), que es de Next y va al contenedor `app` (`127.0.0.1:4561`). El puerto 4560 solo escucha en `127.0.0.1`: desde Internet se llega únicamente a través de nginx.
 
 Todos los comandos van como root, desde la carpeta del proyecto (`cd /opt/matchoncard`).
 

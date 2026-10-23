@@ -12,7 +12,7 @@ Validación de identidad contra la cédula chilena con **huella, rostro y firma*
 | `https://matchoncard.cl/verificar` | Verificación pública de PDF firmados |
 | `https://api.matchoncard.cl` | API y links de captura (`/captura/<token>`) |
 
-Infraestructura en Linode (São Paulo): una VM con Docker Compose y PostgreSQL administrado. La evidencia y los PDF van a Cloudflare R2 (bucket `matchoncard`). nginx corre en el servidor (fuera de Docker), termina el TLS (Let's Encrypt) y reenvía `matchoncard.cl` y `api.matchoncard.cl` a `127.0.0.1:4561` (app) y `admin.matchoncard.cl` a `127.0.0.1:4564` (app-admin). La configuración está en `nginx/`.
+Infraestructura en Linode (São Paulo): una VM con Docker Compose y PostgreSQL administrado. La evidencia y los PDF van a Cloudflare R2 (bucket `matchoncard`). nginx corre en el servidor (fuera de Docker), termina el TLS (Let's Encrypt) y reenvía `matchoncard.cl` a `127.0.0.1:4561` (app), `admin.matchoncard.cl` a `127.0.0.1:4564` (app-admin) y `api.matchoncard.cl` a `127.0.0.1:4560` (api), salvo `/captura/<token>`, que va a `app`. La configuración está en `nginx/`.
 
 ## Servicios (`docker-compose.yml`)
 
@@ -20,7 +20,7 @@ Infraestructura en Linode (São Paulo): una VM con Docker Compose y PostgreSQL a
 |---|---|---|---|
 | `app` | `matchoncard/app:1.0.0` | `127.0.0.1:4561` | Next.js 16 (App Router, TypeScript, Tailwind, Zustand, axios): landing, `/panel`, `/verificar`, `/demo` y `/captura/<token>`, con sus cabeceras (CSP, no-store). Route Handlers que reenvían a la API por streaming en el mismo origen (`/v1`, `/panel/api`, `/verificar/api`, `/health`) |
 | `app-admin` | `matchoncard/app-admin:1.0.0` | `127.0.0.1:4564` | Next.js: administración (clientes, usuarios, validaciones, documentos, webhooks, auditoría). Reenvía `/admin/api` a la API |
-| `api` | `matchoncard/api:1.0.0` | interno `4560` | API principal (NestJS): validaciones, captura, documentos, panel, retención, firma tras la validación |
+| `api` | `matchoncard/api:1.0.0` | `127.0.0.1:4560` | API principal (NestJS): validaciones, captura, documentos, panel, retención, firma tras la validación |
 | `api-webhook` | `matchoncard/api-webhook:1.0.0` | interno `4562` | Emisor de webhooks: recibe de la API cada aviso ya firmado con HMAC (`POST /entregar`) y hace la llamada al cliente. Sin base de datos ni KEK |
 | `api-signature` | `matchoncard/api-signature:1.0.0` | interno `4563` | Python + pyHanko. Red `interna` sin salida a Internet; solo `api` lo alcanza |
 
