@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 if [ -s firma/firma.p12 ]; then echo "Ya existe firma/firma.p12: no se crea de nuevo."; exit 0; fi
 mkdir -p firma firma-ca-respaldo
 # clave aleatoria del .p12: la usa solo el contenedor api-signature (no hace falta que la sepas ni la escribas)
-ENV_FIRMA=api-signature/.env.production
+ENV_FIRMA=api-signature/.env
 (umask 077; touch "$ENV_FIRMA")
 if ! grep -qE '^FIRMA_P12_CLAVE=.{16,}' "$ENV_FIRMA"; then
   CLAVE=$(openssl rand -base64 36 | tr -d '\n/+=' | cut -c1-40)

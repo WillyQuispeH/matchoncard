@@ -73,7 +73,7 @@ services:
     ports:
       - "127.0.0.1:4561:4561"
     env_file:
-      - ./app/.env.production
+      - ./app/.env
     depends_on:
       - api
     healthcheck:
@@ -100,7 +100,7 @@ services:
     ports:
       - "127.0.0.1:4564:4564"
     env_file:
-      - ./app-admin/.env.production
+      - ./app-admin/.env
     depends_on:
       - api
     healthcheck:
@@ -129,7 +129,7 @@ services:
     expose:
       - "4560"
     env_file:
-      - ./api/.env.production
+      - ./api/.env
     environment:
       HOST: 0.0.0.0
       PORT: 4560
@@ -166,7 +166,7 @@ services:
     expose:
       - "4562"
     env_file:
-      - ./api-webhook/.env.production
+      - ./api-webhook/.env
     environment:
       HOST: 0.0.0.0
       PORT: 4562
@@ -208,7 +208,7 @@ services:
     cap_drop:
       - ALL
     env_file:
-      - ./api-signature/.env.production    # FIRMA_P12_CLAVE (la genera deploy/crear-firma.sh si está vacía)
+      - ./api-signature/.env    # FIRMA_P12_CLAVE (la genera deploy/crear-firma.sh si está vacía)
     environment:
       FIRMA_P12_PATH: /run/secrets/firma.p12
       FIRMA_CA_PATH: /run/secrets/firma-ca.pem
