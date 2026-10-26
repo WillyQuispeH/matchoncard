@@ -1,0 +1,594 @@
+{
+  "info": {
+    "name": "MatchOnCard API v1",
+    "description": "Colección de la API de MatchOnCard (validación de identidad y firma de documentos).\n\n1. Abre la colección → Variables y completa `cliente_id` y `secreto_jwt` (columna Current value). Guarda con Ctrl+S.\n2. Para probar en local cambia `base_url` a `http://localhost:4560`.\n3. Ejecuta **Crear validación**: `validacion_id` se guarda solo.\n\nCada solicitud a /v1 lleva las cabeceras `id: {{cliente_id}}` y `Authorization: Bearer {{jwt}}`. El script previo de la colección firma un JWT HS256 nuevo en `{{jwt}}` antes de cada envío.\n\nDocumentación: https://matchoncard.cl/integracion",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Firma un JWT HS256 nuevo por solicitud (iss = cliente_id, vida 120 s) y lo deja en {{jwt}} (variable local de la solicitud: no aparece en la pestaña Variables).",
+          "// Las solicitudes /v1 lo envían en sus cabeceras: id: {{cliente_id}} y Authorization: Bearer {{jwt}}",
+          "if (!pm.request.url.getPath().startsWith('/v1')) return;",
+          "const id = pm.collectionVariables.get('cliente_id');",
+          "const secreto = pm.collectionVariables.get('secreto_jwt');",
+          "if (!id || !secreto || secreto === 'PEGA_AQUI_TU_SECRETO')",
+          "  throw new Error('Falta tu credencial: abre la colección → pestaña Variables → completa cliente_id y secreto_jwt (columna Current value) y guarda con Ctrl+S');",
+          "const b64url = (w) => CryptoJS.enc.Base64.stringify(w).replace(/=+$/, '').replace(/\\+/g, '-').replace(/\\//g, '_');",
+          "const ahora = Math.floor(Date.now() / 1000);",
+          "const cabeza = b64url(CryptoJS.enc.Utf8.parse(JSON.stringify({ alg: 'HS256', typ: 'JWT' })));",
+          "const cuerpo = b64url(CryptoJS.enc.Utf8.parse(JSON.stringify({ iss: id, iat: ahora, exp: ahora + 120 })));",
+          "const firma = b64url(CryptoJS.HmacSHA256(cabeza + '.' + cuerpo, secreto));",
+          "pm.variables.set('jwt', cabeza + '.' + cuerpo + '.' + firma);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.matchoncard.cl"
+    },
+    {
+      "key": "cliente_id",
+      "value": "mi-empresa",
+      "description": "El id de tu cliente de la API"
+    },
+    {
+      "key": "secreto_jwt",
+      "value": "PEGA_AQUI_TU_SECRETO",
+      "description": "El secreto_jwt que entrega yarn cliente:crear (o el panel de administración) al crear tu cliente"
+    },
+    {
+      "key": "callback_url",
+      "value": "https://tu-empresa.cl/webhooks/matchoncard",
+      "description": "Dónde recibes los webhooks"
+    },
+    {
+      "key": "rut",
+      "value": "12.345.678-5"
+    },
+    {
+      "key": "validacion_id",
+      "value": ""
+    },
+    {
+      "key": "documento_id",
+      "value": ""
+    },
+    {
+      "key": "firmante_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Validaciones",
+      "item": [
+        {
+          "name": "Crear validación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  if (r.validacion_id) pm.collectionVariables.set('validacion_id', r.validacion_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rut\": \"{{rut}}\",\n  \"nombre\": \"Ana Pérez\",\n  \"referencia\": \"OP-2026-0042\",\n  \"callback_url\": \"{{callback_url}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/validaciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "validaciones"
+              ]
+            },
+            "description": "Crea la validación y devuelve `url_captura`, el link para el firmante (vale 24 h). Rol: integracion."
+          }
+        },
+        {
+          "name": "Consultar validación",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/validaciones/{{validacion_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "validaciones",
+                "{{validacion_id}}"
+              ]
+            },
+            "description": "Estado, motivos, puntajes y hash de la evidencia. Roles: integracion, auditor, dpo."
+          }
+        },
+        {
+          "name": "Descargar evidencia (ZIP)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/validaciones/{{validacion_id}}/evidencia?motivo=Peritaje%20solicitado%20por%20legal",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "validaciones",
+                "{{validacion_id}}",
+                "evidencia"
+              ],
+              "query": [
+                {
+                  "key": "motivo",
+                  "value": "Peritaje%20solicitado%20por%20legal"
+                }
+              ]
+            },
+            "description": "ZIP descifrado con las capturas. Cada descarga queda auditada con su motivo. Rol: auditor. Usa \"Send and Download\"."
+          }
+        },
+        {
+          "name": "Suprimir validación",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Solicitud de supresión del titular\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/validaciones/{{validacion_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "validaciones",
+                "{{validacion_id}}"
+              ]
+            },
+            "description": "Borra la evidencia y destruye su clave (irreversible). Rol: dpo."
+          }
+        },
+        {
+          "name": "Validaciones de un RUT",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/titulares/{{rut}}/validaciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "titulares",
+                "{{rut}}",
+                "validaciones"
+              ]
+            },
+            "description": "Derecho de acceso: validaciones asociadas a un RUT. Rol: dpo."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documentos",
+      "item": [
+        {
+          "name": "Registrar documento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  if (r.documento_id) pm.collectionVariables.set('documento_id', r.documento_id);",
+                  "  if (r.firmantes && r.firmantes[0] && r.firmantes[0].firmante_id) pm.collectionVariables.set('firmante_id', r.firmantes && r.firmantes[0] && r.firmantes[0].firmante_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Contrato de prueba\",\n  \"referencia\": \"OP-2026-0042\",\n  \"orden\": \"secuencial\",\n  \"callback_url\": \"{{callback_url}}\",\n  \"pdf\": \"JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA1OTUgODQyXSAvUmVzb3VyY2VzIDw8ID4+ID4+CmVuZG9iagp4cmVmCjAgNAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNCAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKMjAzCiUlRU9GCg==\",\n  \"firmantes\": [\n    {\n      \"rut\": \"{{rut}}\",\n      \"nombre\": \"Ana Pérez\",\n      \"ubicaciones\": [\n        {\n          \"pagina\": 1,\n          \"x\": 60,\n          \"y\": 700\n        }\n      ]\n    },\n    {\n      \"rut\": \"9.876.543-3\",\n      \"nombre\": \"Luis Soto\",\n      \"ubicaciones\": [\n        {\n          \"pagina\": 1,\n          \"x\": 330,\n          \"y\": 700\n        }\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/documentos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documentos"
+              ]
+            },
+            "description": "Sella el PDF y devuelve un link por firmante habilitado. `pdf` va en base64 (máx. 25 MB); este ejemplo trae un PDF A4 en blanco. Coordenadas en puntos desde la esquina superior izquierda. Rol: integracion."
+          }
+        },
+        {
+          "name": "Listar documentos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/documentos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documentos"
+              ]
+            },
+            "description": "Últimos 100 documentos. Roles: integracion, auditor."
+          }
+        },
+        {
+          "name": "Consultar documento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/documentos/{{documento_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documentos",
+                "{{documento_id}}"
+              ]
+            },
+            "description": "Estado del documento y de cada firmante. Roles: integracion, auditor, dpo."
+          }
+        },
+        {
+          "name": "Descargar PDF",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/documentos/{{documento_id}}/pdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documentos",
+                "{{documento_id}}",
+                "pdf"
+              ]
+            },
+            "description": "Versión vigente. Cabeceras X-Documento-Version y X-Documento-Sha256. Usa \"Send and Download\"."
+          }
+        },
+        {
+          "name": "Nuevo link de firmante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/documentos/{{documento_id}}/firmantes/{{firmante_id}}/enlace",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documentos",
+                "{{documento_id}}",
+                "firmantes",
+                "{{firmante_id}}",
+                "enlace"
+              ]
+            },
+            "description": "Emite un link nuevo; el anterior deja de servir. Rol: integracion."
+          }
+        },
+        {
+          "name": "Cancelar documento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"El cliente desistió de la operación\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/documentos/{{documento_id}}/cancelar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documentos",
+                "{{documento_id}}",
+                "cancelar"
+              ]
+            },
+            "description": "Cancela un documento pendiente. Rol: integracion."
+          }
+        },
+        {
+          "name": "Suprimir documento",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "id",
+                "value": "{{cliente_id}}",
+                "description": "Id de tu cliente"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt}}",
+                "description": "No lo edites: el script previo pone aquí un JWT nuevo en cada envío"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Fin del plazo de conservación\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/documentos/{{documento_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documentos",
+                "{{documento_id}}"
+              ]
+            },
+            "description": "Borra todas las versiones y destruye la clave (irreversible). Rol: dpo."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Público",
+      "item": [
+        {
+          "name": "Verificar PDF firmado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/pdf"
+              }
+            ],
+            "body": {
+              "mode": "file",
+              "file": {
+                "src": ""
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/verificar/api",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "verificar",
+                "api"
+              ]
+            },
+            "description": "Sin credenciales. En Body → binary elige el PDF firmado. Límite 12 por minuto."
+          }
+        },
+        {
+          "name": "Estado del servicio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Sin credenciales. { ok, db, version }."
+          }
+        }
+      ]
+    }
+  ]
+}

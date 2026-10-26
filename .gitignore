@@ -11,3 +11,6 @@ __pycache__/
 *.p12
 *.pem
 *.key
+
+# colección de Postman de desarrollo (lleva credenciales)
+postman/

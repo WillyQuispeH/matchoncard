@@ -10,12 +10,15 @@ function req(name: string): string {
   return v;
 }
 
-export function conexionDb(): ClientConfig {
+// admin = true: usa DB_ADMIN_USER / DB_ADMIN_PASSWORD si están definidos (migraciones y creación de usuarios);
+// la API y el resto de los scripts usan DB_USER, un usuario sin permisos de DDL.
+export function conexionDb(admin = false): ClientConfig {
+  const comoAdmin = admin && !!process.env.DB_ADMIN_USER;
   return {
     host: req('DB_HOST'),
     port: Number(process.env.DB_PORT || 5432),
-    user: req('DB_USER'),
-    password: req('DB_PASSWORD'),
+    user: comoAdmin ? req('DB_ADMIN_USER') : req('DB_USER'),
+    password: comoAdmin ? req('DB_ADMIN_PASSWORD') : req('DB_PASSWORD'),
     database: req('DB_NAME'),
     ssl: process.env.DATABASE_SSL === 'true'
       ? {

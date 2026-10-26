@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: '/', headers: [...BASE, REFERRER] },
+      { source: '/integracion', headers: [...BASE, REFERRER, { key: 'X-Frame-Options', value: 'DENY' }] },
       {
         source: '/verificar',
         headers: [...BASE, REFERRER,

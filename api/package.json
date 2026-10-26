@@ -11,6 +11,7 @@
     "migrar": "ts-node src/scripts/migrar.ts",
     "cliente:crear": "ts-node src/scripts/crear-cliente.ts",
     "admin:crear": "ts-node src/scripts/crear-admin.ts",
+    "db:usuario": "ts-node src/scripts/crear-usuario-db.ts",
     "bucket:configurar": "ts-node src/scripts/configurar-bucket.ts",
     "kek:rotar": "ts-node src/scripts/rotar-kek.ts",
     "test:e2e": "ts-node src/scripts/prueba-e2e.ts",

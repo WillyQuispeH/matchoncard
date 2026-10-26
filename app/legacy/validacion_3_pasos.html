@@ -3,37 +3,55 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0B1116">
+<meta name="theme-color" content="#222324">
 <title>Validación en 3 Pasos</title>
+<script>
+  // En un computador se muestra primero «Continúa en tu teléfono» (QR); se marca antes de pintar para no mostrar el inicio.
+  (function () {
+    var ua = navigator.userAgent, ipad = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    if (!/Android|iPhone|iPad|iPod|Mobile/i.test(ua) && !ipad && matchMedia('(pointer: fine)').matches) document.documentElement.classList.add('pc');
+    // link real de una validación (/captura/<token>): se ocultan las herramientas del prototipo (quedan en /demo)
+    if (/\/captura\/[A-Za-z0-9_-]{30,64}\/?$/.test(location.pathname)) document.documentElement.classList.add('real');
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gasoek+One&family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;600;700&display=swap">
 <style>
   :root {
     color-scheme: dark;
-    --bg: #0B1116; --surface: #141D24; --sunken: #1C2730; --line: #2A3843;
-    --ink: #E8EEF1; --ink-2: #A9B6BF; --ink-3: #74838D;
-    --accent: #5DB1D1; --accent-ink: #08161D;
-    --ok: #3FD49A; --warn: #F1B84B; --bad: #F2786A;
+    --bg: #222324; --surface: #2A2B2D; --sunken: #1D1E20; --deep: #191A1C; --line: #36383B; --line-2: #46494D;
+    --ink: #F7F5F3; --ink-2: #BCB7B3; --ink-3: #8B8E95;
+    --accent: #D1C3FE; --accent-edge: #927DD0; --accent-ink: #181614;
+    --peach: #FFC19B; --peach-edge: #BA7A53;
+    --ok: #7FD492; --warn: #F2C25B; --bad: #F08A97;
     --ending: #F07560; --bifur: #6F9CF2; --core: #3CC98E; --delta: #E8B04A;
-    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --cond: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
-    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --cond: "Geist", system-ui, sans-serif;
+    --display: "Gasoek One", "Geist", sans-serif;
+    --mono: "Geist Mono", ui-monospace, Menlo, monospace;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { height: 100%; margin: 0; }
   body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
-  h1, h2 { font-family: var(--cond); font-weight: 600; margin: 0; text-wrap: balance; }
+  h1, h2 { font-family: var(--cond); font-weight: 600; letter-spacing: -0.025em; margin: 0; text-wrap: balance; }
   p { margin: 0; }
   .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
   .muted { color: var(--ink-2); }
   .btn { appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 15px var(--sans);
-    padding: 12px 18px; border-radius: 12px; cursor: pointer; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-  .btn.round { width: 48px; padding: 0; border-radius: 50%; background: rgba(20,29,36,.72); backdrop-filter: blur(6px); }
-  .btn.round[aria-pressed="true"] { background: var(--warn); color: #1d1300; border-color: var(--warn); }
-  .btn:disabled { opacity: .45; }
+    padding: 12px 18px; border-radius: 12px; cursor: pointer; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 2px 0 var(--line-2); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent-edge); box-shadow: 0 2px 0 var(--accent-edge); font-weight: 600; }
+  /* botones de ícono de la barra: cuadrados, con el estilo de los demás botones (fondo, borde y canto) */
+  .btn.round { width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 12px; flex: none; }
+  #torch[aria-pressed="true"] { background: var(--warn); color: #1d1300; border-color: var(--warn); }   /* solo la linterna encendida se pinta; la voz usa el ícono */
+  .btn:disabled { opacity: .45; box-shadow: none; }
+  .btn { transition: transform .08s ease, box-shadow .08s ease, opacity .15s; }
+  .btn:not(:disabled):active, .btn.pulsado { transform: translateY(2px); box-shadow: 0 0 0 var(--line-2); }
+  .btn.primary:not(:disabled):active, .btn.primary.pulsado { box-shadow: 0 0 0 var(--accent-edge); }
+  .btn[aria-busy="true"] { opacity: .75; pointer-events: none; }
+  .btn svg { flex: none; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   label.file { position: relative; overflow: hidden; }
   label.file input { position: absolute; inset: 0; opacity: 0; }
@@ -46,8 +64,8 @@
   ol.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: s; }
   ol.steps li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; counter-increment: s; }
   ol.steps li::before { content: counter(s); width: 28px; height: 28px; border-radius: 50%; background: var(--sunken); display: grid; place-items: center; font: 500 13px var(--mono); color: var(--accent); }
-  .notice { border-radius: 10px; padding: 10px 12px; font-size: 14px; background: #3A2A12; color: #F7E3BD; }
-  .notice.bad { background: #3A1E1A; color: #F9D5CF; }
+  .notice { border-radius: 10px; padding: 10px 12px; font-size: 14px; background: rgba(250,215,121,.12); border: 1px solid rgba(250,215,121,.3); color: #FAE3A8; }
+  .notice.bad { background: rgba(255,174,183,.12); border-color: rgba(255,174,183,.3); color: #FFD3D9; }
 
   /* cámara */
   .cam { position: fixed; inset: 0; background: #000; overflow: hidden; touch-action: none; }
@@ -55,12 +73,17 @@
   .cam canvas.ov { position: absolute; inset: 0; width: 100%; height: 100%; }
   .cam video.mirror { transform: scaleX(-1); }
   .cam.screenlight { background: #fff; }
-  .cam.screenlight .top { background: rgba(11,17,22,.92); }
+  .cam.screenlight .top { background: rgba(34,35,36,.92); }
   .cam.screenlight .bottom { background: linear-gradient(transparent, rgba(0,0,0,.82) 30%); }
-  .cam .top { position: absolute; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px;
-    display: flex; align-items: center; gap: 12px; background: linear-gradient(rgba(0,0,0,.6), transparent); }
-  .cam .top .t { flex: 1; min-width: 0; }
-  .cam .top h2 { font-size: 20px; }
+  .cam .top { position: absolute; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top, 0px) + 6px) 12px 10px;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px 10px; background: linear-gradient(rgba(0,0,0,.55), transparent); }
+  .top .izq, .top .der { display: flex; gap: 8px; align-items: center; min-width: 0; }
+  .top .der { justify-content: flex-end; }
+  .top .t { text-align: center; min-width: 0; max-width: calc(100vw - 236px); }   /* deja sitio a 2 botones de 44 px por lado */
+  .top .t h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top .t .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sigcam .top .t { max-width: calc(100vw - 140px); }   /* en la firma hay un solo botón por lado */
+  .cam .top h2 { font-size: 18px; }
   .cam .top .sub { font: 12px var(--mono); color: var(--ink-2); }
   .cam .bottom { position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
     background: linear-gradient(transparent, rgba(0,0,0,.75) 35%); display: grid; gap: 12px; }
@@ -69,13 +92,14 @@
   .bar { height: 6px; border-radius: 99px; background: rgba(255,255,255,.14); overflow: hidden; }
   .bar b { display: block; height: 100%; width: 0; background: var(--ok); border-radius: 99px; transition: width .15s linear; }
   .tools { display: flex; gap: 10px; align-items: center; justify-content: center; }
-  .tools input[type=range] { flex: 1; max-width: 220px; accent-color: var(--accent); }
+  .tools .btn:not(.icon) { flex: 1; white-space: nowrap; }
+  #zoom, #zoomLbl { display: none !important; }
   .chips { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
-  .chip { font: 12px var(--mono); padding: 3px 8px; border-radius: 99px; background: rgba(20,29,36,.72); color: var(--ink-2); }
+  .chip { font: 12px var(--mono); padding: 3px 8px; border-radius: 99px; background: rgba(34,35,36,.72); color: var(--ink-2); }
   .chip.ok { color: var(--ok); } .chip.bad { color: var(--bad); }
   .phases { display: flex; gap: 10px; justify-content: center; }
   .ph { display: grid; justify-items: center; gap: 4px; font-size: 12px; color: var(--ink-3); }
-  .ph .th { width: 64px; height: 42px; border-radius: 7px; border: 1.5px dashed var(--line); background: #141d24 center/cover no-repeat; }
+  .ph .th { width: 64px; height: 42px; border-radius: 7px; border: 1.5px dashed var(--line); background: var(--surface) center/cover no-repeat; }
   .ph[data-state="now"] { color: var(--ink); } .ph[data-state="now"] .th { border: 2px solid var(--accent); }
   .ph[data-state="done"] { color: var(--ok); } .ph[data-state="done"] .th { border: 2px solid var(--ok); }
   .consent .check { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 1.45; cursor: pointer; }
@@ -84,14 +108,14 @@
   .small3 { font-size: 13px; margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; }
   .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .shots img { width: 100%; border-radius: 8px; display: block; }
   .scanrow { display: flex; gap: 14px; align-items: center; justify-content: center; }
-  .scanrow canvas { width: 72px; height: 90px; border-radius: 10px; border: 1px solid var(--line); background: #1b252d; }
+  .scanrow canvas { width: 72px; height: 90px; border-radius: 10px; border: 1px solid var(--line); background: #1D1E20; }
   .big2 { font: 600 34px/1 var(--cond); color: var(--ok); }
   .small2 { font-size: 12px; }
   .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .35s; }
   .flash.on { opacity: .75; transition: none; }
   .sheet { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); background: var(--surface); border: 1px solid var(--line);
     border-radius: 16px; padding: 14px; display: grid; gap: 12px; max-height: 70%; overflow: auto; }
-  .sheet canvas { width: 100%; height: auto; border-radius: 10px; background: #1b252d; display: block; }
+  .sheet canvas { width: 100%; height: auto; border-radius: 10px; background: #1D1E20; display: block; }
   dl.facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 14px; }
   dl.facts dt { color: var(--ink-2); } dl.facts dd { margin: 0; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; } .row .btn { flex: 1; }
@@ -100,35 +124,34 @@
   .big { font: 600 72px/1 var(--cond); font-variant-numeric: tabular-nums; }
   .big small { font-size: 30px; color: var(--ink-2); }
   .pill { display: inline-flex; font: 600 14px var(--sans); padding: 5px 12px; border-radius: 99px; width: fit-content; }
-  .pill.ok { background: #143328; color: var(--ok); } .pill.warn { background: #362A12; color: var(--warn); } .pill.bad { background: #3A1E1A; color: var(--bad); }
+  .pill.ok { background: rgba(127,212,146,.14); color: var(--ok); } .pill.warn { background: rgba(242,194,91,.14); color: var(--warn); } .pill.bad { background: rgba(240,138,151,.14); color: var(--bad); }
   .scale { position: relative; height: 32px; }
-  .scale .track { position: absolute; left: 0; right: 0; top: 6px; height: 10px; border-radius: 99px; background: linear-gradient(90deg, #3A1E1A 0 20%, #362A12 20% 90%, #1d3b30 90% 99%, #143328 99% 100%); }
+  .scale .track { position: absolute; left: 0; right: 0; top: 6px; height: 10px; border-radius: 99px; background: linear-gradient(90deg, rgba(240,138,151,.28) 0 20%, rgba(242,194,91,.24) 20% 90%, rgba(127,212,146,.3) 90% 99%, rgba(127,212,146,.5) 99% 100%); }
   .scale .mk { position: absolute; top: 0; width: 3px; height: 22px; background: var(--ink); border-radius: 2px; transform: translateX(-50%); }
   .scale .tk { position: absolute; top: 18px; font: 11px var(--mono); color: var(--ink-3); transform: translateX(-50%); }
   .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
   .legend i { width: 10px; height: 10px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
-  canvas.res { width: 100%; height: auto; border-radius: 10px; background: #1b252d; display: block; }
+  canvas.res { width: 100%; height: auto; border-radius: 10px; background: #1D1E20; display: block; }
   @media (prefers-reduced-motion: reduce) { .bar b, .msg { transition: none; } }
   /* validación en 3 pasos: rostro y firma */
   .xrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-  .xthumb { height: 48px; width: auto; border-radius: 6px; background: #1b252d; vertical-align: middle; }
+  .xthumb { height: 48px; width: auto; border-radius: 6px; background: #1D1E20; vertical-align: middle; }
   .xthumb.wide { background: #f4f4f4; }
   .busy { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-2); }
   .busy::before { content: ""; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .shots .small2 { text-align: center; margin-top: 4px; }
-  .sigpad { width: 100%; height: min(46vh, 340px, calc((100vw - 32px) / 1.9));   /* alargado como la firma de la cédula */ border-radius: 14px; background: #0f171d; border: 1px solid var(--line); touch-action: none; display: block; }
+  .sigpad { width: 100%; height: min(46vh, 340px, calc((100vw - 32px) / 1.9));   /* alargado como la firma de la cédula */ border-radius: 14px; background: #191A1C; border: 1px solid var(--line); touch-action: none; display: block; }
   .sigtries { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .sigtry { display: grid; gap: 2px; justify-items: center; font-size: 12px; color: var(--ink-2); }
-  .sigtry img { width: 100%; border-radius: 8px; background: #0f171d; border: 1px solid var(--line); }
+  .sigtry img { width: 100%; border-radius: 8px; background: #191A1C; border: 1px solid var(--line); }
   .sigtry b { color: var(--ink); font-size: 14px; }
-  .btn.ghost { background: transparent; }
+  .btn.ghost { background: transparent; box-shadow: none; }
   #sigImgs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; } #sigImgs img { width: 100%; border-radius: 8px; }
   .sumhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   /* pantalla simple en la huella */
   .cam.simple #chips, .cam.simple #mini, .cam.simple .scaninfo { display: none !important; }
   .cam.simple .top .sub { display: none; }
-  #voiceBtn[aria-pressed="true"], #voiceBtn[aria-pressed="false"] { background: rgba(20,29,36,.72); color: var(--ink); border-color: var(--line); }
   .cam.simple .msg { font-size: 22px; min-height: 58px; }
   /* vista doble: huella en vivo (izq.) que se va dibujando y huella de la cédula (der.) que se completa */
   .cam.simple .scanrow { flex-direction: column; gap: 8px; }
@@ -138,16 +161,16 @@
   .cam.simple #duo:not([hidden]) ~ .simpleprog { display: none !important; }
   @media (max-height: 760px) { .duo { width: min(180px, 48vw); } .cam.simple .msg { font-size: 19px; min-height: 0; } }
   .duo figure { margin: 0; display: grid; gap: 4px; justify-items: center; }
-  .duo canvas { width: 100% !important; height: auto !important; aspect-ratio: 4 / 5; border-radius: 12px; border: 1px solid var(--line-2, #2F404C); background: #0b1116 !important; }
-  .duo figcaption { font: 500 12px var(--sans); color: var(--ink-2, #A9B6BF); }
+  .duo canvas { width: 100% !important; height: auto !important; aspect-ratio: 4 / 5; border-radius: 12px; border: 1px solid var(--line-2); background: var(--deep) !important; }
+  .duo figcaption { font: 500 12px var(--sans); color: var(--ink-2); }
   .duometer { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; }
-  .duometer b { display: block; height: 100%; width: 0; background: #3FD49A; transition: width .5s; }
+  .duometer b { display: block; height: 100%; width: 0; background: var(--ok); transition: width .5s; }
   .simpleprog { display: grid; justify-items: center; gap: 8px; }
   .simpleprog .dots { display: flex; gap: 16px; } .simpleprog .dots span { display: grid; justify-items: center; gap: 4px; font: 500 12px var(--sans); color: var(--ink-3); }
   .simpleprog .dots i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); display: block; }
   .simpleprog .dots span.on { color: var(--ok); } .simpleprog .dots span.on i { background: var(--ok); border-color: var(--ok); }
   .simpleprog .pl { font: 600 17px var(--sans); color: var(--ink); }
-  .introsvg { width: 100%; height: auto; background: #0f171d; border-radius: 12px; }
+  .introsvg { width: 100%; height: auto; background: #191A1C; border-radius: 12px; }
   .introsvg .ithumb { animation: ithumb 2.6s ease-in-out infinite; }
   .introsvg .icheck { opacity: 0; animation: icheck 2.6s ease-in-out infinite; }
   .introsvg .irays, .introsvg .iflash { animation: iflash 1.3s ease-in-out infinite; }
@@ -156,23 +179,143 @@
   @keyframes iflash { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .introsvg * { animation: none !important; } .introsvg .icheck { opacity: 1; } }
   .introsteps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 16px; line-height: 1.4; }
+
+  /* ───── inicio: encabezado, pasos con color y botón fijo abajo ───── */
+  .logo { display: flex; align-items: center; gap: 10px; font: 700 18px var(--sans); letter-spacing: -0.02em; }
+  .logo b { color: var(--accent); font-weight: 700; }
+  .eyebrow { font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .display { font-family: var(--display) !important; font-weight: 400 !important; text-transform: uppercase; line-height: .98; letter-spacing: -0.01em !important; }
+  .hero { display: grid; gap: 10px; padding-top: 6px; }
+  .hero .display { font-size: clamp(32px, 10vw, 46px); }
+  .hero small { font: 12px var(--mono); color: var(--ink-3); }
+  ol.steps li::before { font-weight: 600; }
+  ol.steps li:nth-child(1)::before { background: rgba(255,193,155,.16); color: var(--peach); }
+  ol.steps li:nth-child(2)::before { background: rgba(209,195,254,.16); color: var(--accent); }
+  ol.steps li:nth-child(3)::before { background: rgba(161,224,169,.16); color: #A1E0A9; }
+  ol.steps li:nth-child(4)::before { background: rgba(250,215,121,.16); color: #FAD779; }
+  ol.steps li:nth-child(5)::before { background: rgba(162,207,255,.16); color: #A2CFFF; }
+  #home #start { position: sticky; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); min-height: 54px; font-size: 16px; z-index: 2; }
+  #home #start:disabled { opacity: 1; background: var(--surface); color: var(--ink-3); border-color: var(--line-2); box-shadow: 0 2px 0 var(--line-2); }
+  #devProfile { opacity: .7; }
+
+  /* ───── computador: continuar en el teléfono ───── */
+  .pc #home { display: none; }
+  .desk { display: none; min-height: 100%; place-items: center; padding: 48px 24px; }
+  .pc .desk { display: grid; }
+  .desk .wrap { width: min(1000px, 100%); display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
+  .desk .info { display: grid; gap: 18px; align-content: start; }
+  .desk .display { font-size: clamp(40px, 5vw, 64px); }
+  .desk .lead { font-size: 18px; line-height: 1.55; max-width: 46ch; }
+  .feats { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .feats li { display: flex; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: 14px; }
+  .feats i { width: 34px; height: 34px; flex: none; border-radius: 10px; display: grid; place-items: center; font-style: normal; }
+  .feats li:nth-child(1) i { background: rgba(255,193,155,.16); color: var(--peach); }
+  .feats li:nth-child(2) i { background: rgba(209,195,254,.16); color: var(--accent); }
+  .feats li:nth-child(3) i { background: rgba(161,224,169,.16); color: #A1E0A9; }
+  .feats li:nth-child(4) i { background: rgba(250,215,121,.16); color: #FAD779; }
+  .qrcard { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 28px 24px 22px; display: grid; gap: 14px; justify-items: center; text-align: center; box-shadow: 0 2px 0 var(--line-2); }
+  .qrcard .qr { width: 248px; height: 248px; background: #fff; border-radius: 16px; padding: 14px; display: grid; place-items: center; box-shadow: 0 0 0 6px rgba(209,195,254,.16); }
+  .qrcard .qr svg { width: 100%; height: 100%; display: block; }
+  .qrcard .qr .busy { color: #555; }
+  .qrcard b { font-size: 17px; }
+  .qrlink { font: 12px var(--mono); color: var(--ink-3); word-break: break-all; max-width: 30ch; }
+  .linkbtn { appearance: none; background: none; border: 0; padding: 4px; color: var(--ink-3); font: 13px var(--sans); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .linkbtn:hover { color: var(--ink-2); }
+  @media (max-width: 820px) { .desk .wrap { grid-template-columns: 1fr; gap: 32px; } .desk .qrcard { order: -1; } }
+
+  /* ───── link real: lo que es solo para pruebas no se muestra al firmante ───── */
+  .real .solo-demo { display: none !important; }
+
+  /* ───── firma: elegir foto, vista ampliada y confirmación del acercamiento ───── */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--sunken); border: 1px solid var(--line); border-radius: 12px; }
+  .seg button { appearance: none; border: 0; border-radius: 9px; padding: 9px 10px; background: transparent; color: var(--ink-2); font: 500 14px var(--sans); cursor: pointer; }
+  .seg button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .sigzoom { display: grid; gap: 6px; }
+  .sigzoom canvas { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); background: var(--deep); display: block; }
+  .sigconf { width: 100%; max-height: 38vh; object-fit: contain; border-radius: 10px; background: #f4f4f4; border: 1px solid var(--line); }
+
+  /* ───── paso 2 «Tú»: pulgar, rostro y firma en una sola tira, abajo y con el mismo estilo que la de la cédula ───── */
+  .yo { display: flex; gap: 10px; justify-content: center; align-items: flex-end; }
+  .yo .ph { appearance: none; background: none; border: 0; padding: 0; cursor: default; }
+  .yo .ph[data-state="done"], .yo .ph[data-state="skip"] { cursor: pointer; }
+  /* solo cuadrados y rectángulos: pulgar cuadrado, rostro vertical, firma alargada */
+  .yo .ph .th { position: relative; width: 48px; height: 48px; }
+  .yo .ph[data-k="face"] .th { width: 40px; height: 52px; }
+  .yo .ph[data-k="sig"] .th { width: 76px; height: 42px; background-size: contain; background-color: var(--deep); }
+  .yo .ph[data-state="skip"] { color: var(--warn); } .yo .ph[data-state="skip"] .th { border: 2px solid var(--warn); }
+  .yo .ph .n { position: absolute; right: -6px; top: -6px; font: 600 10px var(--mono); background: var(--accent); color: var(--accent-ink); border-radius: 99px; padding: 1px 5px; }
+  .yo .ph[data-state="done"] .th::after, .yo .ph[data-state="skip"] .th::after { content: "↻"; position: absolute; right: -6px; bottom: -6px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+    font: 700 11px var(--sans); background: var(--surface); color: var(--ink-2); border: 1px solid var(--line-2); }
+  .yosheet { position: fixed; z-index: 30; }
+
+  /* ───── zoom: botones 1× · 2× · 3× flotando justo debajo de la barra (manejan el control de zoom oculto) ───── */
+  .zoomchips { grid-column: 1 / -1; justify-self: center; display: flex; gap: 4px; padding: 4px; background: rgba(34,35,36,.82); border: 1px solid var(--line); border-radius: 12px; backdrop-filter: blur(6px); }
+  .zoomchips button { appearance: none; border: 0; background: transparent; color: var(--ink-2); font: 600 13px var(--mono); min-width: 42px; height: 32px; border-radius: 9px; cursor: pointer; }
+  .zoomchips button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+  /* ───── firma con el mismo formato de la cámara: barra arriba, zona central, panel abajo ───── */
+  .sigcam { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
+  .sigcam .top { padding: calc(env(safe-area-inset-top, 0px) + 6px) 12px 10px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px 10px; }
+  .sigcam .top h2 { font-size: 18px; }
+  .sigcam .top .sub { font: 12px var(--mono); color: var(--ink-2); }
+  .sigcam .stage { flex: 1; min-height: 0; position: relative; display: grid; align-content: center; gap: 12px; padding: 8px 16px; overflow: auto; }
+  .sigcam .bottom { padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 16px); display: grid; gap: 12px; }
+  .sigcam .msg { font: 500 15px/1.4 var(--sans); min-height: 42px; color: var(--ink-2); }
+  .sigcam .bar b { background: var(--accent); }
+  .sigcam .sheet { z-index: 5; max-height: 82%; }
+  .sigref { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; font-size: 13px; }
+  .sigref .sigrefimg { height: 44px; max-width: 42%; object-fit: contain; background: #F4F4F4; border-radius: 6px; }
+  .sigref .linkbtn { margin-left: auto; }
+  .sigpadwrap { display: grid; gap: 6px; }
+  .sigfoot { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 12px; color: var(--ink-3); }
+  .sigfoot b { color: var(--ink); font-size: 13px; white-space: nowrap; }
+  @media (max-height: 700px) { .yo .ph > span { display: none; } .yo { gap: 12px; } }   /* solo los nombres: el contador también es un span */
 </style>
 </head>
 <body>
 
+<!-- ───────── computador: continuar en el teléfono ───────── -->
+<section class="desk" id="desk">
+  <div class="wrap">
+    <div class="info">
+      <div class="logo"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2A2B2D"/><rect x="6" y="9" width="20" height="14" rx="3" fill="none" stroke="#D1C3FE" stroke-width="2"/><path d="M11 18l3 3 7-7" fill="none" stroke="#A1E0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Match<b>On</b>Card</span></div>
+      <span class="eyebrow">Validación de identidad</span>
+      <h1 class="display">Continúa en tu teléfono</h1>
+      <p class="muted lead">La validación usa la cámara trasera, la linterna y la pantalla táctil de tu teléfono. Escanea el código y sigue desde ahí: toma unos 3 minutos.</p>
+      <ul class="feats">
+        <li><i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="8" cy="11" r="2.2"/><path d="M5 16c.6-1.4 1.7-2.2 3-2.2s2.4.8 3 2.2M13.5 10h5M13.5 13h5"/></svg></i>Fotos de tu cédula</li>
+        <li><i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11c0 3-1 6-3 8M8 6.5A6 6 0 0 1 18 11c0 2-.3 4-1 6M6 9.5A6 6 0 0 0 6 13c0 1.5-.3 3-1 4.3M12 11c0-1.1.9-2 2-2M10 11a2 2 0 1 1 4 0c0 3.5-1 6.5-2.5 9"/></svg></i>Huella del pulgar</li>
+        <li><i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></i>Selfie con prueba de vida</li>
+        <li><i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17c3-1 4-8 6-8s0 8 3 8 3-5 5-5 2 3 4 3"/><path d="M3 21h18"/></svg></i>Firma con el dedo</li>
+      </ul>
+      <p class="muted small2">Este link es personal: no lo compartas. Si ya lo abriste en el teléfono, puedes cerrar esta pestaña.</p>
+    </div>
+    <div class="qrcard">
+      <div class="qr" id="deskQr" role="img" aria-label="Código QR con el link de esta validación"><span class="busy">Generando código…</span></div>
+      <b>Escanea con la cámara de tu teléfono</b>
+      <span class="muted" style="font-size:14px">Se abre esta misma validación, lista para continuar.</span>
+      <span class="qrlink" id="deskLink"></span>
+      <button class="btn" id="deskCopy" style="min-width:180px">Copiar link</button>
+      <button class="linkbtn" id="deskHere">Continuar en este computador</button>
+    </div>
+  </div>
+</section>
+
 <!-- ───────── inicio ───────── -->
 <section class="page" id="home">
-  <div class="brand">
-    <svg width="34" height="34" viewBox="0 0 30 30" aria-hidden="true"><g fill="none" stroke="#5DB1D1" stroke-width="1.6" stroke-linecap="round"><path d="M8 22c-1.5-2-2.3-4.4-2.3-7A9.3 9.3 0 0 1 15 5.7a9.3 9.3 0 0 1 9.3 9.3"/><path d="M11 24c-1.3-2.4-2-5.3-2-9a6 6 0 0 1 12 0c0 2 .2 3.8.6 5.4"/><path d="M15 25c-1.4-3.4-2-6.6-2-10a2 2 0 0 1 4 0c0 3.6.8 6.8 2.3 9.4"/></g></svg>
-    <div><h1>Validación en 3 Pasos</h1><small>huella v<span id="ver"></span> · rostro · firma · todo se procesa en este teléfono</small></div>
+  <div class="hero">
+    <div class="logo"><svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2A2B2D"/><rect x="6" y="9" width="20" height="14" rx="3" fill="none" stroke="#D1C3FE" stroke-width="2"/><path d="M11 18l3 3 7-7" fill="none" stroke="#A1E0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Match<b>On</b>Card</span></div>
+    <span class="eyebrow">Validación de identidad</span>
+    <h1 class="display">Valida tu identidad</h1>
+    <small class="solo-demo">huella v<span id="ver"></span> · rostro · firma · todo se procesa en este teléfono</small>
   </div>
-  <p class="muted mono" id="devProfile" style="font-size:12px;margin-top:-10px"></p>
+  <p class="muted mono solo-demo" id="devProfile" style="font-size:12px;margin-top:-10px"></p>
   <div class="card">
     <ol class="steps">
       <li><div><b>Cédula en 4 fases: frente, firma de cerca, reverso y huella de cerca.</b> <span class="muted">Cada foto se toma sola cuando la cédula está quieta y enfocada; tómate tu tiempo, el sistema te espera. En el momento se verifican los 3 elementos de referencia: el rostro y la firma del frente, y los puntos clave de la huella.</span></div></li>
-      <li><div><b>Paso 1 · Huella: escanea el pulgar derecho.</b> <span class="muted">Con la cámara trasera y la linterna encendida, acerca el teléfono a la yema y recórrela despacio: centro, punta y costados. El sistema va uniendo los fragmentos y la barra se llena hasta tener la huella completa.</span></div></li>
-      <li><div><b>Paso 2 · Rostro.</b> <span class="muted">Selfie con la cámara frontal y prueba de vida (parpadear y girar la cabeza). Se compara con la foto de la cédula.</span></div></li>
-      <li><div><b>Paso 3 · Firma.</b> <span class="muted">Firmas 3 veces con el dedo en la pantalla. El motor compara los rasgos que se conservan al firmar en un teléfono con la firma impresa en la cédula.</span></div></li>
+      <li><div><b>Tú · Pulgar: escanea el pulgar derecho.</b> <span class="muted">Con la cámara trasera y la linterna encendida, acerca el teléfono a la yema y recórrela despacio: centro, punta y costados. El sistema va uniendo los fragmentos y la barra se llena hasta tener la huella completa.</span></div></li>
+      <li><div><b>Tú · Rostro.</b> <span class="muted">Selfie con la cámara frontal y prueba de vida (parpadear y girar la cabeza). Se compara con la foto de la cédula.</span></div></li>
+      <li><div><b>Tú · Firma.</b> <span class="muted">Firmas 3 veces con el dedo en la pantalla. El motor compara los rasgos que se conservan al firmar en un teléfono con la firma impresa en la cédula.</span></div></li>
       <li><div><b>Resultado consolidado.</b> <span class="muted">Veredicto de los 3 factores, imágenes y evidencia descargable.</span></div></li>
     </ol>
   </div>
@@ -211,17 +354,23 @@
   <video id="video" playsinline muted autoplay></video>
   <canvas class="ov" id="ov"></canvas>
   <div class="flash" id="flash"></div>
+  <!-- barra: izquierda (volver, ayuda) · título centrado · derecha (voz, cámara, luz); el zoom flota justo debajo -->
   <div class="top">
-    <button class="btn round" id="back" aria-label="Volver">←</button>
+    <div class="izq">
+      <button class="btn round" id="back" aria-label="Volver"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+      <button class="btn round" id="helpBtn" aria-label="Ver cómo se hace" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg></button>
+    </div>
     <div class="t"><h2 id="camTitle">Cédula</h2><div class="sub" id="camSub">Paso 1 de 2</div></div>
-    <button class="btn round" id="helpBtn" aria-label="Ver cómo se hace" hidden style="font:700 20px var(--sans)">?</button>
-    <button class="btn round" id="voiceBtn" aria-label="Silenciar voz" aria-pressed="true"></button>
-    <button class="btn round" id="flip" aria-label="Cambiar cámara" hidden>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l-3-3M20 17H9l3 3"/></svg>
-    </button>
-    <button class="btn round" id="torch" aria-label="Luz" aria-pressed="false" hidden>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
-    </button>
+    <div class="der">
+      <button class="btn round" id="voiceBtn" aria-label="Silenciar voz" aria-pressed="true"></button>
+      <button class="btn round" id="flip" aria-label="Cambiar cámara" hidden>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l-3-3M20 17H9l3 3"/></svg>
+      </button>
+      <button class="btn round" id="torch" aria-label="Luz" aria-pressed="false" hidden>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+      </button>
+    </div>
+    <div class="zoomchips" id="zoomChips" role="group" aria-label="Zoom" hidden></div>
   </div>
   <div class="bottom" id="camBottom">
     <div class="phases" id="phases" hidden>
@@ -230,6 +379,7 @@
       <div class="ph" data-k="back"><div class="th"></div><span>Reverso</span></div>
       <div class="ph" data-k="close"><div class="th"></div><span>Huella</span></div>
     </div>
+    <div class="yo" id="yoCam" hidden></div>
     <div class="scanrow" id="scanRow" hidden>
       <canvas id="mini" width="96" height="120" aria-label="Huella armada"></canvas>
       <div class="duo" id="duo" hidden>
@@ -246,30 +396,43 @@
     <div class="tools">
       <span class="mono muted" style="font-size:12px" id="zoomLbl" hidden>Zoom</span>
       <input type="range" id="zoom" min="1" max="1" step="0.1" value="1" hidden aria-label="Zoom de la cámara">
-      <button class="btn" id="manual">Capturar ahora</button>
-      <button class="btn" id="finishScan" hidden disabled>Terminar escaneo</button>
-      <button class="btn ghost" id="skipFinger" hidden>No puedo escanear mi huella</button>
-      <button class="btn ghost" id="diagBtn" title="Descargar diagnóstico" aria-label="Descargar diagnóstico" style="padding:12px">⤓</button>
+      <button class="btn primary" id="manual">Capturar ahora</button>
+      <button class="btn primary" id="finishScan" hidden disabled>Terminar escaneo</button>
     </div>
+    <button class="linkbtn" id="skipFinger" hidden style="justify-self:center">No puedo escanear mi huella</button>
+    <button class="linkbtn" id="useBack" hidden style="justify-self:center">Usar la huella de la foto del reverso</button>
+    <button class="linkbtn" id="useFront" hidden style="justify-self:center">Usar la firma de la foto del frente</button>
   </div>
   <div class="sheet" id="sheet" hidden></div>
 </section>
 
-<!-- ───────── paso 3: firma ───────── -->
-<section class="page" id="sig" hidden>
-  <div class="brand"><button class="btn round" id="sigBack" aria-label="Volver">←</button><div><h1>Firma</h1><small>Paso 3 de 3 · firma con el dedo</small></div></div>
-  <div class="card"><b>Firma de tu cédula</b><div id="sigRefBox" style="display:grid;gap:10px"></div></div>
-  <div class="card" id="sigPick" hidden></div>
-  <div id="sigPadWrap" style="display:grid;gap:10px">
-    <div class="row" style="align-items:center;justify-content:space-between"><b id="sigCount">Firma 1 de 3</b><span class="muted small2">Firma de lado a lado, como en tu cédula</span></div>
-    <div class="notice" id="sigRotate" style="font-size:13px">Consejo: gira el teléfono (horizontal) para tener más espacio. Tu firma debe caber completa dentro del recuadro, sin tocar los bordes.</div>
-    <canvas class="sigpad" id="sigPad" aria-label="Área para firmar"></canvas>
-    <p class="muted" id="sigMsg" style="font-size:14px"></p>
-    <div class="row"><button class="btn" id="sigClear">Borrar</button><button class="btn primary" id="sigOk" disabled>Aceptar firma</button></div>
+<!-- ───────── paso 2 «Tú» · firma: mismo formato que la cámara (barra arriba con la tira, zona central, panel abajo) ───────── -->
+<section class="sigcam" id="sig" hidden>
+  <div class="top">
+    <div class="izq"><button class="btn round" id="sigBack" aria-label="Volver"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button></div>
+    <div class="t"><h2>Firma</h2><div class="sub">Paso 2 de 2 · Tú · firma con el dedo</div></div>
+    <div class="der"></div>
   </div>
-  <div class="sigtries" id="sigTries"></div>
-  <div class="card" id="sigResult" hidden></div>
+  <div class="stage">
+    <div class="sigref" id="sigRefBox"></div>
+    <div class="sigpadwrap" id="sigPadWrap">
+      <canvas class="sigpad" id="sigPad" aria-label="Área para firmar"></canvas>
+      <div class="sigfoot"><b id="sigCount">Firma 1 de 3</b><span id="sigRotate">De lado a lado, sin tocar los bordes. Gira el teléfono si quieres más espacio.</span></div>
+    </div>
+    <div class="sheet" id="sigPick" hidden></div>
+  </div>
+  <div class="bottom">
+    <div class="yo" id="yoSig"></div>
+    <div class="msg" id="sigMsg"></div>
+    <div class="bar"><b id="sigProg"></b></div>
+    <div class="row" id="sigBtns"><button class="btn" id="sigClear">Borrar</button><button class="btn primary" id="sigOk" disabled>Aceptar firma</button></div>
+    <div id="sigResult" hidden></div>
+  </div>
+  <div class="sigtries" id="sigTries" hidden></div>
 </section>
+
+<!-- hoja para repetir una fase del paso «Tú» (visible sobre la cámara y sobre la firma) -->
+<div class="sheet yosheet" id="yoSheet" hidden></div>
 
 <!-- ───────── resultado ───────── -->
 <section class="page" id="result" hidden>
@@ -335,12 +498,12 @@
   </div>
   <div class="card">
     <dl class="facts" id="facts"></dl>
-    <p class="muted" style="font-size:13px">Prototipo con umbrales ajustados en huellas sintéticas. Calíbralo con capturas reales antes de usarlo para decisiones.</p>
+    <p class="muted solo-demo" style="font-size:13px">Prototipo con umbrales ajustados en huellas sintéticas. Calíbralo con capturas reales antes de usarlo para decisiones.</p>
   </div>
   <button class="btn primary" id="pdfBtn">Descargar informe PDF</button>
-  <button class="btn" id="rawBtn">Descargar datos de prueba (ZIP)</button>
-  <p class="muted" style="font-size:12px;margin-top:-8px">Incluye las fotos originales del frente, reverso, acercamiento a la huella y cada fragmento del pulgar, sin procesar. Contiene datos personales: compártelo solo con quien corresponda.</p>
-  <div class="row">
+  <button class="btn solo-demo" id="rawBtn">Descargar datos de prueba (ZIP)</button>
+  <p class="muted solo-demo" style="font-size:12px;margin-top:-8px">Incluye las fotos originales del frente, reverso, acercamiento a la huella y cada fragmento del pulgar, sin procesar. Contiene datos personales: compártelo solo con quien corresponda.</p>
+  <div class="row solo-demo">
     <button class="btn" id="retryFinger">Repetir pulgar</button>
     <button class="btn" id="retryFace">Repetir rostro</button>
     <button class="btn" id="retrySig">Repetir firma</button>
@@ -2497,7 +2660,21 @@
   const toVideo = (G, r) => ({ x: ((G.mirror ? G.sw - r.x - r.w : r.x) - G.ox) / G.k, y: (r.y - G.oy) / G.k, w: r.w / G.k, h: r.h / G.k });
   const toScreenX = (G, vx) => { const x = vx * G.k + G.ox; return G.mirror ? G.sw - x : x; };
   function cardGuide(G) { const w = G.sw * 0.9, h = w * 54 / 85.6; return { x: (G.sw - w) / 2, y: G.sh * 0.42 - h / 2, w, h }; }
-  function circleGuide(G) { const d = Math.min(G.sw * 0.74, G.sh * 0.46); return { cx: G.sw / 2, cy: G.sh * 0.40, r: d / 2 }; }
+  // Zona libre entre la barra de arriba (con la tira) y el panel de abajo: ahí se centran el círculo del pulgar y el
+  // óvalo del rostro, sin que nada los tape. Se mide en el DOM a lo más cada 0,4 s.
+  const STAGE = { at: 0, top: 0, bottom: 0 };
+  function stage(G) {
+    const now = performance.now();
+    if (now - STAGE.at > 400) {
+      const r0 = ov.getBoundingClientRect(), bt = $('#camBottom');
+      STAGE.top = document.querySelector('#cam .top').getBoundingClientRect().bottom - r0.top;
+      STAGE.bottom = bt.hidden ? r0.height : bt.getBoundingClientRect().top - r0.top; STAGE.at = now;
+    }
+    const top = Math.max(0, STAGE.top) + 8, bottom = Math.min(G.sh, STAGE.bottom) - 8;
+    return bottom - top > G.sh * 0.3 ? { top, bottom } : { top: 0, bottom: G.sh };   // sin espacio razonable: la pantalla completa
+  }
+  // mismo tamaño de siempre (el tamaño cambia cuántos surcos se ven); solo se achica si no cabe en la zona libre
+  function circleGuide(G) { const Z = stage(G), h = Z.bottom - Z.top, d = Math.min(G.sw * 0.74, G.sh * 0.46, h * 0.94); return { cx: G.sw / 2, cy: Z.top + h / 2, r: d / 2 }; }
   // Copia una región del video (coords de video) a gris, escalada a maxDim
   function grab(r, maxDim, channel) {
     const x = Math.max(0, r.x), y = Math.max(0, r.y), w = Math.min(video.videoWidth - x, r.w), h = Math.min(video.videoHeight - y, r.h);
@@ -2532,7 +2709,8 @@
   async function startCard() {
     S.mode = 'card-wait'; say('Iniciando cámara trasera…'); benchProfile(); fingerProfileOff();
     await useCamera('environment'); await setLight(false); lightButton(false); $('#flip').hidden = true;
-    $('#scanRow').hidden = true; $('#finishScan').hidden = true; $('#manual').hidden = false; $('#phases').hidden = false;
+    $('#scanRow').hidden = true; $('#finishScan').hidden = true; $('#manual').hidden = false; $('#phases').hidden = false; $('#yoCam').hidden = true;
+    S.yo = null; renderYo();   // validación nueva: la tira del paso «Tú» parte vacía
     S.doc = { front: null, back: null, close: null, ocr: { front: null, mrz: null, check: null, status: 'pendiente' } };
     ['front', 'sig', 'back', 'close'].forEach((k) => setPhaseUI(k, 'todo'));
     S.raw = { started: new Date().toISOString(), closeups: [], fragments: [], ua: navigator.userAgent };
@@ -2544,14 +2722,15 @@
     S.mode = 'card';
   }
   function enterPhase(ph) {
+    $('#useBack').hidden = true; $('#useFront').hidden = true; S.cp.offeredFallback = false;   // el enlace de la huella del reverso se ofrece de nuevo tras el tiempo de espera de la fase
     const C = S.cp; C.phase = ph; C.stable = 0; C.box = null; C.boxV = null; C.t0 = performance.now(); C.flipSeen = false;
     C.okRun = 0; C.peak = 0; C.lastSharp = 0; C.retries = 0; C.sigRun = 0; C.liveHist = []; C.faceRes = null; C.faceAt = 0; C.pauseUntil = performance.now() + (ph === 'front' ? 2500 : 1400);   // pausa: tiempo para acomodarse
     setPhaseUI(ph, 'now');
-    if (ph === 'front') { $('#camTitle').textContent = 'Cédula · frente'; $('#camSub').textContent = 'Fase 1 de 4 · captura automática'; say('Pon la cédula sobre una mesa con buena luz y encuadra el lado con tu foto. Sin apuro: la foto se toma sola'); }
-    if (ph === 'back') { $('#camTitle').textContent = 'Cédula · reverso'; $('#camSub').textContent = 'Fase 3 de 4 · captura automática'; say('✓ Firma lista. Ahora da vuelta la cédula', 'ok'); }
-    if (ph === 'sig') { $('#camTitle').textContent = 'Firma de la cédula'; $('#camSub').textContent = 'Fase 2 de 4 · acercamiento'; say('✓ Frente listo. Ahora acerca el teléfono a tu firma', 'ok'); C.offeredSigFallback = false; lightButton(true); }
+    if (ph === 'front') { $('#camTitle').textContent = 'Cédula · frente'; $('#camSub').textContent = 'Paso 1 de 2 · Cédula · fase 1 de 4'; say('Pon la cédula sobre una mesa con buena luz y encuadra el lado con tu foto. Sin apuro: la foto se toma sola'); }
+    if (ph === 'back') { $('#camTitle').textContent = 'Cédula · reverso'; $('#camSub').textContent = 'Paso 1 de 2 · Cédula · fase 3 de 4'; say('✓ Firma lista. Ahora da vuelta la cédula', 'ok'); }
+    if (ph === 'sig') { $('#camTitle').textContent = 'Firma de la cédula'; $('#camSub').textContent = 'Paso 1 de 2 · Cédula · fase 2 de 4'; say('✓ Frente listo. Ahora acerca el teléfono a tu firma', 'ok'); C.offeredSigFallback = false; lightButton(true); }
     if (ph === 'close') {
-      $('#camTitle').textContent = 'Huella de la cédula'; $('#camSub').textContent = 'Fase 4 de 4 · acercamiento con linterna';
+      $('#camTitle').textContent = 'Huella de la cédula'; $('#camSub').textContent = 'Paso 1 de 2 · Cédula · fase 4 de 4';
       say('Acerca el teléfono a la huella de la cédula' + (S.doc.back && S.doc.back.box ? sideText(S.doc.back.box) : '') + ' hasta que llene el marco', 'ok');
       lightButton(true); setLight(true); if (PROFILE.pauseBg) bgPause(true);
       const z = $('#zoom'); if ((IS_IOS || PROFILE.zoom2) && !z.hidden && +z.value < 1.6 && +z.max >= 2) { z.value = 2; S.track.applyConstraints({ advanced: [{ zoom: 2 }] }).then(keepFocus).catch(() => {}); }
@@ -2750,10 +2929,11 @@
     // de cerca las crestas son gruesas: se reduce la imagen para que el localizador las vea en su rango
     const C = S.cp, gd = closeGuide(G), vr = toVideo(G, gd), { gray, s } = grab(vr, 380, 'lum');
     const secs = (now - C.t0) / 1000;
-    if (secs > CARD.closeFallbackAfter && !C.best && S.doc.back && !C.offeredFallback) { C.offeredFallback = true; $('#manual').textContent = 'Usar huella del reverso'; }
+    // tras un rato sin buena captura se ofrece la huella del reverso como ENLACE aparte: «Capturar ahora» sigue disponible
+    if (secs > CARD.closeFallbackAfter && !C.best && S.doc.back && !C.offeredFallback) { C.offeredFallback = true; $('#useBack').hidden = false; }
     const r = await call('locate', { gray });
     if (S.mode !== 'card' || C.phase !== 'close') return;
-    if (!r.box || r.score < 0.06) { C.stable = 0; C.box = null; chips([['huella', false]]); say(secs > 8 ? 'Si la huella ya llena el marco y se ve nítida, toca Capturar ahora' : 'Acerca el teléfono a la huella de la cédula'); return; }
+    if (!r.box || r.score < 0.06) { C.stable = 0; C.box = null; chips([['huella', false]]); say(C.offeredFallback ? 'Toca Capturar ahora si la huella llena el marco, o usa la huella de la foto del reverso' : secs > 8 ? 'Si la huella ya llena el marco y se ve nítida, toca Capturar ahora' : 'Acerca el teléfono a la huella de la cédula'); return; }
     const fill = (r.box.w * r.box.h) / (gray.w * gray.h), periodVideo = r.period / s, glare = E.glareIn(gray, r.box);
     const bx = { x: gd.x + (r.box.x / s) * G.k, y: gd.y + (r.box.y / s) * G.k, w: (r.box.w / s) * G.k, h: (r.box.h / s) * G.k };
     const moved = C.box ? Math.hypot(bx.x - C.box.x, bx.y - C.box.y) : 1e9;
@@ -2806,7 +2986,7 @@
     await call('setCard', { tpl: t });
     S.card = t; S.attempts = []; S.best = null;
     S.doc.close = { jpeg: best.jpeg, box: best.box, w: best.w, h: best.h, fromBack: !!best.fromBack, tries: S.cp.tries, at: new Date().toISOString() };
-    setPhaseUI('close', 'done', best.jpeg);
+    setPhaseUI('close', 'done', best.jpeg); $('#useBack').hidden = true;
     await setLight(false);
     $('#manual').textContent = 'Capturar ahora';
     showCardSheet(t);
@@ -2946,10 +3126,11 @@
     if (S.raw) { S.raw.fragments = []; try { S.raw.video = S.track.getSettings(); } catch (e) {} }
     S.fp = { lastAssess: 0, lastFilter: 0, lastCap: 0, thumb: null, marks: null, busy: false, filtered: null, state: null, t0: performance.now(),
       cov: 0, patches: 0, tried: 0, rejects: 0, preview: null, interim: null, flashBad: 0 };
-    $('#camTitle').textContent = 'Escanea tu pulgar'; $('#camSub').textContent = 'Paso 1 de 3 · Huella · recorre la yema con la cámara';
+    $('#camTitle').textContent = 'Escanea tu pulgar'; $('#camSub').textContent = 'Paso 2 de 2 · Tú · recorre la yema con la cámara';
+    $('#phases').hidden = true; $('#yoCam').hidden = false; yoEstado('finger', 'now', null);
     $('#flip').hidden = true; lightButton(true); await setLight(true);
     const z = $('#zoom'); if ((IS_IOS || PROFILE.zoom2) && !z.hidden && +z.value < 1.6 && +z.max >= 2) { z.value = 2; S.track.applyConstraints({ advanced: [{ zoom: 2 }] }).then(keepFocus).catch(() => {}); }
-    $('#scanRow').hidden = false; $('#finishScan').hidden = false; $('#manual').hidden = true; S.fp.joint = null;
+    $('#scanRow').hidden = true; $('#finishScan').hidden = false; $('#manual').hidden = true; S.fp.joint = null;   // sin vista doble ni puntitos: el círculo queda libre
     $('#covPct').textContent = '—'; $('#covLbl').textContent = 'buscando fragmentos nítidos'; drawMini();
     say(FLAGS.zoomauto && !$('#zoom').hidden ? 'Pon la yema dentro del círculo, a un palmo (unos 15 cm) de la cámara. El zoom y el enfoque se ajustan solos' : PROFILE.zoom2 && !IS_IOS && !$('#zoom').hidden ? 'Zoom activado: pon la yema a unos 12–15 cm de la cámara' : 'Acerca la cámara a la yema hasta ver los surcos grandes');
     await fingerIntro();   // demostración animada (una vez)
@@ -3058,6 +3239,7 @@
       if (!r.session) { $('#covSub').textContent = `${F.tried} fotograma${F.tried === 1 ? '' : 's'} revisado${F.tried === 1 ? '' : 's'}`; progress(0); $('#covPct').textContent = '—'; }
       $('#finishScan').disabled = F.patches < 3;
       if (r.accepted) {
+        yoPulgar(vr);    // la última toma buena queda como miniatura del pulgar
         uxGoodShot(F);   // tono suave + vibración + avance
         if (r.ridge) duoLive(r.ridge);
         if (r.preview) { F.preview = r.preview; drawMini(); }
@@ -3084,7 +3266,7 @@
   function drawMini() {
     // mapa de la huella de la cédula: en verde, las zonas donde calzaron fragmentos del pulgar
     const c = $('#mini'), g = c.getContext('2d'), W = c.width, H = c.height, t = S.card;
-    g.fillStyle = '#1b252d'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#1D1E20'; g.fillRect(0, 0, W, H);
     if (!t) return;
     if (!S.miniBase || S.miniBaseFor !== t) { S.miniBase = skelCanvas(t); S.miniBaseFor = t; }
     const k = Math.min(W / t.w, H / t.h), ox = (W - t.w * k) / 2, oy = (H - t.h * k) / 2;
@@ -3099,6 +3281,8 @@
     try {
       const r = await call('frameFinish', {});
       S.best = { joint: r.joint, tpl: r.tpl, match: r.match, mosaic: r.mosaic, coverage: r.coverage }; S.attempts = [S.best];
+      yoEstado('finger', 'done', yoPulgarImg());
+      if (!S.face.result) { say('✓ Pulgar listo. Ahora gira el teléfono hacia ti', 'ok'); await yoPausa(1200); }
       nextStep();   // huella lista → rostro → firma → resultado
     } catch (e) { say(e.message, 'bad'); S.mode = 'finger'; }
     finally { S.ending = false; }
@@ -3106,9 +3290,27 @@
   $('#finishScan').addEventListener('click', () => { if (S.mode === 'finger') endScan(); });
 
   // ───────── bucle principal ─────────
+  // ── zoom: botones 1× · 2× · 3× flotando bajo la barra. Manejan el control #zoom (oculto), así el zoom automático,
+  //    el enfoque y la pausa del automático al tocar siguen funcionando igual. Solo con la cámara trasera.
+  const ZC = { key: '' };
+  function zoomSync() {
+    const z = $('#zoom'), box = $('#zoomChips'); if (!box) return;
+    const on = !z.hidden && S.facing !== 'user', min = +z.min, max = +z.max, v = +z.value;
+    const niveles = [...new Set([min, 2, 3, 5].filter((x) => x >= min && x <= max).map((x) => +x.toFixed(1)))];
+    const act = niveles.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a), niveles[0]);
+    const key = `${on}|${niveles.join(',')}|${act}`; if (key === ZC.key) return; ZC.key = key;   // solo se redibuja si cambió algo
+    box.hidden = !on || niveles.length < 2;
+    box.innerHTML = niveles.map((n) => `<button type="button" data-z="${n}" aria-pressed="${n === act}">${n % 1 ? n.toFixed(1) : n}×</button>`).join('');
+  }
+  $('#zoomChips').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-z]'); if (!b) return;
+    const z = $('#zoom'); z.value = b.dataset.z; z.dispatchEvent(new Event('input')); zoomSync();
+  });
+
   function loop(now) {
     if (S.mode === 'home' || S.mode === 'result' || S.mode === 'sig') { S.looping = false; return; }
     requestAnimationFrame(loop);
+    zoomSync();
     if (!video.videoWidth) return;
     sizeOverlay(); const G = geo();
     if (S.mode === 'card' || S.mode === 'card-busy') { if (!S.perf.drawEvery || now - S.perf.lastDraw >= S.perf.drawEvery) { S.perf.lastDraw = now; drawCardOverlay(G); } if (S.mode === 'card') tickCard(G, now); }
@@ -3316,7 +3518,7 @@
   function renderPairs(c, A, B, r) {
     const okA = new Set(), okB = new Set(); r.pairs.filter((p) => p.ok).forEach((p) => { okA.add(p.i); okB.add(p.j); });
     const H = Math.max(A.h, B.h), sA = H / A.h, sB = H / B.h, gap = 14, SC = 1.6, W = A.w * sA + gap + B.w * sB;
-    c.width = W * SC; c.height = H * SC; const g = c.getContext('2d'); g.fillStyle = '#1b252d'; g.fillRect(0, 0, c.width, c.height);
+    c.width = W * SC; c.height = H * SC; const g = c.getContext('2d'); g.fillStyle = '#1D1E20'; g.fillRect(0, 0, c.width, c.height);
     g.drawImage(skelCanvas(A), 0, 0, A.w * sA * SC, A.h * sA * SC);
     const ox = (A.w * sA + gap) * SC; g.drawImage(skelCanvas(B), ox, 0, B.w * sB * SC, B.h * sB * SC);
     g.strokeStyle = '#3CC98E'; g.globalAlpha = 0.55; g.lineWidth = 1.2;
@@ -3564,9 +3766,9 @@
   }
   async function tickSigClose(G, now, force) {
     const C = S.cp, gd = sigGuide(G), vr = toVideo(G, gd), { gray } = grab(vr, 480, 'lum');
-    if (force && C.offeredSigFallback) { $('#manual').textContent = 'Capturar ahora'; setPhaseUI('sig', 'done'); enterPhase('back'); return; }   // seguir con la firma del frente
     const a = E.assessDocument(gray); a.motion = E.motionBetween(a.thumb, C.prev); C.prev = a.thumb;
-    if ((now - C.t0) / 1000 > 25 && !C.offeredSigFallback) { C.offeredSigFallback = true; $('#manual').textContent = 'Usar la firma del frente'; }
+    // tras un rato se ofrece la firma del frente como ENLACE aparte: «Capturar ahora» sigue disponible
+    if ((now - C.t0) / 1000 > 25 && !C.offeredSigFallback) { C.offeredSigFallback = true; $('#useFront').hidden = false; }
     const [text, cls, ok0] = docGate(a, 0.05);   // de cerca el pulso mueve más la imagen: tolerancia mayor
     // filtro de trazos en vivo: guía inmediata (sin esperar la foto) y solo cuenta quietud si la firma está completa
     let L = null; try { L = sigLive(vr); } catch (e) {}
@@ -3595,11 +3797,28 @@
     }
     if (!chk.ok && !(force && chk.box)) { C.sigRun = 0; C.liveHist = []; C.pauseUntil = performance.now() + 600; say(chk.msg, 'warn'); return; }
     flash();
+    // lo que había (la firma del frente), por si la persona descarta este acercamiento
+    const previo = { box: S.sig.box, boxAuto: S.sig.boxAuto, ref: S.sig.ref, refInfo: S.sig.refInfo, status: S.sig.status, srcCanvas: S.sig.srcCanvas, source: S.sig.source };
     S.sig.srcCanvas = shot.canvas; S.sig.source = 'acercamiento'; S.sig.box = chk.box; S.sig.boxAuto = true; buildSigRef();
     S.sig.status = S.sig.refInfo && S.sig.refInfo.quality >= 40 ? 'listo' : 'por confirmar';
     S.doc.sigClose = { jpeg: shot.jpeg, w: shot.canvas.width, h: shot.canvas.height, sharp: +ss.toFixed(4), complete: chk.ok, at: new Date().toISOString() };
-    setPhaseUI('sig', 'done', shot.jpeg); $('#manual').textContent = 'Capturar ahora'; updateCardExtras();
-    enterPhase('back');
+    confirmSigClose(previo, shot.jpeg);
+  }
+  // La persona revisa el recorte del acercamiento antes de seguir: si salió otra parte de la cédula, lo repite
+  // o se queda con la firma de la foto del frente (así no se arrastra un acercamiento sin firma al paso 3).
+  function confirmSigClose(previo, jpeg) {
+    S.mode = 'card-done'; $('#camBottom').hidden = true;
+    const sh = $('#sheet'), ri = S.sig.refInfo; sh.hidden = false;
+    sh.innerHTML = `<b>¿Se ve tu firma completa?</b>
+      <p class="muted" style="font-size:14px">Revisa que aparezca toda tu firma, de punta a punta. Si salió otra parte de la cédula, repite el acercamiento.</p>
+      ${ri ? `<img src="${ri.cropJpeg}" alt="Firma capturada" class="sigconf">` : '<div class="notice">No se pudo recortar la firma de esta foto.</div>'}
+      <div class="row"><button class="btn" id="scRedo">Repetir</button><button class="btn primary" id="scOk"${ri ? '' : ' disabled'}>Sí, continuar</button></div>
+      <button class="linkbtn" id="scFront" style="justify-self:center">Usar la firma de la foto del frente</button>`;
+    const seguir = () => { sh.hidden = true; $('#camBottom').hidden = false; S.mode = 'card'; $('#manual').textContent = 'Capturar ahora'; };
+    const descartar = () => { Object.assign(S.sig, previo); S.doc.sigClose = null; };
+    $('#scOk').onclick = () => { seguir(); setPhaseUI('sig', 'done', jpeg); updateCardExtras(); enterPhase('back'); };
+    $('#scRedo').onclick = () => { descartar(); seguir(); enterPhase('sig'); };
+    $('#scFront').onclick = () => { descartar(); seguir(); setPhaseUI('sig', 'done'); updateCardExtras(); enterPhase('back'); };
   }
 
   // ───────── ubicar la firma en el frente ─────────
@@ -3750,14 +3969,17 @@
   }
 
   // ───────── paso 2: rostro (selfie con prueba de vida) ─────────
+  // tamaño y posición originales (encogerlo a la zona libre lo dejaba muy chico)
   function ovalGuide(G) { const rx = Math.min(G.sw * 0.36, G.sh * 0.22); return { cx: G.sw / 2, cy: G.sh * 0.4, rx, ry: rx * 1.32 }; }
   async function startFace() {
     S.mode = 'face-wait'; $('#sheet').hidden = true; $('#camBottom').hidden = false; $('#scanRow').hidden = true; $('#finishScan').hidden = true; $('#phases').hidden = true;
     $('#manual').hidden = true; progress(0); chips([]);
-    $('#camTitle').textContent = 'Rostro'; $('#camSub').textContent = 'Paso 2 de 3 · selfie con prueba de vida';
-    say('Cargando el motor facial…');
+    $('#camTitle').textContent = 'Rostro'; $('#camSub').textContent = 'Paso 2 de 2 · Tú · selfie con prueba de vida';
+    $('#yoCam').hidden = false; yoEstado('face', 'now', null);
+    say('Cambiando a la cámara frontal…');
     await setLight(false);
     await useCamera('user'); lightButton(true); $('#flip').hidden = true;
+    say('Cargando el motor facial…');
     let fa; try { fa = await faceLoad(); } catch (e) { say('No se pudo cargar el motor facial. Revisa la conexión.', 'bad'); throw e; }
     if (!S.face.card && S.doc.frontCanvas) { say('Buscando el rostro en la cédula…'); try { S.face.card = await faceFrom(S.doc.frontCanvas); } catch (e) {} }
     const order = Math.random() < 0.5 ? ['blink', 'turn'] : ['turn', 'blink'];
@@ -3890,7 +4112,7 @@
     og.fillStyle = S.screenLight ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.5)'; og.beginPath(); og.rect(0, 0, G.sw, G.sh); og.ellipse(o.cx, o.cy, o.rx, o.ry, 0, 0, Math.PI * 2); og.fill('evenodd');
     const ok = F && F.pts && F.stable > 0;
     og.lineWidth = 3; og.strokeStyle = ok ? '#3FD49A' : 'rgba(255,255,255,.9)'; og.beginPath(); og.ellipse(o.cx, o.cy, o.rx, o.ry, 0, 0, Math.PI * 2); og.stroke();
-    if (F && F.pts) { og.fillStyle = 'rgba(93,177,209,.8)'; for (const p of F.pts) { og.beginPath(); og.arc(toScreenX(G, p.x), p.y * G.k + G.oy, 1.6, 0, Math.PI * 2); og.fill(); } }
+    if (F && F.pts) { og.fillStyle = 'rgba(209,195,254,.85)'; for (const p of F.pts) { og.beginPath(); og.arc(toScreenX(G, p.x), p.y * G.k + G.oy, 1.6, 0, Math.PI * 2); og.fill(); } }
     if (F) { // progreso de la prueba de vida
       const n = (F.done ? F.done.length : 0) / 2; og.lineWidth = 6; og.strokeStyle = 'rgba(255,255,255,.16)'; og.beginPath(); og.ellipse(o.cx, o.cy, o.rx + 9, o.ry + 9, 0, 0, Math.PI * 2); og.stroke();
       og.strokeStyle = '#3FD49A'; og.beginPath(); og.ellipse(o.cx, o.cy, o.rx + 9, o.ry + 9, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * n); og.stroke();
@@ -3913,28 +4135,21 @@
     S.face.result = { distance: d != null ? +d.toFixed(3) : null, distances: ds.map((x) => +x.toFixed(3)), P: d != null ? +faceP(d).toFixed(4) : null, verdict: V,
       liveness: { ok: F.done.length === 2, challenges: F.order, eventos: F.evts }, selfies: out.map((o) => ({ tag: o.tag, jpeg: o.jpeg, score: o.score, saturation: o.saturation })),
       selfieFull: F.shots.map((s) => s.canvas.toDataURL('image/jpeg', 0.85)), intra: intra.map((x) => +x.toFixed(3)), flags, at: new Date().toISOString(), cardFaces: C ? C.faces : 0 };
-    progress(1); showFaceSheet();
+    // sin hoja intermedia: la selfie queda en la tira y se sigue solo (el detalle está en el resultado)
+    progress(1); yoEstado('face', 'done', yoSelfie(F));
+    say(S.sig.result ? '✓ Rostro listo' : '✓ Rostro listo. Ahora tu firma', 'ok');
+    await yoPausa(1100);
+    if (S.mode === 'face-done') nextStep();   // salvo que la persona haya pedido repetir algo en la pausa
   }
   const livText = (R) => (R.liveness.eventos || []).map((e) => e.tipo).join(' → ') || 'superada';
-  function showFaceSheet() {
-    const R = S.face.result, C = S.face.card; $('#camBottom').hidden = true; const sh = $('#sheet'); sh.hidden = false;
-    const best = R.selfies[0];
-    sh.innerHTML = `<b>Rostro</b>
-      <div class="shots"><div><img src="${C ? C.jpeg : ''}" alt="Cédula"><div class="muted small2">Foto de la cédula</div></div><div><img src="${best ? best.jpeg : ''}" alt="Selfie"><div class="muted small2">Tu selfie (en gris, mismo dominio)</div></div></div>
-      <div class="row" style="align-items:center"><span class="big2 mono" style="flex:none">${R.P != null ? pct(R.P) + '%' : '—'}</span><span class="pill ${R.verdict.level}">${R.verdict.text}</span></div>
-      <dl class="facts"><dt>Distancia (menor es más parecido)</dt><dd>${R.distance ?? '—'}</dd><dt>Prueba de vida</dt><dd>${R.liveness.ok ? livText(R) + ' ✓' : 'incompleta'}</dd></dl>
-      ${R.flags.map((f) => `<div class="notice">${f}</div>`).join('')}
-      ${!C ? '<div class="notice bad">No se encontró el rostro en la foto de la cédula. Repite la cédula con buena luz y sin reflejos.</div>' : ''}
-      <div class="row"><button class="btn" id="faceRedo">Repetir selfie</button><button class="btn primary" id="faceNext">Continuar con la firma</button></div>`;
-    $('#faceRedo').onclick = () => { sh.hidden = true; startFace().catch(camError); };
-    $('#faceNext').onclick = () => { sh.hidden = true; nextStep(); };
-  }
 
   // ───────── paso 3: firma ─────────
   const SIG_N = 3;
-  function startSig() {
+  // reset = false: se vuelve a la firma después de repetir otra fase; se conservan las firmas ya hechas
+  function startSig(reset = true) {
     S.mode = 'sig'; $('#cam').classList.remove('screenlight'); closeCamera(); show('sig'); window.scrollTo(0, 0);
-    S.sig.tries = []; S.sig.result = null; $('#sigResult').hidden = true; $('#sigPadWrap').hidden = false;
+    if (reset || S.sig.tries.length >= SIG_N) S.sig.tries = [];
+    S.sig.result = null; $('#sigResult').hidden = true; $('#sigPadWrap').hidden = false; $('#sigBtns').hidden = false; $('#sigPick').hidden = true;
     renderSigRef(); sigPadReset(); sigList();
   }
   async function renderSigRef() {
@@ -3943,23 +4158,52 @@
     if (!S.doc.frontCanvas) { box.innerHTML = '<div class="notice bad">No hay foto del frente de la cédula.</div>'; return; }
     if (S.sig.anchorJob && S.sig.anchor === undefined) { box.innerHTML = '<span class="busy">Ubicando la firma en la cédula…</span>'; await Promise.race([S.sig.anchorJob, new Promise((r) => setTimeout(r, 8000))]); }
     if (!sg.box) { const b = locateSignature(S.doc.frontCanvas, S.face.card && S.face.card.box); if (b) { sg.box = b; buildSigRef(); } }
-    box.innerHTML = sg.ref ? `<div class="row" style="align-items:center;gap:12px"><img src="${sg.refInfo.cropJpeg}" alt="Firma de la cédula" class="xthumb wide" style="height:56px"><img src="${sg.refInfo.inkJpeg}" alt="" class="xthumb wide" style="height:56px">
-        <span class="pill ${sg.refInfo.quality >= 40 ? 'ok' : 'warn'}">${sg.refInfo.quality >= 40 ? 'Firma de la cédula lista' : 'Poco nítida'}</span></div>
-        <button class="btn ghost" id="sigAdjust" style="justify-self:start">No es mi firma: ajustar recuadro</button>`
-      : `<div class="notice">No se encontró la firma automáticamente. Márcala en la foto.</div><button class="btn" id="sigAdjust">Marcar la firma en la cédula</button>`;
+    // fila compacta sobre la almohadilla: la firma de la cédula con la que se compara
+    box.innerHTML = sg.ref ? `<span class="muted">En tu cédula</span><img src="${sg.refInfo.cropJpeg}" alt="Firma de la cédula" class="sigrefimg">
+        <span class="pill ${sg.refInfo.quality >= 40 ? 'ok' : 'warn'}" style="font-size:12px">${sg.refInfo.quality >= 40 ? 'Lista' : 'Poco nítida'}</span>
+        <button class="linkbtn" id="sigAdjust">No es mi firma: ajustar</button>`
+      : `<span style="flex:1">No se encontró la firma en tu cédula.</span><button class="btn" id="sigAdjust" style="min-height:40px">Marcarla</button>`;
     $('#sigAdjust').onclick = pickSignature;
   }
-  // el usuario marca/ajusta la firma sobre la foto del frente (igual que la huella en el reverso)
+  // el usuario marca/ajusta la firma (igual que la huella en el reverso). Parte siempre de la cédula completa:
+  // si el acercamiento salió en otra parte de la cédula, ahí no hay firma que marcar. Si hay acercamiento, se puede elegir.
   async function pickSignature() {
-    const c = sigCanvas(), sheet = $('#sigPick'); sheet.hidden = false;
-    let box = S.sig.box ? { ...S.sig.box } : { x: c.width * 0.34, y: c.height * 0.72, w: c.width * 0.55, h: c.height * 0.25 };
+    const front = S.doc.frontCanvas, close = S.sig.srcCanvas, sheet = $('#sigPick');
+    if (!front && !close) return;
+    let modo = front ? 'frente' : 'acercamiento', c = null, sc = 1, box = null;
+    // recuadro de partida para cada foto (cada una tiene sus propias coordenadas)
+    const inicial = (m) => {
+      const cc = m === 'frente' ? front : close;
+      if (m === 'acercamiento') return S.sig.box ? { ...S.sig.box } : { x: cc.width * 0.08, y: cc.height * 0.15, w: cc.width * 0.84, h: cc.height * 0.7 };
+      if (!S.sig.srcCanvas && S.sig.box) return { ...S.sig.box };
+      const auto = locateSignature(front, S.face.card && S.face.card.box, S.sig.anchor || undefined);
+      return auto ? { x: auto.x, y: auto.y, w: auto.w, h: auto.h } : { x: cc.width * 0.34, y: cc.height * 0.72, w: cc.width * 0.55, h: cc.height * 0.25 };
+    };
+    const boxes = {};
+    sheet.hidden = false;
     sheet.innerHTML = `<b>¿Dónde está tu firma?</b><p class="muted" style="font-size:14px">Arrastra el dedo sobre la foto para dibujar un rectángulo que cubra toda tu firma (de punta a punta). Un toque solo mueve el recuadro.</p>
+      ${front && close ? '<div class="seg" role="tablist"><button role="tab" data-m="frente">Cédula completa</button><button role="tab" data-m="acercamiento">Acercamiento</button></div>' : ''}
       <canvas id="sigPickCv" style="touch-action:none;width:100%;border-radius:10px"></canvas>
+      <div class="sigzoom"><span class="muted small2">Así se ve tu recuadro</span><canvas id="sigPickZoom"></canvas></div>
       <div class="row"><button class="btn" id="spSmall">Recuadro más chico</button><button class="btn" id="spBig">Más grande</button></div>
       <div class="row"><button class="btn" id="spCancel">Cancelar</button><button class="btn primary" id="spOk">Es aquí</button></div>`;
-    const cv = $('#sigPickCv'), sc = Math.min(1, 900 / c.width); cv.width = Math.round(c.width * sc); cv.height = Math.round(c.height * sc);
-    const draw = () => { const g = cv.getContext('2d'); g.drawImage(c, 0, 0, cv.width, cv.height); g.lineWidth = 3; g.strokeStyle = '#3FD49A'; g.setLineDash([8, 6]); g.strokeRect(box.x * sc, box.y * sc, box.w * sc, box.h * sc); g.setLineDash([]); };
-    draw();
+    const cv = $('#sigPickCv'), zc = $('#sigPickZoom');
+    const draw = () => {
+      const g = cv.getContext('2d'); g.drawImage(c, 0, 0, cv.width, cv.height); g.lineWidth = 3; g.strokeStyle = '#3FD49A'; g.setLineDash([8, 6]); g.strokeRect(box.x * sc, box.y * sc, box.w * sc, box.h * sc); g.setLineDash([]);
+      // vista ampliada del recorte: en la cédula completa la firma se ve chica
+      const bw = Math.max(1, Math.round(box.w)), bh = Math.max(1, Math.round(box.h)), zw = 640, zh = Math.max(40, Math.min(320, Math.round(zw * bh / bw)));
+      zc.width = zw; zc.height = zh; const z = zc.getContext('2d'); z.fillStyle = '#191A1C'; z.fillRect(0, 0, zw, zh);
+      const k = Math.min(zw / bw, zh / bh), dw = bw * k, dh = bh * k; z.drawImage(c, box.x, box.y, bw, bh, (zw - dw) / 2, (zh - dh) / 2, dw, dh);
+    };
+    const montar = (m) => {
+      if (box) boxes[modo] = box;
+      modo = m; c = m === 'frente' ? front : close; box = boxes[m] || inicial(m);
+      sc = Math.min(1, 900 / c.width); cv.width = Math.round(c.width * sc); cv.height = Math.round(c.height * sc);
+      sheet.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.m === m)));
+      draw();
+    };
+    sheet.querySelectorAll('.seg button').forEach((b) => { b.onclick = () => montar(b.dataset.m); });
+    montar(modo);
     const at = (e) => { const r = cv.getBoundingClientRect(); return { x: Math.max(0, Math.min(c.width, (e.clientX - r.left) / r.width * c.width)), y: Math.max(0, Math.min(c.height, (e.clientY - r.top) / r.height * c.height)) }; };
     let start = null;
     cv.onpointerdown = (e) => { e.preventDefault(); cv.setPointerCapture(e.pointerId); start = at(e); };
@@ -3969,7 +4213,11 @@
     const resize = (f) => { const cx = box.x + box.w / 2, cy = box.y + box.h / 2; box.w = Math.min(c.width, box.w * f); box.h = Math.min(c.height, box.h * f); box.x = Math.max(0, cx - box.w / 2); box.y = Math.max(0, cy - box.h / 2); draw(); };
     $('#spSmall').onclick = () => resize(0.85); $('#spBig').onclick = () => resize(1.18);
     $('#spCancel').onclick = () => { sheet.hidden = true; };
-    $('#spOk').onclick = () => { S.sig.box = box; S.sig.boxAuto = false; if (!S.sig.srcCanvas) saveSigPos(box); buildSigRef(); sheet.hidden = true; renderSigRef(); if (S.sig.tries.length) reevaluateSig(); };
+    $('#spOk').onclick = () => {
+      // marcada sobre la cédula completa: la referencia sale del frente y el acercamiento queda descartado
+      if (modo === 'frente') { if (S.sig.srcCanvas) { S.sig.srcCanvas = null; S.sig.source = 'frente'; if (S.doc.sigClose) S.doc.sigClose.descartado = true; } saveSigPos(box); }
+      S.sig.box = box; S.sig.boxAuto = false; buildSigRef(); sheet.hidden = true; renderSigRef(); if (S.sig.tries.length) reevaluateSig();
+    };
   }
   // almohadilla de firma
   const PAD = { strokes: [], cur: null, lastW: 0 };
@@ -4011,24 +4259,24 @@
   });
   function say2(m) { $('#sigMsg').textContent = m; }
   function sigList() {
-    $('#sigTries').innerHTML = S.sig.tries.map((t, i) => `<div class="sigtry"><img src="${t.png}" alt=""><span>Firma ${i + 1}</span>${t.vsRef ? `<b class="mono">${t.vsRef.score}</b>` : ''}</div>`).join('');
+    // en la tira, la última firma con su contador (no se muestran todas)
+    const n = S.sig.tries.length, ult = S.sig.tries[n - 1];
+    if (!S.sig.result) yoEstado('sig', 'now', ult ? ult.png : null, n ? `${n}/${SIG_N}` : '');
+    $('#sigProg').style.width = Math.round(100 * Math.min(n, SIG_N) / SIG_N) + '%';
     say2(S.sig.tries.length ? `Firma ${S.sig.tries.length} registrada${S.sig.tries[S.sig.tries.length - 1].vsRef ? ' · parecido con la cédula ' + S.sig.tries[S.sig.tries.length - 1].vsRef.score + '/100' : ''}. ${S.sig.tries.length < SIG_N ? 'Firma otra vez, como lo haces siempre.' : ''}` : 'Firma con el dedo como lo haces siempre. Te pediremos 3 firmas.');
   }
   function reevaluateSig() { for (const t of S.sig.tries) t.vsRef = S.sig.ref ? SE.compare(t.desc, S.sig.ref) : null; sigList(); if (S.sig.tries.length >= SIG_N) evaluateSig(); }
-  function evaluateSig() {
-    $('#sigPadWrap').hidden = true; const box = $('#sigResult'); box.hidden = false;
+  async function evaluateSig() {
+    $('#sigPadWrap').hidden = true; $('#sigBtns').hidden = true; const box = $('#sigResult'); box.hidden = false;
     if (!S.sig.ref) { box.innerHTML = '<div class="notice bad">Falta la firma de la cédula. Márcala arriba para poder comparar.</div>'; S.sig.result = null; return; }
     const ev = SE.evaluate(S.sig.ref, S.sig.tries.map((t) => t.desc));
     S.sig.result = { ...ev, vsRef: ev.vsRef.map((r) => ({ score: r.score, parts: r.parts, align: r.align, chamferPx: r.chamferPx, overlap: r.overlap })), at: new Date().toISOString(), model: SE.version };
-    box.innerHTML = `<div class="row" style="align-items:center"><span class="big2 mono" style="flex:none">${ev.match}<small class="muted" style="font-size:16px">/100</small></span><span class="pill ${ev.verdict.level}">${ev.verdict.text}</span></div>
-      <canvas class="res" id="sigOverlay"></canvas>
-      <div class="legend"><span><i style="background:#A9B6BF"></i>Firma de la cédula (normalizada)</span><span><i style="background:#3FD49A"></i>Tu mejor firma, alineada</span></div>
-      <dl class="facts" id="sigFacts"></dl>
-      <div class="row"><button class="btn" id="sigRedo">Repetir firmas</button><button class="btn primary" id="sigNext">Ver resultado</button></div>`;
     S.sig.bestM = ev.vsRef[ev.best].M;
-    drawSigOverlay($('#sigOverlay'), S.sig.ref, S.sig.tries[ev.best].desc, S.sig.bestM);
-    $('#sigFacts').innerHTML = sigFactsHtml();
-    $('#sigRedo').onclick = startSig; $('#sigNext').onclick = nextStep;
+    // sin hoja intermedia: la mejor firma queda en la tira y se pasa al resultado (ahí está el detalle y el botón para repetir)
+    yoEstado('sig', 'done', S.sig.tries[ev.best].png, '');
+    box.innerHTML = '<div class="notice" style="background:rgba(127,212,146,.12);border-color:rgba(127,212,146,.3);color:var(--ink)">✓ Firma lista. Preparando tu resultado…</div>';
+    await yoPausa(900);
+    if (S.mode === 'sig' && S.sig.result) nextStep();
   }
   function sigFactsHtml() {
     const R = S.sig.result, b = R.vsRef[R.best], p = b.parts;
@@ -4040,17 +4288,63 @@
   }
   function drawSigOverlay(c, ref, t, M) {
     const SC = 3, pad = 10; c.width = (ref.w + 2 * pad) * SC; c.height = (ref.h + 2 * pad) * SC; const g = c.getContext('2d');
-    g.fillStyle = '#1b252d'; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = '#1D1E20'; g.fillRect(0, 0, c.width, c.height);
     g.fillStyle = 'rgba(169,182,191,.75)'; const rp = ref.feat.pts; for (let k = 0; k < rp.length; k += 2) g.fillRect((rp[k] + pad) * SC, (rp[k + 1] + pad) * SC, SC, SC);
     g.fillStyle = 'rgba(63,212,154,.85)'; const tp = t.feat.pts;
     for (let k = 0; k < tp.length; k += 2) { const x = M[0] * tp[k] + M[1] * tp[k + 1] + M[2], y = M[3] * tp[k] + M[4] * tp[k + 1] + M[5]; g.fillRect((x + pad) * SC + 0.5, (y + pad) * SC + 0.5, SC - 1, SC - 1); }
   }
 
+  // ───────── paso 2 «Tú»: pulgar → rostro → firma en un solo paso, con su tira de miniaturas ─────────
+  // Cada cuadrito muestra solo la imagen final de su fase (no todas las tomas). Uno terminado se toca para repetirlo.
+  const YO = [['finger', 'Pulgar', 'el pulgar'], ['face', 'Rostro', 'el rostro'], ['sig', 'Firma', 'la firma']];
+  const yoData = () => S.yo || (S.yo = { finger: { state: 'todo' }, face: { state: 'todo' }, sig: { state: 'todo' } });
+  function yoEstado(k, state, img, badge) {
+    const Y = yoData(); Y[k] = { state, img: img === undefined ? Y[k].img : img, badge: badge === undefined ? Y[k].badge : badge }; renderYo();
+  }
+  function renderYo() {
+    const Y = yoData();
+    const html = YO.map(([k, t]) => { const y = Y[k], listo = y.state === 'done' || y.state === 'skip';
+      return `<button type="button" class="ph" data-k="${k}" data-state="${y.state}"${listo ? '' : ' disabled'} aria-label="${t}${listo ? ': tocar para repetir' : ''}">` +
+        `<div class="th"${y.img ? ` style="background-image:url(${y.img})"` : ''}>${y.badge ? `<span class="n">${y.badge}</span>` : ''}</div><span>${t}</span></button>`; }).join('');
+    for (const id of ['#yoCam', '#yoSig']) { const el = $(id); if (el && el.innerHTML !== html) el.innerHTML = html; }
+  }
+  const yoPausa = (ms) => new Promise((r) => setTimeout(r, ms));
+  // miniatura de la toma del dedo (color, cuadrada) y de la selfie (en espejo, como la ve la persona)
+  // en cada toma buena solo se copia a un lienzo chico (rápido); el JPEG se arma una sola vez al terminar (toDataURL bloquea la cámara)
+  function yoPulgar(vr) {
+    const c = S.fp.yoCanvas || (S.fp.yoCanvas = Object.assign(document.createElement('canvas'), { width: 96, height: 96 }));
+    try { c.getContext('2d').drawImage(video, vr.x, vr.y, vr.w, vr.h, 0, 0, 96, 96); S.fp.yoTiene = true; } catch (e) {}
+  }
+  const yoPulgarImg = () => (S.fp && S.fp.yoTiene ? S.fp.yoCanvas.toDataURL('image/jpeg', 0.7) : null);
+  function yoSelfie(F) {
+    const s = F.shots[F.shots.length - 1]; if (!s) return null;
+    const c = document.createElement('canvas'), g = c.getContext('2d'), sw = s.canvas.width, sh = s.canvas.height, h = sh * 0.72, w = h * 0.8;
+    c.width = 96; c.height = 120; g.translate(96, 0); g.scale(-1, 1);
+    g.drawImage(s.canvas, (sw - w) / 2, Math.max(0, sh * 0.4 - h / 2), w, h, 0, 0, 96, 120);
+    return c.toDataURL('image/jpeg', 0.75);
+  }
+  function yoPreguntar(k) {
+    const [, , nombre] = YO.find(([x]) => x === k), d = $('#yoSheet'); d.hidden = false;
+    d.innerHTML = `<b>¿Repetir ${nombre}?</b><p class="muted" style="font-size:14px">Se descarta lo que capturaste en esa parte y vuelves a hacerla. Lo demás se mantiene.</p>
+      <div class="row"><button class="btn" id="ysNo">Cancelar</button><button class="btn primary" id="ysSi">Repetir</button></div>`;
+    $('#ysNo').onclick = () => { d.hidden = true; };
+    $('#ysSi').onclick = () => { d.hidden = true; yoRepetir(k); };
+  }
+  function yoRepetir(k) {
+    $('#sheet').hidden = true; voiceStop();
+    const arrancar = (fn) => { if (S.looping) { show('cam'); fn().catch(camError); } else begin(fn); };
+    if (k === 'finger') { yoEstado('finger', 'todo', null); arrancar(startFinger); return; }
+    if (k === 'face') { S.face.result = null; yoEstado('face', 'todo', null); arrancar(startFace); return; }
+    S.sig.result = null; yoEstado('sig', 'todo', null, ''); startSig(true);
+  }
+  document.addEventListener('click', (e) => { const b = e.target.closest('.yo .ph'); if (b && !b.disabled) yoPreguntar(b.dataset.k); });
+
   // ───────── secuencia de pasos y resultado consolidado ─────────
   function nextStep() {
     fingerProfileOff();   // termina la huella: se reanudan las tareas de fondo
+    if (!S.best) { if (!S.looping) begin(startFinger); else startFinger().catch(camError); return; }   // se repitió el pulgar desde la firma
     if (!S.face.result) { if (!S.looping) begin(startFace); else startFace().catch(camError); return; }
-    if (!S.sig.result) { startSig(); return; }
+    if (!S.sig.result) { startSig(false); return; }
     finish();
   }
   function levelOf(v) { return v ? v.level : 'warn'; }
@@ -4087,16 +4381,11 @@
     // firma
     const sc = $('#sigCard');
     if (G) { sc.hidden = false;
-      $('#sigImgs').innerHTML = `<img src="${S.sig.refInfo.cropJpeg}" alt="Firma cédula"><img src="${S.sig.tries[G.best].png}" alt="Mejor firma" style="background:#0f171d">`;
+      $('#sigImgs').innerHTML = `<img src="${S.sig.refInfo.cropJpeg}" alt="Firma cédula"><img src="${S.sig.tries[G.best].png}" alt="Mejor firma" style="background:#191A1C">`;
       drawSigOverlay($('#sigOverlay2'), S.sig.ref, S.sig.tries[G.best].desc, S.sig.bestM);
       $('#sigFacts2').innerHTML = sigFactsHtml() + S.sig.tries.map((t, i) => t.dyn ? `<dt>Firma ${i + 1} · dinámica</dt><dd>${t.dyn.strokes} trazos · ${(t.dyn.durationMs / 1000).toFixed(1)} s · ${t.dyn.speed} alt/s</dd>` : '').join('');
     } else sc.hidden = true;
   }
-  // diagnóstico: se puede descargar el paquete en cualquier momento de la captura (aunque falle antes del final)
-  $('#diagBtn').addEventListener('click', async () => {
-    const b = $('#diagBtn'); b.disabled = true; S.diagAt = new Date().toISOString();
-    try { await makeRawZip(); } catch (e) { say('No se pudo generar el diagnóstico: ' + e.message, 'warn'); } finally { b.disabled = false; S.diagAt = null; }
-  });
   $('#retryFace').addEventListener('click', () => { S.face.result = null; begin(startFace); });
   $('#retrySig').addEventListener('click', () => { S.sig.result = null; startSig(); });
   $('#sigBack').addEventListener('click', () => { if (S.best && S.face.result) { if (S.sig.result) finish(); else { S.mode = 'home'; show('home'); } } else { S.mode = 'home'; show('home'); } });
@@ -4180,7 +4469,7 @@
   // Se puede forzar con ?perfil=ios|android|ajustado|default o COTEJO_CONFIG.perfil.
   const PROFILES = {
     ios: { id: 'ios', name: 'iPhone / iPad', zoom2: false, fingerMax: 0, pauseBg: false },
-    android: { id: 'android', name: 'Android', zoom2: true, fingerMax: 0, pauseBg: false },   // zoom 2× en la huella: la mayoría de las cámaras Android no enfoca a menos de 10 cm
+    android: { id: 'android', name: 'Android', zoom2: true, fingerMax: 0, pauseBg: false, noLiveFilter: true },   // zoom 2× en la huella: la mayoría de las cámaras Android no enfoca a menos de 10 cm; sin filtro de surcos en vivo (se lagea)
     ajustado: { id: 'ajustado', name: 'Android ajustado', zoom2: true, fingerMax: 1920, pauseBg: true, slowTick: true, noLiveFilter: true },
     default: { id: 'default', name: 'Estándar', zoom2: false, fingerMax: 0, pauseBg: false },
   };
@@ -4460,8 +4749,8 @@
       <defs><linearGradient id="skin" x1="0" x2="1"><stop offset="0" stop-color="#e9b597"/><stop offset="1" stop-color="#d99a7c"/></linearGradient></defs>
       <g class="ithumb"><path d="M28 118c-4-28 6-60 30-72 22-11 44 2 50 22 5 16 3 34-4 50z" fill="url(#skin)"/>
         <g stroke="#b97a5f" stroke-width="1.4" fill="none" opacity=".7"><path d="M52 70c10-8 26-6 32 6"/><path d="M47 80c12-11 34-9 40 8"/><path d="M45 92c12-12 38-10 44 10"/><path d="M47 104c11-10 33-9 39 6"/></g></g>
-      <g class="iphone"><rect x="214" y="22" width="78" height="130" rx="14" fill="#1c2730" stroke="#5DB1D1" stroke-width="2.5"/>
-        <circle cx="236" cy="42" r="7" fill="#0b1116" stroke="#A9B6BF" stroke-width="1.5"/><circle cx="256" cy="42" r="3.5" fill="#F1B84B" class="iflash"/></g>
+      <g class="iphone"><rect x="214" y="22" width="78" height="130" rx="14" fill="#2A2B2D" stroke="#D1C3FE" stroke-width="2.5"/>
+        <circle cx="236" cy="42" r="7" fill="#191A1C" stroke="#A9B6BF" stroke-width="1.5"/><circle cx="256" cy="42" r="3.5" fill="#F1B84B" class="iflash"/></g>
       <g class="irays" stroke="#F1B84B" stroke-width="2" stroke-linecap="round" opacity=".8"><path d="M205 38 176 30"/><path d="M205 46 172 50"/><path d="M205 54 178 68"/></g>
       <g stroke="#E8EEF1" stroke-width="2" fill="none" stroke-linecap="round"><path d="M118 150h86"/><path d="M118 150l8-5M118 150l8 5M204 150l-8-5M204 150l-8 5"/></g>
       <text x="161" y="166" fill="#E8EEF1" font-size="12" text-anchor="middle" font-family="sans-serif">un palmo · 15 cm</text>
@@ -4491,16 +4780,16 @@
   const DUO = { live: null, reveal: null, cardBase: null, cardFor: null, seen: null, lastDraw: 0 };
   function duoReset() {
     const el = $('#duo'); if (!el) return; el.hidden = false;
-    const c = $('#duoLive'), g = c.getContext('2d'); g.fillStyle = '#0b1116'; g.fillRect(0, 0, c.width, c.height);
+    const c = $('#duoLive'), g = c.getContext('2d'); g.fillStyle = '#191A1C'; g.fillRect(0, 0, c.width, c.height);
     DUO.live = document.createElement('canvas'); DUO.live.width = c.width; DUO.live.height = c.height;
     DUO.reveal = null; DUO.seen = null; $('#duoBar').style.width = '0%'; $('#duoCap').textContent = 'Cédula';
   }
   function duoLive(rg) {
-    if (!DUO.live) return;
+    if (!DUO.live || $('#scanRow').hidden) return;   // vista doble oculta: no se calcula
     // capa nueva con los surcos del fotograma (se revela desde el centro, como si se dibujara)
     const W = DUO.live.width, H = DUO.live.height, k = Math.min(W / rg.w, H / rg.h) * 0.94, ox = (W - rg.w * k) / 2, oy = (H - rg.h * k) / 2;
     const layer = document.createElement('canvas'); layer.width = W; layer.height = H; const g = layer.getContext('2d');
-    g.fillStyle = '#5DB1D1';
+    g.fillStyle = '#D1C3FE';
     for (let y = 0; y < rg.h; y++) for (let x = 0; x < rg.w; x++) if (rg.data[y * rg.w + x] === 2) g.fillRect(ox + x * k, oy + y * k, Math.max(1.2, k), Math.max(1.2, k));
     // lo anterior queda tenue debajo: se ve que la huella se va formando
     const lg = DUO.live.getContext('2d');
@@ -4509,10 +4798,10 @@
     DUO.reveal = { layer, t: performance.now() };
   }
   function duoDraw(now) {
-    if (!DUO.live || $('#duo').hidden || now - DUO.lastDraw < 33) return; DUO.lastDraw = now;
+    if (!DUO.live || $('#duo').hidden || $('#scanRow').hidden || now - DUO.lastDraw < 33) return; DUO.lastDraw = now;
     // izquierda
     const c = $('#duoLive'), g = c.getContext('2d'), W = c.width, H = c.height;
-    g.fillStyle = '#0b1116'; g.fillRect(0, 0, W, H); g.drawImage(DUO.live, 0, 0);
+    g.fillStyle = '#191A1C'; g.fillRect(0, 0, W, H); g.drawImage(DUO.live, 0, 0);
     if (DUO.reveal) {
       const a = Math.min(1, (now - DUO.reveal.t) / 650);
       g.save(); g.beginPath(); g.arc(W / 2, H / 2, Math.hypot(W, H) * 0.55 * a, 0, Math.PI * 2); g.clip(); g.drawImage(DUO.reveal.layer, 0, 0); g.restore();
@@ -4520,7 +4809,7 @@
       g.fillStyle = 'rgba(169,182,191,.55)'; g.font = '500 20px sans-serif'; g.textAlign = 'center'; g.fillText('leyendo…', W / 2, H / 2);
     }
     // derecha
-    const t = S.card, d = $('#duoCard'), h = d.getContext('2d'); h.fillStyle = '#0b1116'; h.fillRect(0, 0, d.width, d.height);
+    const t = S.card, d = $('#duoCard'), h = d.getContext('2d'); h.fillStyle = '#191A1C'; h.fillRect(0, 0, d.width, d.height);
     if (!t || !t.images || !t.images.skel) return;
     if (DUO.cardFor !== t) { DUO.cardBase = skelCanvas(t); DUO.cardFor = t; DUO.seen = null; }
     const k = Math.min(d.width / t.w, d.height / t.h) * 0.94, ox = (d.width - t.w * k) / 2, oy = (d.height - t.h * k) / 2;
@@ -4580,6 +4869,7 @@
       joint: { P: 0, agree: 0, fragments: F.patches || 0, positive: 0, inside: 0, evidence: 0, coverage: 0, mirror: false, polarity: 1, rotationDeg: 0, alternatives: [], per: [], outlines: [] },
       verdict: { text: 'No capturada', level: 'warn' } };
     S.attempts = [S.best]; S.mode = 'finger-done'; uxFingerOff();
+    yoEstado('finger', 'skip', null);
     nextStep();
   }
   $('#skipFinger').addEventListener('click', () => skipSheet(false));
@@ -4628,7 +4918,7 @@
       apiConsentTexts(j.config);
       apiHomeMsg(j.nombre ? `Hola, ${j.nombre}. Esta validación confirma tu identidad para firmar tu documento.` : '');
       if (!j.nombre) $('#homeWarn').hidden = true;
-      else $('#homeWarn').style.cssText = 'background:#14262f;color:var(--ink)';
+      else $('#homeWarn').style.cssText = 'background:rgba(209,195,254,.1);border:1px solid rgba(209,195,254,.3);color:var(--ink)';
       delete $('#start').dataset.api; $('#start').disabled = !$('#consent').checked;
     } catch (e) {
       $('#homeWarn').style.cssText = '';
@@ -4642,8 +4932,30 @@
     API.consentP.catch(() => { API.consentP = null; });
     return API.consentP;
   }
+  // ───────── computador: QR para continuar en el teléfono ─────────
+  // En un computador NO se canjea el token: el primer canje inicia los 40 minutos de la sesión y debe ocurrir en el teléfono.
+  const EN_PC = document.documentElement.classList.contains('pc');
+  function continuarAqui() {
+    document.documentElement.classList.remove('pc');
+    show('home');
+    if (API && !API.sesion) apiInit();
+  }
+  if (EN_PC) {
+    const link = location.href.split('#')[0];
+    $('#deskLink').textContent = link.replace(/^https?:\/\//, '').replace(/(\/captura\/.{6}).+/, '$1…');
+    loadScript(CFG.qrcode || 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js').then(() => {
+      const q = window.qrcode(0, 'M'); q.addData(link); q.make();
+      $('#deskQr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+    }).catch(() => { $('#deskQr').innerHTML = '<span class="busy">No se pudo generar el código. Copia el link y ábrelo en tu teléfono.</span>'; });
+    $('#deskCopy').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(link); $('#deskCopy').textContent = 'Link copiado ✓'; } catch (e) { $('#deskCopy').textContent = 'No se pudo copiar'; }
+      setTimeout(() => { $('#deskCopy').textContent = 'Copiar link'; }, 1800);
+    });
+    $('#deskHere').addEventListener('click', continuarAqui);
+  }
+
   if (API) {
-    apiInit();
+    if (!EN_PC) apiInit();
     // el consentimiento habilita «Comenzar» solo cuando la sesión ya está lista
     $('#consent').addEventListener('change', () => setTimeout(() => { if ($('#start').dataset.api) $('#start').disabled = true; }));
     $('#start').addEventListener('click', () => { if (S.consent && API.sesion) apiSendConsent(); });
@@ -4669,7 +4981,7 @@
   function apiBox(html, level) {
     let b = $('#apiBox');
     if (!b) { b = document.createElement('div'); b.id = 'apiBox'; b.style.cssText = 'margin-top:12px;display:grid;gap:10px'; $('#sumNote').insertAdjacentElement('afterend', b); }
-    const bg = level === 'ok' ? 'background:#143328;color:var(--ok)' : level === 'bad' ? '' : 'background:#14262f;color:var(--ink)';
+    const bg = level === 'ok' ? 'background:#143328;color:var(--ok)' : level === 'bad' ? '' : 'background:rgba(209,195,254,.1);border:1px solid rgba(209,195,254,.3);color:var(--ink)';
     b.innerHTML = `<div class="notice${level === 'bad' ? ' bad' : ''}" style="${bg}">${html}</div>`;
     return b;
   }
@@ -4679,7 +4991,17 @@
     if (!API.sesion) { apiBox('No hay conexión con el servidor; la validación no se pudo enviar.', 'bad'); return; }
     const O = S.overall || overall();
     if (O.level === 'ok') { apiSubmit(); return; }
-    const b = apiBox('Puedes <b>repetir el rostro o la firma</b> para mejorar el resultado, o enviar la validación así.', 'info');
+    // botones junto al mensaje y solo para los factores que no salieron bien (los de la fila de abajo quedan al final del resultado)
+    const rep = [
+      ['la huella', O.finger, 'Repetir huella', () => begin(startFinger)],
+      ['el rostro', O.face, 'Repetir rostro', () => { S.face.result = null; begin(startFace); }],
+      ['la firma', O.sig, 'Repetir firma', () => { S.sig.result = null; startSig(); }],
+    ].filter(([, v]) => levelOf(v) !== 'ok');
+    const lista = rep.map(([n]) => n).join(', ').replace(/, ([^,]*)$/, ' o $1');
+    const b = apiBox(`Puedes <b>repetir ${lista || 'algún paso'}</b> para mejorar el resultado, o enviar la validación así.`, 'info');
+    const fila = document.createElement('div'); fila.className = 'row';
+    for (const [, , texto, fn] of rep) { const r = document.createElement('button'); r.className = 'btn'; r.textContent = texto; r.onclick = fn; fila.appendChild(r); }
+    if (rep.length) b.appendChild(fila);
     const btn = document.createElement('button'); btn.className = 'btn primary'; btn.style.width = '100%'; btn.textContent = 'Enviar validación así';
     btn.onclick = () => apiSubmit(); b.appendChild(btn);
   }
@@ -4739,18 +5061,27 @@
     if ((S.mode === 'face' || S.mode === 'face-done' || S.mode === 'face-wait') && S.card) { S.fc = null; startFinger().catch(camError); return; }
     S.mode = 'home'; $('#cam').classList.remove('screenlight'); closeCamera(); show('home');
   });
+  $('#useBack').addEventListener('click', async () => {
+    if (S.mode !== 'card' || S.cp.phase !== 'close' || S.cp.busy) return;
+    S.cp.busy = true; try { await useBackFallback(); } finally { S.cp.busy = false; }
+  });
   $('#manual').addEventListener('click', async () => {
     if (S.mode !== 'card' || S.cp.busy) return;
-    const C = S.cp, G = geo(); C.busy = true;
+    const C = S.cp, G = geo(), btn = $('#manual'), antes = btn.textContent; C.busy = true;
+    btn.setAttribute('aria-busy', 'true'); btn.textContent = 'Capturando…'; try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) {}
     try {
       if (C.phase === 'front') { C.stable = 99; C.busy = false; await tickFront(G); }
       else if (C.phase === 'back') { C.busy = false; await tickBack(G, true); }
       else if (C.phase === 'sig') { C.busy = false; await tickSigClose(G, performance.now(), true); }
-      else if (C.offeredFallback && !C.best) await useBackFallback();
       else await captureClose(G, true);
-    } catch (e) { say(e.message, 'warn'); } finally { C.busy = false; }
-
+    } catch (e) { say(e.message, 'warn'); } finally { C.busy = false; btn.removeAttribute('aria-busy'); if (btn.textContent === 'Capturando…') btn.textContent = antes; }
   });
+  $('#useFront').addEventListener('click', () => {
+    if (S.mode !== 'card' || S.cp.phase !== 'sig' || S.cp.busy) return;
+    setPhaseUI('sig', 'done'); enterPhase('back');   // seguir con la firma del frente
+  });
+  // efecto de presionar en todos los botones (también en iOS, donde :active no siempre se aplica)
+  document.addEventListener('pointerdown', (e) => { const b = e.target.closest('.btn'); if (b && !b.disabled) { b.classList.add('pulsado'); setTimeout(() => b.classList.remove('pulsado'), 160); } });
   $('#retryFinger').addEventListener('click', () => begin(startFinger));
   $('#restart').addEventListener('click', () => { S.card = null; S.best = null; S.overall = null; begin(startCard); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && S.stream) { S.resume = S.mode; } });

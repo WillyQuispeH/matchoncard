@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { FileDrop } from '@/components/ui/FileDrop';
 import { IconoPdf } from '@/components/ui/Iconos';
 import { Logo } from '@/components/ui/Logo';
@@ -12,7 +13,7 @@ export function Verificar() {
     <div className="text-base leading-[1.6]">
       <header className="border-b border-line">
         <div className="mx-auto flex h-16 max-w-[760px] items-center justify-between px-5">
-          <a href="/" className="text-xl text-ink no-underline"><Logo /></a>
+          <Link href="/" className="text-xl text-ink no-underline"><Logo /></Link>
         </div>
       </header>
       <main className="mx-auto max-w-[760px] px-5 pb-20 pt-12">
@@ -21,7 +22,7 @@ export function Verificar() {
         <p className="mb-7 max-w-[56ch] text-ink-2">
           Sube un documento firmado con MatchOnCard para comprobar quién lo firmó y que no haya sido modificado después. El archivo se revisa y se descarta: no lo guardamos.
         </p>
-        <FileDrop alElegir={verificacionVerificar} className="rounded-[14px] border-[1.5px] border-dashed border-line-2 bg-surface px-5 py-10 hover:border-accent hover:bg-[#16222a]">
+        <FileDrop alElegir={verificacionVerificar} className="rounded-[14px] border-[1.5px] border-dashed border-line-2 bg-surface px-5 py-10 hover:border-accent hover:bg-accent/5">
           <IconoPdf className="text-accent" />
           <strong className="text-[17px]">Elige el PDF o arrástralo aquí</strong>
           <small className="text-ink-3">Hasta 25 MB</small>

@@ -1,4 +1,5 @@
 import { Eyebrow, Wrap } from '@/components/layout/Wrap';
+import { ButtonLink } from '@/components/ui/Button';
 
 const K = ({ children }: { children: React.ReactNode }) => <span className="text-accent">{children}</span>;
 const S = ({ children }: { children: React.ReactNode }) => <span className="text-ok">{children}</span>;
@@ -13,13 +14,17 @@ export function Integracion() {
       <Wrap className="grid grid-cols-[.9fr_1.1fr] items-center gap-12 max-[980px]:grid-cols-1">
         <div>
           <Eyebrow>Integración</Eyebrow>
-          <h2 className="mb-4 mt-3.5 text-[clamp(32px,4vw,46px)] tracking-[-0.01em]">Una API para cualquier flujo de firma.</h2>
+          <h2 className="mb-4 mt-3.5 font-display text-[clamp(32px,4vw,46px)] font-normal tracking-[-0.01em]">Una API para cualquier flujo de firma.</h2>
           <p className="text-[19px] text-ink-2">Tu plataforma crea la validación y envía el link al firmante. Cuando termina, recibes el resultado firmado en tu servidor.</p>
           <ul className="mt-[22px] grid list-none gap-2.5 p-0 text-ink-2">
             <li><Code>POST /v1/validaciones</Code>: crea la validación y entrega el link</li>
             <li><Code>GET /v1/validaciones/:id</Code>: estado, puntajes y hash de la evidencia</li>
             <li>Aviso por webhook firmado con HMAC</li>
           </ul>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <ButtonLink href="/integracion" variante="primary">Ver la documentación</ButtonLink>
+            <ButtonLink href="/matchoncard.postman_collection.json" download>Colección Postman</ButtonLink>
+          </div>
         </div>
         <pre className="m-0 overflow-x-auto rounded-[18px] border border-line bg-deep p-[22px] font-mono text-sm leading-[1.7] text-ink-2">
           <C>{'// 1 · crear la validación'}</C>{'\n'}

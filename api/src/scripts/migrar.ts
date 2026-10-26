@@ -5,7 +5,7 @@ import { Client } from 'pg';
 import { conexionDb } from '../utils/conexion-db';
 
 async function main() {
-  const c = new Client(conexionDb());
+  const c = new Client(conexionDb(true));
   await c.connect();
   await c.query(readFileSync(resolve(__dirname, '../../sql/schema.sql'), 'utf8'));
   // Auditoría de solo inserción: si se define DB_APP_USER, se le quitan UPDATE/DELETE sobre auditoria.

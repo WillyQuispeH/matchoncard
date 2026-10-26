@@ -18,7 +18,7 @@ export function SeccionSitio({ id, eyebrow, titulo, texto, children, className =
       <Wrap>
         <div className="mb-[52px] max-w-[720px]">
           <Eyebrow>{eyebrow}</Eyebrow>
-          <h2 className="mb-4 mt-3.5 text-balance text-[clamp(32px,4vw,46px)] tracking-[-0.01em]">{titulo}</h2>
+          <h2 className="mb-4 mt-3.5 text-balance font-display text-[clamp(32px,4vw,46px)] font-normal tracking-[-0.01em]">{titulo}</h2>
           {texto && <p className="text-[19px] text-ink-2">{texto}</p>}
         </div>
         {children}

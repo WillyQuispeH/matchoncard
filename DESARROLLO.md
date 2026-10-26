@@ -4,25 +4,25 @@ Validación de identidad contra la cédula chilena con **huella, rostro y firma*
 
 ## Producción
 
-| URL | Qué es |
-|---|---|
-| `https://matchoncard.cl` | Landing (Next.js, `app/src/components/functional/Landing`) |
-| `https://matchoncard.cl/demo` | App de captura en modo local (no guarda nada) |
-| `https://admin.matchoncard.cl` | Administración (app-admin). `matchoncard.cl/panel` redirige aquí |
-| `https://matchoncard.cl/verificar` | Verificación pública de PDF firmados |
-| `https://api.matchoncard.cl` | API y links de captura (`/captura/<token>`) |
+| URL                                | Qué es                                                           |
+| ---------------------------------- | ---------------------------------------------------------------- |
+| `https://matchoncard.cl`           | Landing (Next.js, `app/src/components/functional/Landing`)       |
+| `https://matchoncard.cl/demo`      | App de captura en modo local (no guarda nada)                    |
+| `https://admin.matchoncard.cl`     | Administración (app-admin). `matchoncard.cl/panel` redirige aquí |
+| `https://matchoncard.cl/verificar` | Verificación pública de PDF firmados                             |
+| `https://api.matchoncard.cl`       | API y links de captura (`/captura/<token>`)                      |
 
 Infraestructura en Linode (São Paulo): una VM con Docker Compose y PostgreSQL administrado. La evidencia y los PDF van a Cloudflare R2 (bucket `matchoncard`). nginx corre en el servidor (fuera de Docker), termina el TLS (Let's Encrypt) y reenvía `matchoncard.cl` a `127.0.0.1:4561` (app), `admin.matchoncard.cl` a `127.0.0.1:4564` (app-admin) y `api.matchoncard.cl` a `127.0.0.1:4560` (api), salvo `/captura/<token>`, que va a `app`. La configuración está en `nginx/`.
 
 ## Servicios (`docker-compose.yml`)
 
-| Servicio | Imagen | Puerto | Qué hace |
-|---|---|---|---|
-| `app` | `matchoncard/app:1.0.0` | `127.0.0.1:4561` | Next.js 16 (App Router, TypeScript, Tailwind, Zustand, axios): landing, `/panel`, `/verificar`, `/demo` y `/captura/<token>`, con sus cabeceras (CSP, no-store). Route Handlers que reenvían a la API por streaming en el mismo origen (`/v1`, `/panel/api`, `/verificar/api`, `/health`) |
-| `app-admin` | `matchoncard/app-admin:1.0.0` | `127.0.0.1:4564` | Next.js: administración (clientes, usuarios, validaciones, documentos, webhooks, auditoría). Reenvía `/admin/api` a la API |
-| `api` | `matchoncard/api:1.0.0` | `127.0.0.1:4560` | API principal (NestJS): validaciones, captura, documentos, panel, retención, firma tras la validación |
-| `api-webhook` | `matchoncard/api-webhook:1.0.0` | interno `4562` | Emisor de webhooks: recibe de la API cada aviso ya firmado con HMAC (`POST /entregar`) y hace la llamada al cliente. Sin base de datos ni KEK |
-| `api-signature` | `matchoncard/api-signature:1.0.0` | interno `4563` | Python + pyHanko. Red `interna` sin salida a Internet; solo `api` lo alcanza |
+| Servicio        | Imagen                            | Puerto           | Qué hace                                                                                                                                                                                                                                                                                  |
+| --------------- | --------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app`           | `matchoncard/app:1.0.0`           | `127.0.0.1:4561` | Next.js 16 (App Router, TypeScript, Tailwind, Zustand, axios): landing, `/panel`, `/verificar`, `/demo` y `/captura/<token>`, con sus cabeceras (CSP, no-store). Route Handlers que reenvían a la API por streaming en el mismo origen (`/v1`, `/panel/api`, `/verificar/api`, `/health`) |
+| `app-admin`     | `matchoncard/app-admin:1.0.0`     | `127.0.0.1:4564` | Next.js: administración (clientes, usuarios, validaciones, documentos, webhooks, auditoría). Reenvía `/admin/api` a la API                                                                                                                                                                |
+| `api`           | `matchoncard/api:1.0.0`           | `127.0.0.1:4560` | API principal (NestJS): validaciones, captura, documentos, panel, retención, firma tras la validación                                                                                                                                                                                     |
+| `api-webhook`   | `matchoncard/api-webhook:1.0.0`   | interno `4562`   | Emisor de webhooks: recibe de la API cada aviso ya firmado con HMAC (`POST /entregar`) y hace la llamada al cliente. Sin base de datos ni KEK                                                                                                                                             |
+| `api-signature` | `matchoncard/api-signature:1.0.0` | interno `4563`   | Python + pyHanko. Red `interna` sin salida a Internet; solo `api` lo alcanza                                                                                                                                                                                                              |
 
 ## Arquitectura
 
@@ -80,24 +80,25 @@ app/
 ```
 
 Reglas del front:
+
 - Los componentes nunca importan un store: usan su hook.
 - Los services no manejan errores; el store lo hace con `onLoading`, `onError` y `error`.
 - La sesión del panel es la cookie `httpOnly` de la API, con `SameSite=Strict` y la cabecera `X-Panel`. **No** se usa `localStorage` ni se decodifica el JWT en el navegador.
 - El navegador nunca habla con otro origen: no hay variables `NEXT_PUBLIC_*`. `API_INTERNAL_URL` solo la usa el servidor.
 
-| Dónde | Qué hay |
-|---|---|
-| `api/src/models/captura.ts` | Ciclo de una validación. La regla de decisión está en `resultado()` |
-| `api/src/models/documentos.ts` | Registro de PDF, firmantes, orden libre o secuencial, firma tras la validación, verificación pública |
-| `api/src/models/panel.ts`, `operacion.ts`, `informe.ts` | Panel: sesión de admin (scrypt + cookie), revisión de la evidencia, informe PDF |
-| `api/src/models/webhooks.ts` | Cola de webhooks: arma el cuerpo, lo encola, firma con HMAC y reintenta (1, 2, 4… min, hasta 8). Repasa cada 30 s |
-| `api-webhook/src/models/emisor.ts` | Llamada HTTP al cliente con el cuerpo y la firma que le pasa la API. No guarda nada |
-| `api-signature/` | Servicio de firma de PDF y creación de la CA propia (`crear_certificado.py`) |
-| `app/src/` | Front en Next.js (estructura abajo) |
-| `app/legacy/validacion_3_pasos.html` | App de captura en un solo archivo. **Fase 1:** Next la sirve tal cual (`src/app/captura/[token]/route.ts`, `src/app/demo/route.ts`). **Fase 2:** pasará a componentes sin tocar FPEngine ni SigEngine |
-| `nginx/` | Configuración de nginx del servidor: un sitio por dominio, TLS, proxy y logs sin tokens |
-| `deploy/crear-firma.sh` | Creación (una vez) de la CA propia y del certificado de firma en el servidor |
-| `experimentos/` | Variantes de prueba que no están en producción (ver su README) |
+| Dónde                                                   | Qué hay                                                                                                                                                                                               |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api/src/models/captura.ts`                             | Ciclo de una validación. La regla de decisión está en `resultado()`                                                                                                                                   |
+| `api/src/models/documentos.ts`                          | Registro de PDF, firmantes, orden libre o secuencial, firma tras la validación, verificación pública                                                                                                  |
+| `api/src/models/panel.ts`, `operacion.ts`, `informe.ts` | Panel: sesión de admin (scrypt + cookie), revisión de la evidencia, informe PDF                                                                                                                       |
+| `api/src/models/webhooks.ts`                            | Cola de webhooks: arma el cuerpo, lo encola, firma con HMAC y reintenta (1, 2, 4… min, hasta 8). Repasa cada 30 s                                                                                     |
+| `api-webhook/src/models/emisor.ts`                      | Llamada HTTP al cliente con el cuerpo y la firma que le pasa la API. No guarda nada                                                                                                                   |
+| `api-signature/`                                        | Servicio de firma de PDF y creación de la CA propia (`crear_certificado.py`)                                                                                                                          |
+| `app/src/`                                              | Front en Next.js (estructura abajo)                                                                                                                                                                   |
+| `app/legacy/validacion_3_pasos.html`                    | App de captura en un solo archivo. **Fase 1:** Next la sirve tal cual (`src/app/captura/[token]/route.ts`, `src/app/demo/route.ts`). **Fase 2:** pasará a componentes sin tocar FPEngine ni SigEngine |
+| `nginx/`                                                | Configuración de nginx del servidor: un sitio por dominio, TLS, proxy y logs sin tokens                                                                                                               |
+| `deploy/crear-firma.sh`                                 | Creación (una vez) de la CA propia y del certificado de firma en el servidor                                                                                                                          |
+| `experimentos/`                                         | Variantes de prueba que no están en producción (ver su README)                                                                                                                                        |
 
 ## Reglas que no se negocian
 
@@ -115,18 +116,18 @@ Todos los servicios se trabajan igual que en portal-firma-vehicle: `yarn dev` co
 
 Cada servicio tiene dos archivos de variables, y ninguno va a git:
 
-| Archivo | Para qué |
-|---|---|
-| `.env` | Desarrollo local (`yarn dev` y los scripts) |
+| Archivo           | Para qué                                               |
+| ----------------- | ------------------------------------------------------ |
+| `.env`            | Desarrollo local (`yarn dev` y los scripts)            |
 | `.env.production` | Producción: lo lee `docker-compose.yml` en el servidor |
 
-| Servicio | `yarn dev` | Puerto | `.env` local |
-|---|---|---|---|
-| `api` | `nodemon src/server.ts` (ts-node) | 4560 | PostgreSQL local en `127.0.0.1:5432` (base `matchoncard`), bucket R2 `matchoncard`, `PUBLIC_URL=http://127.0.0.1:4561`, `ALLOW_HTTP_CALLBACKS=true` |
-| `api-webhook` | `nodemon src/server.ts` (ts-node) | 4562 | Sin base de datos ni KEK; la API lo llama por `WEBHOOK_SERVICE_URL=http://127.0.0.1:4562` |
-| `api-signature` | nodemon + uvicorn (vigila `firmador.py`) | 4563 | Certificado de prueba en `./tmp-firma` y la fuente Arial de Windows |
-| `app` | `next dev` | 4561 | `API_INTERNAL_URL=http://127.0.0.1:4560` |
-| `app-admin` | `next dev` | 4564 | `API_INTERNAL_URL=http://127.0.0.1:4560` |
+| Servicio        | `yarn dev`                               | Puerto | `.env` local                                                                                                                                        |
+| --------------- | ---------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api`           | `nodemon src/server.ts` (ts-node)        | 4560   | PostgreSQL local en `127.0.0.1:5432` (base `matchoncard`), bucket R2 `matchoncard`, `PUBLIC_URL=http://127.0.0.1:4561`, `ALLOW_HTTP_CALLBACKS=true` |
+| `api-webhook`   | `nodemon src/server.ts` (ts-node)        | 4562   | Sin base de datos ni KEK; la API lo llama por `WEBHOOK_SERVICE_URL=http://127.0.0.1:4562`                                                           |
+| `api-signature` | nodemon + uvicorn (vigila `firmador.py`) | 4563   | Certificado de prueba en `./tmp-firma` y la fuente Arial de Windows                                                                                 |
+| `app`           | `next dev`                               | 4561   | `API_INTERNAL_URL=http://127.0.0.1:4560`                                                                                                            |
+| `app-admin`     | `next dev`                               | 4564   | `API_INTERNAL_URL=http://127.0.0.1:4560`                                                                                                            |
 
 Las claves de los `.env` locales son aleatorias y solo sirven en tu equipo. En `app` y `app-admin`, `next build` y `next start` también cargan `.env.production`; para probar en local usa `yarn dev`.
 
@@ -155,13 +156,13 @@ Linode Ubuntu 24.04 con el Cloud Firewall abierto en 80/443 y el 22 solo desde l
 
 Cada servicio explica sus certificados en su `CERTIFICADOS.md`:
 
-| Servicio | Certificados |
-|---|---|
-| `api` | CA de la base de datos (`secrets/db-ca.crt`) y TLS de `api.matchoncard.cl` |
-| `api-webhook` | Ninguno: no tiene dominio ni se conecta a la base |
-| `api-signature` | CA propia y certificado de firma de PDF (`firma/`) |
-| `app` | TLS de `matchoncard.cl` y `www.matchoncard.cl` |
-| `app-admin` | TLS de `admin.matchoncard.cl` |
+| Servicio        | Certificados                                                               |
+| --------------- | -------------------------------------------------------------------------- |
+| `api`           | CA de la base de datos (`secrets/db-ca.crt`) y TLS de `api.matchoncard.cl` |
+| `api-webhook`   | Ninguno: no tiene dominio ni se conecta a la base                          |
+| `api-signature` | CA propia y certificado de firma de PDF (`firma/`)                         |
+| `app`           | TLS de `matchoncard.cl` y `www.matchoncard.cl`                             |
+| `app-admin`     | TLS de `admin.matchoncard.cl`                                              |
 
 ```bash
 # 1) Docker, nginx y certbot
@@ -213,12 +214,6 @@ Si cambió algo en `nginx/`, copia el archivo a `/etc/nginx/...` y `nginx -t && 
 
 Pendiente: actualización desde el panel (subir el paquete, con un código de despliegue aparte y vuelta atrás automática).
 
-## Forma de trabajo
-
-- Este repositorio es la **fuente de verdad**. Trabaja en una rama, abre un *pull request* y espera la aprobación de Jerónimo antes de juntar con `main`.
-- Si el cambio toca el esquema, que `schema.sql` siga siendo idempotente (`create … if not exists`, `alter … add column if not exists`).
-- Mantén los mensajes al usuario en español de Chile, claros y sin jerga técnica.
-
 ## Pendientes conocidos
 
 - Actualización del sistema desde el panel.
@@ -226,3 +221,5 @@ Pendiente: actualización desde el panel (subir el paquete, con un código de de
 - Huella: evaluar en terreno la variante "mano + 3 fotos" (`experimentos/huella-foto`), sobre todo con dedos que no son el pulgar derecho y con otras personas.
 - Sello de tiempo (TSA) en las firmas (`TSA_URL` en el firmador).
 - Certificado de firma reconocido (AATL) si se necesita que Adobe muestre la firma en verde.
+
+C:\next\portal-firma-vehicle>ssh -N -L 27992:private-a536165-akamai-prod-7313032-default.g2a.akamaidb.net:27992 root@172.233.16.21
