@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="mbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1C2A34"/><stop offset="1" stop-color="#0B1116"/></linearGradient>
+    <linearGradient id="mok" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#52E0AA"/><stop offset="1" stop-color="#2FBF86"/></linearGradient>
+    <clipPath id="mcard"><rect x="88" y="138" width="336" height="228" rx="42"/></clipPath>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#mbg)"/>
+  <rect x="3" y="3" width="506" height="506" rx="113" fill="none" stroke="#FFFFFF" stroke-opacity=".06" stroke-width="6"/>
+  <rect x="88" y="138" width="336" height="228" rx="42" fill="#5DB1D1" fill-opacity=".08" stroke="#5DB1D1" stroke-width="24"/>
+  <g clip-path="url(#mcard)" fill="none" stroke="#5DB1D1" stroke-linecap="round" stroke-width="15">
+    <path d="M150 318 C150 250 176 214 214 214 C252 214 278 250 278 300"/>
+    <path d="M182 338 C176 276 190 246 214 246 C238 246 248 272 246 306"/>
+    <path d="M214 280 L214 350"/>
+  </g>
+  <path d="M308 222 H362" stroke="#5DB1D1" stroke-opacity=".55" stroke-width="18" stroke-linecap="round"/>
+  <path d="M308 262 H344" stroke="#5DB1D1" stroke-opacity=".55" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="372" cy="364" r="86" fill="#0B1116"/>
+  <circle cx="372" cy="364" r="68" fill="url(#mok)"/>
+  <path d="M340 366 L362 388 L406 342" fill="none" stroke="#08161D" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

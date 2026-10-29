@@ -1,13 +1,11 @@
-// Marca de MatchOnCard (ícono + nombre)
-export function Logo({ tamano = 28, fondo = '#2a2b2d', texto }: { tamano?: number; fondo?: string; texto?: string }) {
+// Marca de MatchOnCard (isotipo + nombre) para fondo oscuro; los archivos están en public/
+export function Logo({ tamano = 28, texto }: { tamano?: number; texto?: string }) {
+  const alto = Math.round(tamano * 1.25);
   return (
     <span className="flex items-center gap-2.5 font-sans font-bold tracking-[-0.01em]">
-      <svg width={tamano} height={tamano} viewBox="0 0 32 32" aria-hidden="true">
-        <rect width="32" height="32" rx="8" fill={fondo} />
-        <rect x="6" y="9" width="20" height="14" rx="3" fill="none" stroke="#D1C3FE" strokeWidth="2" />
-        <path d="M11 18l3 3 7-7" fill="none" stroke="#A1E0A9" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <span>Match<b className="text-accent">On</b>Card{texto ? ` · ${texto}` : ''}</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/matchoncard-logo-fondo-oscuro.svg" alt="MatchOnCard" height={alto} width={Math.round((alto * 2339) / 512)} />
+      {texto ? <span>· {texto}</span> : null}
     </span>
   );
 }
