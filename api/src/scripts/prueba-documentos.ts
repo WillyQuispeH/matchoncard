@@ -58,7 +58,7 @@ const verificar = (pdf: Buffer) => fetch(`${API}/verificar/api`, { method: 'POST
 async function main() {
   await new Promise<void>((r) => receptor.listen(4556, process.env.RECEPTOR_HOST || '127.0.0.1', r));
   const b64 = PDF.toString('base64');
-  const base = { nombre: 'Contrato de arriendo', pdf: b64, callback_url: RECEPTOR };
+  const base = { nombre: 'Contrato de arriendo', pdf: b64, url_confirmacion: RECEPTOR };
   const A = { rut: '11.111.111-1', nombre: 'Ana Rojas', ubicaciones: [{ pagina: 1, x: 60, y: 650, ancho: 220, alto: 80 }, { pagina: 3, x: 60, y: 600, ancho: 220, alto: 80 }] };
   const B = { rut: '22.222.222-2', nombre: 'Bruno Díaz', ubicaciones: [{ pagina: 3, x: 320, y: 600, ancho: 220, alto: 80 }] };
 

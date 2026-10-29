@@ -1,13 +1,13 @@
 // registro
 export const INSERTAR_DOCUMENTO =
-  `insert into documentos (id, cliente_id, nombre, referencia, callback_url, orden, estado, dek_envuelta, objeto_clave, version, paginas, sha256_original, sha256_actual)
-   values ($1,$2,$3,$4,$5,$6,'pendiente',$7,$8,1,$9,$10,$11)`;
+  `insert into documentos (id, cliente_id, nombre, referencia, url_confirmacion, url_retorno, orden, estado, dek_envuelta, objeto_clave, version, paginas, sha256_original, sha256_actual)
+   values ($1,$2,$3,$4,$5,$6,$7,'pendiente',$8,$9,1,$10,$11,$12)`;
 export const INSERTAR_VERSION_INICIAL = `insert into documento_versiones (documento_id, version, sha256, evento) values ($1,1,$2,'registrado')`;
 export const INSERTAR_FIRMANTE =
   `insert into firmantes (id, documento_id, orden, nombre, rut_hash, rut_mascara, rut_cifrado, ubicaciones, campos, estado) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`;
 
 // enlaces de los firmantes
-export const FIRMANTE_CON_DOCUMENTO = 'select f.*, d.callback_url, d.referencia, d.nombre as doc_nombre from firmantes f join documentos d on d.id = f.documento_id where f.id = $1';
+export const FIRMANTE_CON_DOCUMENTO = 'select f.*, d.url_confirmacion, d.url_retorno, d.referencia, d.nombre as doc_nombre from firmantes f join documentos d on d.id = f.documento_id where f.id = $1';
 export const ASIGNAR_VALIDACION = 'update firmantes set validacion_id = $2 where id = $1';
 export const FIRMANTE_CON_VALIDACION = 'select f.*, v.estado as v_estado from firmantes f left join validaciones v on v.id = f.validacion_id where f.id = $1 and f.documento_id = $2';
 

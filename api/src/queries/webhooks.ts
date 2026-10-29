@@ -1,7 +1,7 @@
 // La API encola, firma y lleva los reintentos; api-webhook solo hace la llamada HTTP al cliente.
 export const INSERTAR_WEBHOOK_VALIDACION = 'insert into webhooks (validacion_id, cliente_id, url, cuerpo) values ($1,$2,$3,$4) returning id';
 export const INSERTAR_WEBHOOK_DOCUMENTO = 'insert into webhooks (documento_id, cliente_id, url, cuerpo) values ($1,$2,$3,$4) returning id';
-export const DOCUMENTO_PARA_WEBHOOK = 'select id, cliente_id, callback_url, referencia, nombre, estado, sha256_actual, version from documentos where id = $1';
+export const DOCUMENTO_PARA_WEBHOOK = 'select id, cliente_id, url_confirmacion, referencia, nombre, estado, sha256_actual, version from documentos where id = $1';
 // toma un lote y lo aparta $3 segundos: otro repaso (u otra réplica de la API) no lo envía dos veces.
 // Los descartados a mano desde app-admin no se reintentan.
 export const RESERVAR_PENDIENTES =

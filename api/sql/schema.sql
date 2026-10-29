@@ -19,7 +19,8 @@ create table if not exists validaciones (
   nombre                 text,
   documento_id           text,
   referencia             text,
-  callback_url           text,
+  url_confirmacion       text,                          -- webhook entre servidores (POST firmado con HMAC)
+  url_retorno            text,                          -- a dónde vuelve el firmante al terminar
   estado                 text not null,                 -- creada | en_captura | consentida | evidencia_subida | aprobada | rechazada | revision | expirada | borrada
   token_hash             text unique,                   -- sha256 del token del link (el token no se guarda)
   link_expira            timestamptz not null,
@@ -108,7 +109,8 @@ create table if not exists documentos (
   cliente_id       text not null references clientes(id),
   nombre           text not null,
   referencia       text,
-  callback_url     text,
+  url_confirmacion text,                             -- webhook entre servidores (POST firmado con HMAC)
+  url_retorno      text,                             -- a dónde vuelve cada firmante al terminar
   orden            text not null default 'libre',    -- libre | secuencial
   estado           text not null,                    -- pendiente | completado | cancelado
   dek_envuelta     text,
@@ -157,6 +159,18 @@ create index if not exists firmantes_por_firmar_idx on firmantes (estado) where 
 alter table validaciones add column if not exists firmante_id uuid;
 alter table webhooks alter column validacion_id drop not null;
 alter table webhooks add column if not exists documento_id uuid;
+
+-- callback_url pasó a llamarse url_confirmacion (webhook) y se sumó url_retorno (redirección del firmante)
+do $$ begin
+  if exists (select 1 from information_schema.columns where table_name = 'validaciones' and column_name = 'callback_url') then
+    alter table validaciones rename column callback_url to url_confirmacion;
+  end if;
+  if exists (select 1 from information_schema.columns where table_name = 'documentos' and column_name = 'callback_url') then
+    alter table documentos rename column callback_url to url_confirmacion;
+  end if;
+end $$;
+alter table validaciones add column if not exists url_retorno text;
+alter table documentos add column if not exists url_retorno text;
 
 -- ===================== app-admin =====================
 -- Rol del usuario del panel: superadmin gestiona clientes y usuarios; operador opera validaciones, documentos y webhooks.

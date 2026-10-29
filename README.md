@@ -31,7 +31,7 @@ Servicio que entrega la validación biométrica (huella, rostro y firma desde el
 
 | Método y ruta | Auth | Descripción |
 |---|---|---|
-| `POST /v1/validaciones` | cliente, rol `integracion` | `{rut, nombre?, documento_id?, referencia?, callback_url?}` → `{validacion_id, url_captura, expira_en}` |
+| `POST /v1/validaciones` | cliente, rol `integracion` | `{rut, nombre?, documento_id?, referencia?, url_confirmacion?, url_retorno?}` → `{validacion_id, url_captura, expira_en}` |
 | `GET /v1/validaciones/:id` | cliente | Estado, puntajes, `evidencia_sha256` e `integridad` |
 | `GET /v1/validaciones/:id/evidencia?motivo=…` | rol `auditor` | ZIP descifrado. Cada descarga queda auditada con su motivo |
 | `DELETE /v1/validaciones/:id` `{motivo}` | rol `dpo` | Supresión: borra el objeto y destruye la clave |
@@ -48,9 +48,16 @@ const token = jwt.sign({}, process.env.V3P_SECRETO_JWT!, { algorithm: 'HS256', i
 await fetch('https://api.matchoncard.cl/v1/validaciones', {
   method: 'POST',
   headers: { id: 'portalfirma', Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ rut: '12.345.678-5', nombre: 'Ana Pérez', documento_id: 'DOC-123', callback_url: 'https://integracion.portalfirma.cl/webhooks/v3p' }),
+  body: JSON.stringify({ rut: '12.345.678-5', nombre: 'Ana Pérez', documento_id: 'DOC-123', url_confirmacion: 'https://integracion.portalfirma.cl/webhooks/v3p', url_retorno: 'https://integracion.portalfirma.cl/firma/listo' }),
 });
 ```
+
+### URLs del cliente
+
+- **`url_confirmacion`**: webhook entre servidores. Ahí llega el `POST` firmado con HMAC de cada evento (ver abajo).
+- **`url_retorno`**: a dónde vuelve el titular al terminar. La página de captura muestra el botón «Volver a …» y redirige sola a los 5 s, agregando `?validacion_id=…&documento_id=…&estado=…`. Es solo navegación: el resultado que vale es el del webhook o el de `GET /v1/validaciones/:id`.
+
+Las dos deben ser `https` con dominio público (en local se acepta `http` con `ALLOW_HTTP_CALLBACKS=true`).
 
 ### Webhook
 
@@ -108,7 +115,8 @@ await fetch('https://api.matchoncard.cl/v1/documentos', {
     nombre: 'Contrato de arriendo',
     referencia: 'OP-2026-0042',
     orden: 'secuencial',                                  // o 'libre' (por defecto)
-    callback_url: 'https://integracion.portalfirma.cl/webhooks/v3p',
+    url_confirmacion: 'https://integracion.portalfirma.cl/webhooks/v3p',      // webhook entre servidores
+    url_retorno: 'https://integracion.portalfirma.cl/firma/listo',            // a dónde vuelve cada firmante al terminar
     pdf: pdfBuffer.toString('base64'),                    // máx. 25 MB
     firmantes: [
       { rut: '12.345.678-5', nombre: 'Ana Pérez', ubicaciones: [{ pagina: 1, x: 60, y: 700 }, { pagina: 3, x: 60, y: 640 }] },

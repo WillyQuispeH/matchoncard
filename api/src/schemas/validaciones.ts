@@ -8,7 +8,9 @@ export class CrearValidacionDto {
   @IsOptional() @IsString() @MaxLength(80) documento_id?: string;
   @IsOptional() @IsString() @MaxLength(120) referencia?: string;
   // En producción solo https con dominio público. ALLOW_HTTP_CALLBACKS=true únicamente para pruebas locales.
-  @IsOptional() @IsUrl({ protocols: DEV_HTTP ? ['http', 'https'] : ['https'], require_protocol: true, require_tld: !DEV_HTTP }) @MaxLength(500) callback_url?: string;
+  // url_confirmacion: webhook entre servidores · url_retorno: a dónde vuelve el titular al terminar
+  @IsOptional() @IsUrl({ protocols: DEV_HTTP ? ['http', 'https'] : ['https'], require_protocol: true, require_tld: !DEV_HTTP }) @MaxLength(500) url_confirmacion?: string;
+  @IsOptional() @IsUrl({ protocols: DEV_HTTP ? ['http', 'https'] : ['https'], require_protocol: true, require_tld: !DEV_HTTP }) @MaxLength(500) url_retorno?: string;
 }
 
 export class MotivoDto {

@@ -244,7 +244,8 @@ export function Documentacion() {
               { nombre: 'nombre', tipo: 'string ≤ 160', desc: 'Nombre del titular. Se muestra en la página de captura.' },
               { nombre: 'referencia', tipo: 'string ≤ 120', desc: 'Tu identificador interno (operación, contrato, cliente). Vuelve en el webhook.' },
               { nombre: 'documento_id', tipo: 'string ≤ 80', desc: 'Identificador de tu documento, si la validación es para firmarlo en tu sistema.' },
-              { nombre: 'callback_url', tipo: 'url https ≤ 500', desc: <>Dónde te avisamos el resultado. Debe ser <C>https</C> con dominio público. Ver <a href="#webhooks" className="text-accent">Webhooks</a>.</> },
+              { nombre: 'url_confirmacion', tipo: 'url https ≤ 500', desc: <>Webhook entre servidores: dónde te avisamos el resultado. Debe ser <C>https</C> con dominio público. Ver <a href="#webhooks" className="text-accent">Webhooks</a>.</> },
+              { nombre: 'url_retorno', tipo: 'url https ≤ 500', desc: <>A dónde vuelve el titular al terminar. Redirigimos a los 5 s agregando <C>validacion_id</C>, <C>documento_id</C> y <C>estado</C> a la query. Es solo navegación: confía en el webhook.</> },
             ]} />
             <Parametros titulo="Respuesta" filas={[
               { nombre: 'validacion_id', tipo: 'uuid', req: true, desc: 'Guárdalo junto a tu operación.' },
@@ -302,7 +303,8 @@ export function Documentacion() {
               { nombre: 'firmantes[].ubicaciones[]', tipo: 'object', req: true, desc: <><C>pagina</C> (desde 1), <C>x</C>, <C>y</C> en puntos PDF desde la esquina <strong>superior izquierda</strong>; <C>ancho</C> (90–600, por defecto 200) y <C>alto</C> (36–300, por defecto 70). Los recuadros no pueden superponerse.</> },
               { nombre: 'orden', tipo: 'libre | secuencial', desc: 'Por defecto libre.' },
               { nombre: 'referencia', tipo: 'string ≤ 120', desc: 'Tu identificador interno.' },
-              { nombre: 'callback_url', tipo: 'url https', desc: 'Recibe los eventos del documento y de las validaciones de sus firmantes.' },
+              { nombre: 'url_confirmacion', tipo: 'url https', desc: 'Webhook entre servidores: recibe los eventos del documento y de las validaciones de sus firmantes.' },
+              { nombre: 'url_retorno', tipo: 'url https', desc: 'A dónde vuelve cada firmante al terminar su validación (redirección a los 5 s, con validacion_id, documento_id y estado en la query).' },
             ]} />
             <Nota>En una hoja A4 (595 × 842 puntos), un recuadro abajo a la izquierda sería <C>{'{ pagina: 1, x: 60, y: 700 }'}</C>. 1 punto = 1/72 de pulgada.</Nota>
           </Endpoint>
@@ -356,7 +358,7 @@ export function Documentacion() {
           {/* ───── Referencia ───── */}
           <Bloque id="webhooks" titulo="Webhooks"
             codigo={<><Codigo titulo="Ejemplos de eventos" muestras={E.webhookValidacion} /><Codigo titulo="Verificar la firma" muestras={E.verificarWebhook} /></>}>
-            <p>Cuando algo cambia, hacemos un <C>POST</C> JSON a tu <C>callback_url</C>. Cada envío lleva estas cabeceras:</p>
+            <p>Cuando algo cambia, hacemos un <C>POST</C> JSON a tu <C>url_confirmacion</C>. Cada envío lleva estas cabeceras:</p>
             <Tabla cabeza={['Cabecera', 'Contenido']} filas={[
               [<C key="1">X-V3P-Evento</C>, 'Nombre del evento.'],
               [<C key="2">X-V3P-Entrega</C>, 'Id único de la entrega. Úsalo para descartar duplicados.'],

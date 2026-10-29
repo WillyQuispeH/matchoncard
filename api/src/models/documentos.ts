@@ -74,7 +74,7 @@ export class DocumentosService implements OnModuleInit {
 
     await this.db.tx(async (c) => {
       await c.query(Q.INSERTAR_DOCUMENTO,
-        [id, cliente.id, dto.nombre, dto.referencia ?? null, dto.callback_url ?? null, orden, this.cripto.envolver(dek), objeto, prep.paginas, shaOriginal, shaActual]);
+        [id, cliente.id, dto.nombre, dto.referencia ?? null, dto.url_confirmacion ?? null, dto.url_retorno ?? null, orden, this.cripto.envolver(dek), objeto, prep.paginas, shaOriginal, shaActual]);
       await c.query(Q.INSERTAR_VERSION_INICIAL, [id, shaActual]);
       for (const f of firmantes) {
         const activo = orden === 'libre' || f.orden === 1;
@@ -94,7 +94,7 @@ export class DocumentosService implements OnModuleInit {
   private async emitirEnlace(cliente: ClienteAuth, documentoId: string, firmanteId: string, ip: string, actor: string) {
     const f = await this.db.uno(Q.FIRMANTE_CON_DOCUMENTO, [firmanteId]);
     const rut = this.cripto.desenvolver(f.rut_cifrado).toString();
-    const v = await this.validaciones.crear(cliente, { rut, nombre: f.nombre, documento_id: documentoId, referencia: f.referencia ?? `Firma de ${f.doc_nombre}`.slice(0, 120), callback_url: f.callback_url ?? undefined }, ip, actor, firmanteId);
+    const v = await this.validaciones.crear(cliente, { rut, nombre: f.nombre, documento_id: documentoId, referencia: f.referencia ?? `Firma de ${f.doc_nombre}`.slice(0, 120), url_confirmacion: f.url_confirmacion ?? undefined, url_retorno: f.url_retorno ?? undefined }, ip, actor, firmanteId);
     await this.db.q(Q.ASIGNAR_VALIDACION, [firmanteId, v.validacion_id]);
     return { url_captura: v.url_captura, expira_en: v.expira_en, validacion_id: v.validacion_id };
   }

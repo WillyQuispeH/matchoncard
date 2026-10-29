@@ -23,7 +23,8 @@ export class CrearDocumentoDto {
   @IsString() @IsBase64() pdf: string;
   @IsOptional() @IsIn(['libre', 'secuencial']) orden?: 'libre' | 'secuencial';
   @IsOptional() @IsString() @MaxLength(120) referencia?: string;
-  @IsOptional() @IsUrl({ protocols: DEV_HTTP ? ['http', 'https'] : ['https'], require_protocol: true, require_tld: !DEV_HTTP }) @MaxLength(500) callback_url?: string;
+  @IsOptional() @IsUrl({ protocols: DEV_HTTP ? ['http', 'https'] : ['https'], require_protocol: true, require_tld: !DEV_HTTP }) @MaxLength(500) url_confirmacion?: string;
+  @IsOptional() @IsUrl({ protocols: DEV_HTTP ? ['http', 'https'] : ['https'], require_protocol: true, require_tld: !DEV_HTTP }) @MaxLength(500) url_retorno?: string;
   @IsArray() @ArrayMinSize(1) @ArrayMaxSize(20) @ValidateNested({ each: true }) @Type(() => FirmanteDto) firmantes: FirmanteDto[];
 }
 

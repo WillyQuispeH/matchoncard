@@ -1,6 +1,6 @@
 export const INSERTAR_VALIDACION =
-  `insert into validaciones (id, cliente_id, rut_hash, rut_mascara, nombre, documento_id, referencia, callback_url, estado, token_hash, link_expira, dek_envuelta, firmante_id)
-   values ($1,$2,$3,$4,$5,$6,$7,$8,'creada',$9,$10,$11,$12)`;
+  `insert into validaciones (id, cliente_id, rut_hash, rut_mascara, nombre, documento_id, referencia, url_confirmacion, url_retorno, estado, token_hash, link_expira, dek_envuelta, firmante_id)
+   values ($1,$2,$3,$4,$5,$6,$7,$8,$9,'creada',$10,$11,$12,$13)`;
 export const VALIDACION_DE_CLIENTE = 'select * from validaciones where id = $1 and cliente_id = $2';
 export const VALIDACION_POR_ID = 'select * from validaciones where id = $1';
 export const VALIDACIONES_POR_RUT = 'select * from validaciones where cliente_id = $1 and rut_hash = $2 order by creado_en desc limit 200';

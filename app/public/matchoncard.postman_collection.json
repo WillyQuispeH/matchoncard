@@ -43,9 +43,14 @@
       "description": "El secreto_jwt que entrega yarn cliente:crear (o el panel de administración) al crear tu cliente"
     },
     {
-      "key": "callback_url",
+      "key": "url_confirmacion",
       "value": "https://tu-empresa.cl/webhooks/matchoncard",
-      "description": "Dónde recibes los webhooks"
+      "description": "Webhook entre servidores: dónde recibes los eventos"
+    },
+    {
+      "key": "url_retorno",
+      "value": "https://tu-empresa.cl/firma/listo",
+      "description": "A dónde vuelve el firmante al terminar"
     },
     {
       "key": "rut",
@@ -104,7 +109,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"rut\": \"{{rut}}\",\n  \"nombre\": \"Ana Pérez\",\n  \"referencia\": \"OP-2026-0042\",\n  \"callback_url\": \"{{callback_url}}\"\n}",
+              "raw": "{\n  \"rut\": \"{{rut}}\",\n  \"nombre\": \"Ana Pérez\",\n  \"referencia\": \"OP-2026-0042\",\n  \"url_confirmacion\": \"{{url_confirmacion}}\",\n  \"url_retorno\": \"{{url_retorno}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -307,7 +312,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Contrato de prueba\",\n  \"referencia\": \"OP-2026-0042\",\n  \"orden\": \"secuencial\",\n  \"callback_url\": \"{{callback_url}}\",\n  \"pdf\": \"JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA1OTUgODQyXSAvUmVzb3VyY2VzIDw8ID4+ID4+CmVuZG9iagp4cmVmCjAgNAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNCAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKMjAzCiUlRU9GCg==\",\n  \"firmantes\": [\n    {\n      \"rut\": \"{{rut}}\",\n      \"nombre\": \"Ana Pérez\",\n      \"ubicaciones\": [\n        {\n          \"pagina\": 1,\n          \"x\": 60,\n          \"y\": 700\n        }\n      ]\n    },\n    {\n      \"rut\": \"9.876.543-3\",\n      \"nombre\": \"Luis Soto\",\n      \"ubicaciones\": [\n        {\n          \"pagina\": 1,\n          \"x\": 330,\n          \"y\": 700\n        }\n      ]\n    }\n  ]\n}",
+              "raw": "{\n  \"nombre\": \"Contrato de prueba\",\n  \"referencia\": \"OP-2026-0042\",\n  \"orden\": \"secuencial\",\n  \"url_confirmacion\": \"{{url_confirmacion}}\",\n  \"url_retorno\": \"{{url_retorno}}\",\n  \"pdf\": \"JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA1OTUgODQyXSAvUmVzb3VyY2VzIDw8ID4+ID4+CmVuZG9iagp4cmVmCjAgNAowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNCAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKMjAzCiUlRU9GCg==\",\n  \"firmantes\": [\n    {\n      \"rut\": \"{{rut}}\",\n      \"nombre\": \"Ana Pérez\",\n      \"ubicaciones\": [\n        {\n          \"pagina\": 1,\n          \"x\": 60,\n          \"y\": 700\n        }\n      ]\n    },\n    {\n      \"rut\": \"9.876.543-3\",\n      \"nombre\": \"Luis Soto\",\n      \"ubicaciones\": [\n        {\n          \"pagina\": 1,\n          \"x\": 330,\n          \"y\": 700\n        }\n      ]\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"

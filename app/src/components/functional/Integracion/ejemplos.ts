@@ -73,7 +73,8 @@ ${CABECERAS_CURL} \\
     "rut": "12.345.678-5",
     "nombre": "Ana Pérez",
     "referencia": "OP-2026-0042",
-    "callback_url": "https://tu-empresa.cl/webhooks/matchoncard"
+    "url_confirmacion": "https://tu-empresa.cl/webhooks/matchoncard",
+    "url_retorno": "https://tu-empresa.cl/firma/listo"
   }'`,
   `const r = await fetch('${BASE_URL}/v1/validaciones', {
   method: 'POST',
@@ -82,7 +83,8 @@ ${CABECERAS_CURL} \\
     rut: '12.345.678-5',
     nombre: 'Ana Pérez',
     referencia: 'OP-2026-0042',
-    callback_url: 'https://tu-empresa.cl/webhooks/matchoncard',
+    url_confirmacion: 'https://tu-empresa.cl/webhooks/matchoncard',
+    url_retorno: 'https://tu-empresa.cl/firma/listo',
   }),
 });
 const { validacion_id, url_captura } = await r.json();
@@ -93,7 +95,8 @@ r = requests.post("${BASE_URL}/v1/validaciones", headers=cabeceras(), json={
     "rut": "12.345.678-5",
     "nombre": "Ana Pérez",
     "referencia": "OP-2026-0042",
-    "callback_url": "https://tu-empresa.cl/webhooks/matchoncard",
+    "url_confirmacion": "https://tu-empresa.cl/webhooks/matchoncard",
+    "url_retorno": "https://tu-empresa.cl/firma/listo",
 })
 r.raise_for_status()
 v = r.json()
@@ -207,7 +210,8 @@ ${CABECERAS_CURL} \\
   "nombre": "Contrato de arriendo",
   "referencia": "OP-2026-0042",
   "orden": "secuencial",
-  "callback_url": "https://tu-empresa.cl/webhooks/matchoncard",
+  "url_confirmacion": "https://tu-empresa.cl/webhooks/matchoncard",
+  "url_retorno": "https://tu-empresa.cl/firma/listo",
   "pdf": "$PDF",
   "firmantes": [
     { "rut": "12.345.678-5", "nombre": "Ana Pérez",
@@ -227,7 +231,8 @@ const r = await fetch('${BASE_URL}/v1/documentos', {
     nombre: 'Contrato de arriendo',
     referencia: 'OP-2026-0042',
     orden: 'secuencial',                       // o 'libre' (por defecto)
-    callback_url: 'https://tu-empresa.cl/webhooks/matchoncard',
+    url_confirmacion: 'https://tu-empresa.cl/webhooks/matchoncard',
+    url_retorno: 'https://tu-empresa.cl/firma/listo',
     pdf: pdf.toString('base64'),               // máx. 25 MB
     firmantes: [
       { rut: '12.345.678-5', nombre: 'Ana Pérez',
@@ -248,7 +253,8 @@ r = requests.post("${BASE_URL}/v1/documentos", headers=cabeceras(), json={
     "nombre": "Contrato de arriendo",
     "referencia": "OP-2026-0042",
     "orden": "secuencial",
-    "callback_url": "https://tu-empresa.cl/webhooks/matchoncard",
+    "url_confirmacion": "https://tu-empresa.cl/webhooks/matchoncard",
+    "url_retorno": "https://tu-empresa.cl/firma/listo",
     "pdf": pdf,
     "firmantes": [
         {"rut": "12.345.678-5", "nombre": "Ana Pérez",

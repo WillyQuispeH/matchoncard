@@ -38,7 +38,7 @@ const receptor = createServer((req, res) => {
 
 type N = 'ok' | 'warn' | 'bad';
 async function flujo(rut: string, runLeido: string[], nivel: N, alterarHash = false, fx: { huella?: N; rostro?: N; firma?: N; omitida?: boolean } = {}) {
-  const r = await cli('POST', '/v1/validaciones', { rut, nombre: 'Persona de Prueba', documento_id: 'DOC-1', referencia: 'ref-' + Date.now(), callback_url: RECEPTOR });
+  const r = await cli('POST', '/v1/validaciones', { rut, nombre: 'Persona de Prueba', documento_id: 'DOC-1', referencia: 'ref-' + Date.now(), url_confirmacion: RECEPTOR });
   const v: any = await r.json();
   const token = v.url_captura.split('/captura/')[1];
   const pag = await fetch(`${API}/captura/${token}`);

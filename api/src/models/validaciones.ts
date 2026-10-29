@@ -30,7 +30,7 @@ export class ValidacionesService {
     await (db ? db.query.bind(db) : this.db.q.bind(this.db))(
       INSERTAR_VALIDACION,
       [id, cliente.id, this.cripto.hashRut(rut), CriptoService.mascaraRut(rut), dto.nombre ?? null, dto.documento_id ?? null, dto.referencia ?? null,
-        dto.callback_url ?? null, this.cripto.sha256(token), linkExpira, this.cripto.envolver(this.cripto.nuevaDek()), firmanteId],
+        dto.url_confirmacion ?? null, dto.url_retorno ?? null, this.cripto.sha256(token), linkExpira, this.cripto.envolver(this.cripto.nuevaDek()), firmanteId],
     );
     await this.audit.registrar('validacion.creada', actor, id, ip, { documento_id: dto.documento_id, referencia: dto.referencia });
     return { validacion_id: id, estado: 'creada', url_captura: `${config.urlPublica}/captura/${token}`, expira_en: linkExpira.toISOString() };

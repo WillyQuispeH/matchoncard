@@ -3,7 +3,7 @@
 //   yarn postman:dev   → ../postman/matchoncard-dev.postman_collection.json (solo local: API en localhost:4560,
 //                        tus credenciales y utilidades de desarrollo). La carpeta postman/ no va a git.
 // Las credenciales de dev se leen de ../postman/dev.json (opcional):
-//   { "cliente_id": "pruebas", "secreto_jwt": "...", "secreto_webhook": "...", "callback_url": "https://…ngrok-free.app", "rut": "…" }
+//   { "cliente_id": "pruebas", "secreto_jwt": "...", "secreto_webhook": "...", "url_confirmacion": "https://…ngrok-free.app", "url_retorno": "https://…", "rut": "…" }
 const fs = require('fs');
 const path = require('path');
 
@@ -95,7 +95,8 @@ const variables = [
   { key: 'base_url', value: DEV ? 'http://localhost:4560' : 'https://api.matchoncard.cl' },
   { key: 'cliente_id', value: dev.cliente_id || (DEV ? 'pruebas' : 'mi-empresa'), description: 'El id de tu cliente de la API' },
   { key: 'secreto_jwt', value: dev.secreto_jwt || PENDIENTE, description: 'El secreto_jwt que entrega yarn cliente:crear (o el panel de administración) al crear tu cliente' },
-  { key: 'callback_url', value: dev.callback_url || 'https://tu-empresa.cl/webhooks/matchoncard', description: 'Dónde recibes los webhooks' },
+  { key: 'url_confirmacion', value: dev.url_confirmacion || 'https://tu-empresa.cl/webhooks/matchoncard', description: 'Webhook entre servidores: dónde recibes los eventos' },
+  { key: 'url_retorno', value: dev.url_retorno || 'https://tu-empresa.cl/firma/listo', description: 'A dónde vuelve el firmante al terminar' },
   ...(DEV ? [{ key: 'secreto_webhook', value: dev.secreto_webhook || PENDIENTE, description: 'Para firmar los webhooks simulados' }] : []),
   { key: 'rut', value: dev.rut || '12.345.678-5' },
   { key: 'validacion_id', value: '' },
@@ -109,7 +110,7 @@ const carpetas = [
     item: [
       req('Crear validación', 'POST', 'v1/validaciones', {
         desc: 'Crea la validación y devuelve `url_captura`, el link para el firmante (vale 24 h). Rol: integracion.',
-        body: json({ rut: '{{rut}}', nombre: 'Ana Pérez', referencia: 'OP-2026-0042', callback_url: '{{callback_url}}' }),
+        body: json({ rut: '{{rut}}', nombre: 'Ana Pérez', referencia: 'OP-2026-0042', url_confirmacion: '{{url_confirmacion}}', url_retorno: '{{url_retorno}}' }),
         eventos: guardar([['validacion_id', 'r.validacion_id']], DEV ? ["  console.log('url_captura:', r.url_captura);"] : []),
       }),
       req('Consultar validación', 'GET', 'v1/validaciones/{{validacion_id}}', { desc: 'Estado, motivos, puntajes y hash de la evidencia. Roles: integracion, auditor, dpo.' }),
@@ -130,7 +131,7 @@ const carpetas = [
       req('Registrar documento', 'POST', 'v1/documentos', {
         desc: 'Sella el PDF y devuelve un link por firmante habilitado. `pdf` va en base64 (máx. 25 MB); este ejemplo trae un PDF A4 en blanco. Coordenadas en puntos desde la esquina superior izquierda. Rol: integracion.',
         body: json({
-          nombre: 'Contrato de prueba', referencia: 'OP-2026-0042', orden: 'secuencial', callback_url: '{{callback_url}}', pdf: PDF_MIN,
+          nombre: 'Contrato de prueba', referencia: 'OP-2026-0042', orden: 'secuencial', url_confirmacion: '{{url_confirmacion}}', url_retorno: '{{url_retorno}}', pdf: PDF_MIN,
           firmantes: [
             { rut: '{{rut}}', nombre: 'Ana Pérez', ubicaciones: [{ pagina: 1, x: 60, y: 700 }] },
             { rut: '9.876.543-3', nombre: 'Luis Soto', ubicaciones: [{ pagina: 1, x: 330, y: 700 }] },
@@ -169,9 +170,9 @@ const carpetas = [
 if (DEV) carpetas.push({
   name: 'Desarrollo',
   item: [
-    req('Simular webhook a mi callback', 'POST', '', {
-      base: '{{callback_url}}',
-      desc: 'Envía a tu callback_url un webhook firmado igual que MatchOnCard (X-V3P-Firma con secreto_webhook), para probar tu receptor sin hacer una validación completa.',
+    req('Simular webhook a mi url_confirmacion', 'POST', '', {
+      base: '{{url_confirmacion}}',
+      desc: 'Envía a tu url_confirmacion un webhook firmado igual que MatchOnCard (X-V3P-Firma con secreto_webhook), para probar tu receptor sin hacer una validación completa.',
       body: json({
         evento: 'validacion.finalizada', validacion_id: '{{validacion_id}}', referencia: 'OP-2026-0042', documento_id: null,
         estado: 'aprobada', motivos: [], veredicto_dispositivo: 'Identidad confirmada',

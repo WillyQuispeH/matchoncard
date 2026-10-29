@@ -21,7 +21,7 @@ export class WebhooksService {
 
   async encolar(validacionId: string, evento: string) {
     const r = await this.db.uno(VALIDACION_POR_ID, [validacionId]);
-    if (!r || !r.callback_url) return;
+    if (!r || !r.url_confirmacion) return;
     const res = r.resultado || {};
     const cuerpo = {
       evento,
@@ -37,16 +37,16 @@ export class WebhooksService {
       verificacion_servidor: r.verificacion_servidor,
       fecha: new Date().toISOString(),
     };
-    await this.db.uno(INSERTAR_WEBHOOK_VALIDACION, [r.id, r.cliente_id, r.callback_url, cuerpo]);
+    await this.db.uno(INSERTAR_WEBHOOK_VALIDACION, [r.id, r.cliente_id, r.url_confirmacion, cuerpo]);
     this.despertar();
   }
 
   // Eventos de documentos: documento.firmado | documento.completado | documento.turno | documento.validacion_fallida | documento.cancelado
   async encolarDocumento(documentoId: string, evento: string, extra: Record<string, unknown> = {}) {
     const d = await this.db.uno(DOCUMENTO_PARA_WEBHOOK, [documentoId]);
-    if (!d || !d.callback_url) return;
+    if (!d || !d.url_confirmacion) return;
     const cuerpo = { evento, documento_id: d.id, referencia: d.referencia, nombre: d.nombre, estado: d.estado, version: d.version, sha256: d.sha256_actual, ...extra, fecha: new Date().toISOString() };
-    await this.db.uno(INSERTAR_WEBHOOK_DOCUMENTO, [d.id, d.cliente_id, d.callback_url, cuerpo]);
+    await this.db.uno(INSERTAR_WEBHOOK_DOCUMENTO, [d.id, d.cliente_id, d.url_confirmacion, cuerpo]);
     this.despertar();
   }
 

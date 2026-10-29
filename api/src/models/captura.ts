@@ -136,6 +136,16 @@ export class CapturaService {
       firma = ['aprobada', 'revision'].includes(estado) ? 'Tu firma se está estampando en el documento.' : 'No pudimos habilitar la firma del documento con esta validación.';
     }
     return {
-      documento: firma, validacion_id: r.id, estado, mensaje: estado === 'aprobada' ? 'Validación enviada. Ya puedes volver a tu documento.' : 'Validación enviada. Te avisaremos si hace falta algo más.' };
+      documento: firma, validacion_id: r.id, estado, url_retorno: this.urlRetorno(r, estado), mensaje: estado === 'aprobada' ? 'Validación enviada. Ya puedes volver a tu documento.' : 'Validación enviada. Te avisaremos si hace falta algo más.' };
+  }
+
+  // A dónde vuelve el titular al terminar: la url_retorno del cliente con el resultado en la query (solo identificadores y estado).
+  private urlRetorno(r: { id: string; documento_id: string | null; url_retorno: string | null }, estado: string) {
+    if (!r.url_retorno) return null;
+    const u = new URL(r.url_retorno);
+    u.searchParams.set('validacion_id', r.id);
+    if (r.documento_id) u.searchParams.set('documento_id', r.documento_id);
+    u.searchParams.set('estado', estado);
+    return u.toString();
   }
 }
