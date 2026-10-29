@@ -18,6 +18,7 @@ import { AuditoriaService } from './auditoria';
 import { WebhooksService } from './webhooks';
 import { ValidacionesService } from './validaciones';
 import { OperacionService } from './operacion';
+import { factor, urlVerificacion } from './firmaPublica';
 
 @Injectable()
 export class DocumentosService implements OnModuleInit {
@@ -49,11 +50,13 @@ export class DocumentosService implements OnModuleInit {
     const orden = dto.orden || 'libre';
     const id = randomUUID();
 
-    // RUT válidos y no repetidos
+    // RUT válidos y no repetidos. Los campos llevan el id del documento: si el PDF ya pasó por MatchOnCard
+    // (trae campos firma_1_1…), los nuevos no chocan con los anteriores.
+    const sufijo = id.slice(0, 8);
     const firmantes = dto.firmantes.map((f, i) => {
       const rut = CriptoService.normalizarRut(f.rut);
       if (!rut) throw new BadRequestException(`RUT inválido del firmante ${i + 1}`);
-      return { id: randomUUID(), orden: i + 1, rut, nombre: f.nombre.trim(), ubicaciones: f.ubicaciones.map((u, j) => ({ nombre: `firma_${i + 1}_${j + 1}`, pagina: u.pagina, x: u.x, y: u.y, ancho: u.ancho ?? ANCHO, alto: u.alto ?? ALTO })) };
+      return { id: randomUUID(), orden: i + 1, rut, nombre: f.nombre.trim(), ubicaciones: f.ubicaciones.map((u, j) => ({ nombre: `firma_${i + 1}_${j + 1}_${sufijo}`, etiqueta: `firma_${i + 1}_${j + 1}`, pagina: u.pagina, x: u.x, y: u.y, ancho: u.ancho ?? ANCHO, alto: u.alto ?? ALTO })) };
     });
     if (new Set(firmantes.map((f) => f.rut)).size !== firmantes.length) throw new BadRequestException('Hay un RUT repetido entre los firmantes');
     // recuadros superpuestos en la misma página quedarían ilegibles
@@ -61,11 +64,11 @@ export class DocumentosService implements OnModuleInit {
     for (let a = 0; a < todas.length; a++) for (let b = a + 1; b < todas.length; b++) {
       const p = todas[a], q = todas[b];
       if (p.pagina === q.pagina && p.x < q.x + q.ancho && q.x < p.x + p.ancho && p.y < q.y + q.alto && q.y < p.y + p.alto)
-        throw new BadRequestException(`Los recuadros ${p.nombre} y ${q.nombre} se superponen en la página ${p.pagina}`);
+        throw new BadRequestException(`Los recuadros ${p.etiqueta} y ${q.etiqueta} se superponen en la página ${p.pagina}`);
     }
 
     // el firmador valida páginas y límites, crea los campos vacíos y certifica el documento (sello MatchOnCard)
-    const prep = await this.firmador.preparar(original, todas, id, dto.nombre);
+    const prep = await this.firmador.preparar(original, todas.map(({ etiqueta, ...u }) => u), id, dto.nombre);
     const sellado = Buffer.from(prep.pdf, 'base64');
     const dek = this.cripto.nuevaDek();
     const objeto = this.clave(id, 1);
@@ -83,7 +86,7 @@ export class DocumentosService implements OnModuleInit {
             JSON.stringify(f.ubicaciones), f.ubicaciones.map((u) => u.nombre), activo ? 'pendiente' : 'en_espera']);
       }
     });
-    await this.audit.registrar('documento.registrado', actor, null, ip, { documento_id: id, sha256_original: shaOriginal, firmantes: firmantes.length, orden });
+    await this.audit.registrar('documento.registrado', actor, null, ip, { documento_id: id, sha256_original: shaOriginal, firmantes: firmantes.length, orden, certificado: prep.certificado, firmas_previas: prep.firmas_previas });
 
     const enlaces: Record<string, { url_captura: string; expira_en: string } | null> = {};
     for (const f of firmantes) enlaces[f.id] = orden === 'libre' || f.orden === 1 ? await this.emitirEnlace(cliente, id, f.id, ip, actor) : null;
@@ -233,6 +236,8 @@ export class DocumentosService implements OnModuleInit {
       const r = await this.firmador.firmar({
         pdf: actual, campos: f.campos, nombre: f.nombre, rut: formatoRut(this.cripto.desenvolver(f.rut_cifrado).toString()),
         validacion_id: v.id, evidencia_sha256: v.evidencia_sha256 || '', estado_validacion: v.estado, firma_png: firmaPng, documento_id: d.id,
+        factores: { huella: factor(v.resultado?.huella), rostro: factor(v.resultado?.rostro), firma: factor(v.resultado?.firma) },
+        url_verificacion: urlVerificacion(v.id),
       });
       const nuevo = Buffer.from(r.pdf, 'base64');
       const version = d.version + 1, sha = this.cripto.sha256(nuevo), objeto = this.clave(d.id, version);
@@ -272,12 +277,14 @@ export class DocumentosService implements OnModuleInit {
     const r = await this.firmador.verificar(pdf);
     const reg = await this.db.uno(Q.VERSION_POR_HASH, [r.sha256]);
     const firmas = (r.firmas || []).map((f: any) => ({
-      tipo: f.certificacion ? 'sello' : 'firma', nombre: f.nombre || null, fecha: f.fecha, motivo: f.motivo || null,
+      // previa: firma que el PDF ya traía al registrarse (de otro sistema); el sello es de aprobación si hubo previas
+      tipo: f.sello ? 'sello' : f.previa ? 'previa' : 'firma', certificacion: !!f.certificacion, nombre: f.nombre || null, fecha: f.fecha, motivo: f.motivo || null,
       integra: !!f.integra, emitida_por_matchoncard: !!f.confiable, modificaciones_permitidas: f.modificaciones_permitidas !== false,
       error: f.error ? 'No se pudo validar esta firma' : undefined,
     }));
     const sello = firmas.find((f: any) => f.tipo === 'sello');
-    const valido = !!sello && firmas.length > 0 && firmas.every((f: any) => f.integra && f.emitida_por_matchoncard && f.modificaciones_permitidas);
+    // las previas no las emite MatchOnCard: se exige que sigan íntegras y sin cambios no permitidos, no que sean nuestras
+    const valido = !!sello && firmas.length > 0 && firmas.every((f: any) => f.integra && f.modificaciones_permitidas && (f.tipo === 'previa' || f.emitida_por_matchoncard));
     return {
       sha256: r.sha256,
       valido,

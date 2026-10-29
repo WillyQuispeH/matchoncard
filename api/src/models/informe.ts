@@ -56,7 +56,7 @@ export class InformeService {
       doc.rect(0, 0, W, 6).fillColor(C.accent).fill();
       doc.font('Helvetica-Bold').fontSize(18).fillColor(C.ink).text('Informe de validación de identidad', M, 30);
       doc.font('Helvetica').fontSize(9.5).fillColor(C.ink2).text(`MatchOnCard · Validación en 3 pasos (huella, rostro y firma) · Folio ${folio}`, M, doc.y + 2);
-      doc.text(`Emitido el ${fecha(new Date())} por ${actor.replace(/^admin:/, '')}`, M);
+      doc.text(`Emitido el ${fecha(new Date())} ${actor === 'publico:qr' ? 'desde la verificación pública (QR de la firma)' : `por ${actor.replace(/^admin:/, '')}`}`, M);
       doc.moveDown(0.8);
 
       // ── resultado ──

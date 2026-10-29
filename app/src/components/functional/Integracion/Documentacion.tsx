@@ -291,7 +291,7 @@ export function Documentacion() {
             codigo={[E.crearDocumento, E.respuestaDocumento]}>
             <p>Envías el PDF y dónde firma cada persona. MatchOnCard:</p>
             <ol className="mb-4 grid list-decimal gap-1.5 pl-5">
-              <li><strong>Sella el documento</strong> (certificación DocMDP): desde ahí solo admite completar los recuadros de firma; cualquier otro cambio queda en evidencia.</li>
+              <li><strong>Sella el documento</strong> (certificación DocMDP): desde ahí solo admite completar los recuadros de firma; cualquier otro cambio queda en evidencia. Si el PDF ya trae firmas de otro sistema, se conservan y el sello entra como firma de aprobación; solo se rechaza un PDF certificado sin permitir cambios.</li>
               <li><strong>Crea un link por firmante</strong>. Con orden <C>libre</C> todos lo reciben de inmediato; con <C>secuencial</C>, cada uno cuando firma el anterior (webhook <C>documento.turno</C>).</li>
               <li>Cuando la validación del firmante queda <C>aprobada</C> o <C>revision</C>, <strong>estampa su firma</strong> PAdES en todos sus recuadros.</li>
               <li>Al firmar el último, el documento pasa a <C>completado</C>.</li>

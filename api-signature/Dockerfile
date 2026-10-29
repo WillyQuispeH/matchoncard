@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-co
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY firmador.py crear_certificado.py ./
+COPY firmador.py crear_certificado.py matchoncard-isotipo.png ./
 RUN groupadd -g 10001 firma && useradd -u 10001 -g firma -M -s /usr/sbin/nologin firma
 USER firma
 EXPOSE 4563

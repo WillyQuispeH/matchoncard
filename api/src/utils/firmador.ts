@@ -22,7 +22,7 @@ export class FirmadorClient {
   }
 
   preparar(pdf: Buffer, ubicaciones: Ubicacion[], documentoId: string, titulo: string) {
-    return this.post('/preparar', { pdf: pdf.toString('base64'), ubicaciones, documento_id: documentoId, titulo }) as Promise<{ pdf: string; paginas: number }>;
+    return this.post('/preparar', { pdf: pdf.toString('base64'), ubicaciones, documento_id: documentoId, titulo }) as Promise<{ pdf: string; paginas: number; certificado: boolean; firmas_previas: number }>;
   }
   firmar(p: FirmarParams) {
     return this.post('/firmar', { ...p, pdf: p.pdf.toString('base64'), firma_png: p.firma_png ? p.firma_png.toString('base64') : null }) as Promise<{ pdf: string }>;

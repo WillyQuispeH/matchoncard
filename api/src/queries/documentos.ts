@@ -52,3 +52,10 @@ export const VERSION_POR_HASH =
      (select count(*)::int from firmantes f where f.documento_id = d.id) as firmantes,
      (select count(*)::int from firmantes f where f.documento_id = d.id and f.estado = 'firmado') as firmados
    from documento_versiones dv join documentos d on d.id = dv.documento_id where dv.sha256 = $1 order by dv.version desc limit 1`;
+
+// verificación pública de una firma (QR de la estampa): solo firmantes que ya firmaron
+export const FIRMA_PUBLICA =
+  `select v.id as validacion_id, v.cliente_id, v.estado, v.resultado, v.motivos, v.evidencia_sha256, v.dek_envuelta is not null as dek_envuelta, f.nombre, f.rut_mascara, f.firmado_en,
+          d.nombre as documento, c.nombre as cliente
+   from firmantes f join validaciones v on v.id = f.validacion_id join documentos d on d.id = f.documento_id join clientes c on c.id = d.cliente_id
+   where f.validacion_id = $1 and f.estado = 'firmado'`;

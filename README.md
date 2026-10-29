@@ -88,6 +88,8 @@ function firmaValida(cuerpoCrudo: string, cabecera: string) {
 El cliente integrado entrega el PDF y dónde firma cada persona. MatchOnCard:
 
 1. **Sella el documento** (firma de certificación DocMDP nivel 2). Desde ese momento el PDF solo admite completar los recuadros de firma designados; cualquier otra edición invalida el sello y queda en evidencia.
+   Si el PDF **ya trae firmas** de otro sistema, se conservan intactas y el sello entra como firma de aprobación (la certificación solo puede ser la primera firma de un PDF). `/verificar` las muestra como «firmas anteriores al registro». Se rechaza solo un PDF certificado sin permitir cambios (DocMDP nivel 1).
+   Un PDF que ya pasó por MatchOnCard también se puede registrar de nuevo (sello `MatchOnCard-Sello-2`, `-3`…). Ojo: si el PDF traía una **certificación** (nuestra o de otro sistema), agregar los campos nuevos la deja con cambios no permitidos, y `/verificar` mostrará el documento como no válido aunque todas las firmas sigan íntegras.
 2. **Crea un link de validación por firmante**. Con orden `libre` todos lo reciben de inmediato; con `secuencial`, cada uno lo recibe cuando firma el anterior (webhook `documento.turno`).
 3. Cuando la validación del firmante queda **`aprobada` o `revision`**, se estampa su firma en **todos sus recuadros** (puede firmar en varias páginas). La firma es criptográfica (PAdES, incremental: no rompe las anteriores). La estampa visible muestra su firma dibujada, nombre, RUT, fecha, folio de la validación y hash de la evidencia. Si la validación quedó en `revision`, la estampa dice "Validación con observaciones".
 4. Al firmar el último firmante, el documento pasa a `completado` (webhook `documento.completado`).

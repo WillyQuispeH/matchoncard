@@ -4,4 +4,6 @@ export interface Ubicacion { nombre: string; pagina: number; x: number; y: numbe
 export interface FirmarParams {
   pdf: Buffer; campos: string[]; nombre: string; rut: string; validacion_id: string;
   evidencia_sha256: string; estado_validacion: string; firma_png: Buffer | null; documento_id: string;
+  factores: Record<'huella' | 'rostro' | 'firma', 'ok' | 'warn' | 'bad' | 'omitida' | null>;   // chips de la estampa
+  url_verificacion: string;   // destino del QR de la estampa
 }

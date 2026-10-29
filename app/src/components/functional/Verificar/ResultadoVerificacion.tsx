@@ -32,6 +32,7 @@ const valida = (f: IFirmaVerificada) => f.integra && f.emitida_por_matchoncard &
 export function ResultadoVerificacion({ r }: { r: IVerificacion }) {
   const personas = r.firmas.filter((f) => f.tipo === 'firma');
   const sello = r.firmas.find((f) => f.tipo === 'sello');
+  const previas = r.firmas.filter((f) => f.tipo === 'previa');
   const tono: Tono = r.valido ? (r.firmas_pendientes ? 'warn' : 'ok') : 'bad';
   const titulo = r.valido
     ? (r.firmas_pendientes ? 'Firmas válidas · documento aún en proceso' : 'Documento auténtico e íntegro')
@@ -72,8 +73,28 @@ export function ResultadoVerificacion({ r }: { r: IVerificacion }) {
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <b className="text-base">MatchOnCard</b><Chip ok={sello.integra && sello.modificaciones_permitidas} si="sin alteraciones" no="alterado" />
             </div>
-            <div className="mt-1 text-[13.5px] text-ink-3">Registrado el {fechaLarga(sello.fecha)}. Después del registro el documento solo admite firmas electrónicas de los firmantes designados.</div>
+            <div className="mt-1 text-[13.5px] text-ink-3">
+              Registrado el {fechaLarga(sello.fecha)}.{' '}
+              {sello.certificacion
+                ? 'Después del registro el documento solo admite firmas electrónicas de los firmantes designados.'
+                : 'El documento ya traía firmas de otro sistema: se conservaron y se agregaron las de los firmantes designados.'}
+            </div>
           </Tarjeta>
+        </>
+      )}
+      {previas.length > 0 && (
+        <>
+          <Subtitulo>Firmas anteriores al registro ({previas.length})</Subtitulo>
+          {previas.map((f, i) => (
+            <Tarjeta key={i}>
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <b className="text-base">{f.nombre || 'Firma de otro sistema'}</b><Chip ok={f.integra && f.modificaciones_permitidas} si="íntegra" no="no válida" />
+              </div>
+              <div className="mt-1 text-[13.5px] text-ink-3">
+                {f.fecha ? `${fechaLarga(f.fecha)} · ` : ''}El PDF ya traía esta firma al registrarse. Verificamos que siga íntegra; no la emite MatchOnCard.
+              </div>
+            </Tarjeta>
+          ))}
         </>
       )}
       <Subtitulo>Huella digital del archivo (SHA-256)</Subtitulo>

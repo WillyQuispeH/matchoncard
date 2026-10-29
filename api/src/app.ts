@@ -20,6 +20,7 @@ import { DocumentosService } from './models/documentos';
 import { PanelService } from './models/panel';
 import { OperacionService } from './models/operacion';
 import { InformeService } from './models/informe';
+import { FirmaPublicaService } from './models/firmaPublica';
 import { RetencionService } from './models/retencion';
 import { AdminClientesService } from './models/adminClientes';
 import { AdminUsuariosService } from './models/adminUsuarios';
@@ -54,7 +55,7 @@ import { AdminAuditoriaController } from './controllers/adminAuditoria';
     DbService, CriptoService, AlmacenService, FirmadorClient, EmisorWebhooksClient,
     ClienteGuard, SesionGuard, AdminGuard, SuperadminGuard,
     AuditoriaService, WebhooksService, ValidacionesService, CapturaService, DocumentosService,
-    PanelService, OperacionService, InformeService, RetencionService,
+    PanelService, OperacionService, InformeService, FirmaPublicaService, RetencionService,
     AdminClientesService, AdminUsuariosService, AdminWebhooksService, AdminAuditoriaService, AdminEstadoService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
