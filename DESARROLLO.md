@@ -150,6 +150,34 @@ API_URL=... CLIENTE_ID=... CLIENTE_SECRETO=... WEBHOOK_SECRETO=... ZIP=... PDF=c
 
 Hoy pasan 27 pruebas de validaciones y 30 de documentos. Si las corres seguidas, espera un minuto entre ellas: el límite es de 120 solicitudes por minuto por IP.
 
+### Probar desde el celular en la red local (sin ngrok)
+
+La cámara del teléfono solo funciona en `https`, así que `app` y `app-admin` se levantan con un certificado propio. El celular y el PC deben estar en la misma red. Solo `app` (4561) y `app-admin` (4564) quedan abiertos a la red: la API y los demás servicios siguen en `127.0.0.1`, porque el teléfono pasa por los Route Handlers de Next.
+
+**Una vez por equipo**
+
+1. Certificado (usa tu IP de `ipconfig`): `bash scripts/certificado-dev.sh 192.168.1.88`. Queda en `certs-dev/`, que no va a git. Si tu IP cambia, vuelve a correrlo con la nueva: la CA se reutiliza y no hay que reinstalar nada en los celulares. Conviene reservar la IP del PC en el router.
+2. `PUBLIC_URL=https://192.168.1.88:4561` en `api/.env`. Con ella salen los links de captura.
+3. CORS del bucket, para que el teléfono pueda subir la evidencia: `cd api && yarn bucket:configurar`. Suma el origen de `PUBLIC_URL` sin borrar los demás.
+4. Firewall de Windows, en una PowerShell **como administrador**:
+   ```powershell
+   New-NetFirewallRule -DisplayName "MatchOnCard dev (red local)" -Direction Inbound -Protocol TCP -LocalPort 4561,4564 -Action Allow -Profile Private
+   ```
+   La red Wi-Fi o Ethernet del PC debe estar como **privada**, no pública.
+
+**Una vez por celular: instalar `certs-dev/ca.crt`** (envíatelo por correo, Drive o WhatsApp; nunca `ca.key`)
+
+- **Android:** Ajustes → Seguridad → Más ajustes de seguridad → Cifrado y credenciales → Instalar un certificado → **Certificado de CA**, y elige `ca.crt`. El nombre del menú cambia según la marca; busca "certificado de CA" en Ajustes.
+- **iPhone:** abre `ca.crt` en Safari o Archivos → "Perfil descargado". Luego Ajustes → General → VPN y gestión de dispositivos → instala el perfil. Y además: Ajustes → General → Información → **Ajustes de confianza de certificados** → activa "MatchOnCard Desarrollo Local". Sin este último paso Safari no confía en el certificado.
+
+**Cada vez**
+
+```bash
+yarn dev:red     # en app y en app-admin (en vez de yarn dev); api, api-webhook y api-signature con yarn dev, como siempre
+```
+
+Desde el celular: `https://192.168.1.88:4561/demo`, los links `/captura/<token>` que entrega la API, y `https://192.168.1.88:4564` para app-admin. En el PC también funciona `https://localhost:4561`.
+
 ## Puesta en marcha del servidor (una vez)
 
 Linode Ubuntu 24.04 con el Cloud Firewall abierto en 80/443 y el 22 solo desde la IP de administración. Los registros DNS `matchoncard.cl`, `www`, `admin` y `api` deben apuntar ya a la IP de la Linode.

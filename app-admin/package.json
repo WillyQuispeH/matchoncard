@@ -5,6 +5,7 @@
   "scripts": {
     "predev": "node scripts/copiar-pdfjs.mjs",
     "dev": "next dev --turbopack -p 4564",
+    "dev:red": "next dev --turbopack -p 4564 -H 0.0.0.0 --experimental-https --experimental-https-key ../certs-dev/servidor.key --experimental-https-cert ../certs-dev/servidor.crt",
     "prebuild": "node scripts/copiar-pdfjs.mjs",
     "build": "next build",
     "start": "next start -p 4564",

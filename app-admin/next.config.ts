@@ -5,7 +5,7 @@ import type { NextConfig } from 'next';
 const dev = process.env.NODE_ENV !== 'production';
 const CSP =
   `default-src 'self'; script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ''}; style-src 'self' 'unsafe-inline'; font-src 'self'; ` +
-  `img-src 'self' data: blob:; connect-src 'self'${dev ? ' ws:' : ''}; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'`;
+  `img-src 'self' data: blob:; connect-src 'self'${dev ? ' ws: wss:' : ''}; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'`;
 
 const SEGURIDAD = [
   { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   poweredByHeader: false,
+  // yarn dev:red: abrir desde el celular por la IP de la red local (Next bloquea otros orígenes en desarrollo)
+  allowedDevOrigins: ['192.168.*.*', '10.*.*.*'],
   async headers() {
     return [
       // páginas: sin caché (muestran datos personales) y con CSP
