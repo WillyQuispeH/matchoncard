@@ -170,7 +170,9 @@
   .simpleprog .dots i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); display: block; }
   .simpleprog .dots span.on { color: var(--ok); } .simpleprog .dots span.on i { background: var(--ok); border-color: var(--ok); }
   .simpleprog .pl { font: 600 17px var(--sans); color: var(--ink); }
-  .introsvg { width: 100%; height: auto; background: #191A1C; border-radius: 12px; }
+  .introsvg { width: 100%; height: auto; max-height: 22vh; background: #191A1C; border-radius: 12px; }
+  /* pie fijo de una hoja larga: el botón principal queda a la vista aunque el contenido se desplace */
+  .sheet .sheetfoot { position: sticky; bottom: -14px; margin: 0 -14px -14px; padding: 10px 14px 14px; background: var(--surface); border-radius: 0 0 16px 16px; }
   .introsvg .ithumb { animation: ithumb 2.6s ease-in-out infinite; }
   .introsvg .icheck { opacity: 0; animation: icheck 2.6s ease-in-out infinite; }
   .introsvg .irays, .introsvg .iflash { animation: iflash 1.3s ease-in-out infinite; }
@@ -185,6 +187,8 @@
   .logo b { color: var(--accent); font-weight: 700; }
   .eyebrow { font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
   .display { font-family: var(--display) !important; font-weight: 400 !important; text-transform: uppercase; line-height: .98; letter-spacing: -0.01em !important; }
+  .final-ico { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; }
+  .final-ico.ok { background: rgba(127,212,146,.14); color: var(--ok); } .final-ico.warn { background: rgba(242,194,91,.14); color: var(--warn); } .final-ico.bad { background: rgba(240,138,151,.14); color: var(--bad); }
   .hero { display: grid; gap: 10px; padding-top: 6px; }
   .hero .display { font-size: clamp(32px, 10vw, 46px); }
   .hero small { font: 12px var(--mono); color: var(--ink-3); }
@@ -252,6 +256,27 @@
   .zoomchips { grid-column: 1 / -1; justify-self: center; display: flex; gap: 4px; padding: 4px; background: rgba(34,35,36,.82); border: 1px solid var(--line); border-radius: 12px; backdrop-filter: blur(6px); }
   .zoomchips button { appearance: none; border: 0; background: transparent; color: var(--ink-2); font: 600 13px var(--mono); min-width: 42px; height: 32px; border-radius: 9px; cursor: pointer; }
   .zoomchips button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  /* laboratorio */
+  .labgrid { display: grid; margin-top: 6px; }
+  .labrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .labrow:first-child { border-top: 0; }
+  .labrow .btn { flex: none; min-width: 92px; }
+  .labimgs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .labimgs img, .labimgs canvas { height: 96px; width: auto; max-width: 48%; border-radius: 8px; object-fit: contain; background: var(--deep); }
+  .labaj { display: grid; gap: 10px; margin: 12px 0; }
+  .labaj label { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px; }
+  .labaj select { font: inherit; color: var(--ink); background: var(--deep); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 8px; max-width: 60%; }
+  /* huella de la cédula como referencia mientras se escanea el pulgar (bajo la barra, como la firma) */
+  .fpref { grid-column: 1 / -1; justify-self: center; display: flex; align-items: center; gap: 10px; max-width: 100%; padding: 6px 14px 6px 6px; background: rgba(34,35,36,.82); border: 1px solid var(--line); border-radius: 12px; backdrop-filter: blur(6px); font-size: 13px; line-height: 1.3; }
+  .fpref figure { margin: 0; display: grid; gap: 3px; justify-items: center; flex: none; }
+  .fpref img, .fpref canvas { height: 76px; width: 76px; object-fit: cover; border-radius: 8px; background: #F4F4F4; display: block; }
+  .fpref canvas { background: var(--deep); border: 2px solid var(--line-2); box-sizing: border-box; transition: border-color .2s; }
+  .fpref canvas.on { border-color: var(--ok); }
+  .fpref figcaption { font: 500 11px var(--sans); color: var(--ink-2); white-space: nowrap; }
+  .fpref b { display: block; font-size: 14px; }
+  .fpref .fptxt { min-width: 0; }
+  @media (max-width: 370px) { .fpref .fptxt { display: none; } }
+  @media (max-height: 700px) { .fpref img, .fpref canvas { height: 56px; width: 56px; } }
 
   /* ───── firma con el mismo formato de la cámara: barra arriba, zona central, panel abajo ───── */
   .sigcam { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
@@ -278,7 +303,7 @@
 <section class="desk" id="desk">
   <div class="wrap">
     <div class="info">
-      <div class="logo"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2A2B2D"/><rect x="6" y="9" width="20" height="14" rx="3" fill="none" stroke="#D1C3FE" stroke-width="2"/><path d="M11 18l3 3 7-7" fill="none" stroke="#A1E0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Match<b>On</b>Card</span></div>
+      <div class="logo"><img src="/matchoncard-logo-fondo-oscuro.svg" alt="MatchOnCard" height="38" width="174"></div>
       <span class="eyebrow">Validación de identidad</span>
       <h1 class="display">Continúa en tu teléfono</h1>
       <p class="muted lead">La validación usa la cámara trasera, la linterna y la pantalla táctil de tu teléfono. Escanea el código y sigue desde ahí: toma unos 3 minutos.</p>
@@ -304,7 +329,7 @@
 <!-- ───────── inicio ───────── -->
 <section class="page" id="home">
   <div class="hero">
-    <div class="logo"><svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2A2B2D"/><rect x="6" y="9" width="20" height="14" rx="3" fill="none" stroke="#D1C3FE" stroke-width="2"/><path d="M11 18l3 3 7-7" fill="none" stroke="#A1E0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Match<b>On</b>Card</span></div>
+    <div class="logo"><img src="/matchoncard-logo-fondo-oscuro.svg" alt="MatchOnCard" height="35" width="160"></div>
     <span class="eyebrow">Validación de identidad</span>
     <h1 class="display">Valida tu identidad</h1>
     <small class="solo-demo">huella v<span id="ver"></span> · rostro · firma · todo se procesa en este teléfono</small>
@@ -370,6 +395,7 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
       </button>
     </div>
+    <div class="fpref" id="fpRef" hidden></div>
     <div class="zoomchips" id="zoomChips" role="group" aria-label="Zoom" hidden></div>
   </div>
   <div class="bottom" id="camBottom">
@@ -433,6 +459,31 @@
 
 <!-- hoja para repetir una fase del paso «Tú» (visible sobre la cámara y sobre la firma) -->
 <div class="sheet yosheet" id="yoSheet" hidden></div>
+
+<!-- ───────── cierre (modo API): validación enviada o link que ya no sirve ───────── -->
+<section class="page" id="final" hidden style="min-height:100dvh;align-content:center;text-align:center;justify-items:center">
+  <div class="final-ico" id="finalIco" aria-hidden="true"></div>
+  <h1 class="display" id="finalTitle" style="font-size:clamp(28px,8vw,38px)"></h1>
+  <p id="finalText" style="font-size:17px;line-height:1.5;max-width:420px;margin:0"></p>
+  <p class="muted" id="finalNote" style="font-size:14px;max-width:420px;margin:0"></p>
+  <a class="btn primary" id="finalBack" hidden style="width:100%;max-width:420px;text-decoration:none"></a>
+</section>
+
+<!-- ───────── laboratorio (/demo?prueba=1): cada punto por separado, con la misma lógica ───────── -->
+<section class="page" id="lab" hidden>
+  <div><h1>Laboratorio de captura</h1>
+    <p class="muted" style="font-size:14px;margin:6px 0 0">Prueba cada punto por separado con la misma lógica de la validación. Nada se envía: las fotos de referencia y el historial quedan solo en este teléfono.</p></div>
+  <div class="card consent"><label class="check"><input type="checkbox" id="labConsent"><span>Autorizo usar mis datos biométricos (huella, rostro y firma) en este teléfono, solo para estas pruebas.</span></label></div>
+  <div id="labRes" hidden></div>
+  <div class="card"><b>Cédula</b><div class="labgrid" id="labCedula"></div></div>
+  <div class="card"><b>Tú</b><div class="labgrid" id="labTu"></div></div>
+  <details class="card"><summary><b>Ajustes del pulgar (A/B)</b></summary>
+    <p class="muted small2" style="margin:8px 0 0">Se aplican solo en el laboratorio. El historial del pulgar se agrupa por combinación para comparar.</p>
+    <div class="labaj" id="labAj"></div>
+    <div id="labAjRes"></div>
+  </details>
+  <div class="row"><button class="btn" id="labBorrarRef">Borrar referencias</button><button class="btn" id="labBorrarHist">Borrar historial</button></div>
+</section>
 
 <!-- ───────── resultado ───────── -->
 <section class="page" id="result" hidden>
@@ -2554,9 +2605,8 @@
   const S = { mode: 'home', stream: null, track: null, card: null, attempts: [], best: null, busy: false };
   const video = $('#video'), ov = $('#ov'), og = ov.getContext('2d');
   const grabC = document.createElement('canvas'), grabG = grabC.getContext('2d', { willReadFrequently: true });
-  const filtC = document.createElement('canvas'), filtG = filtC.getContext('2d');
 
-  function show(id) { ['home', 'cam', 'sig', 'result'].forEach((k) => ($('#' + k).hidden = k !== id)); }
+  function show(id) { ['home', 'cam', 'sig', 'result', 'final', 'lab'].forEach((k) => ($('#' + k).hidden = k !== id)); }
   function say(text, cls) { const m = $('#msg'); if (m.textContent !== text) { m.textContent = text; voice(text); } m.className = 'msg ' + (cls || ''); }
   function progress(f) { $('#prog').style.width = Math.round(Math.max(0, Math.min(1, f)) * 100) + '%'; }
   function chips(list) { $('#chips').innerHTML = list.map(([t, ok]) => `<span class="chip ${ok === true ? 'ok' : ok === false ? 'bad' : ''}">${t}</span>`).join(''); }
@@ -2575,7 +2625,19 @@
     const num = (d) => { const m = d.label.match(/(\d+)/); return m ? +m[1] : 99; };
     return (good.length ? good : backs).sort((a, b) => num(a) - num(b))[0];
   }
+  // Mantener la pantalla encendida mientras se usa la cámara: si no, el teléfono se apaga a mitad del enfoque
+  // (no hay toques en pantalla mientras se escanea). El sistema la suelta al ocultar la página: se vuelve a pedir.
+  const WAKE = { lock: null, want: false };
+  async function pantallaEncendida(on) {
+    WAKE.want = on;
+    try {
+      if (on && !WAKE.lock && navigator.wakeLock && document.visibilityState === 'visible') { WAKE.lock = await navigator.wakeLock.request('screen'); WAKE.lock.addEventListener('release', () => { WAKE.lock = null; }); }
+      if (!on && WAKE.lock) { const l = WAKE.lock; WAKE.lock = null; await l.release(); }
+    } catch (e) { WAKE.lock = null; }
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && WAKE.want) pantallaEncendida(true); });
   async function openCamera(facing) {
+    pantallaEncendida(true);
     if (!navigator.mediaDevices?.getUserMedia) throw new Error(location.protocol !== 'https:' ? 'La cámara solo funciona si la página se abre con HTTPS.' : 'Este navegador no permite usar la cámara.');
     const size = facing === 'user' ? { width: { ideal: 1920 }, height: { ideal: 1080 } } : IS_IOS ? { width: { ideal: 3840 }, height: { ideal: 2160 } } : S.camMax ? { width: { ideal: S.camMax }, height: { ideal: S.camMax } } : { width: { ideal: 2560 }, height: { ideal: 2560 } };   // S.camMax: perfil de dispositivo   // lado mayor ≈ 2560, sin forzar orientación
     // Android: resolución nativa de la cámara, sin recortar ni ampliar el cuadro (antes llegaba un cuadrado ampliado)
@@ -2624,7 +2686,7 @@
       setTimeout(keepFocus, 1500);
     } catch (e) {}
   }
-  function closeCamera() { S.stream?.getTracks().forEach((t) => t.stop()); S.stream = null; S.track = null; S.facing = null; S.torchOn = false; }
+  function closeCamera() { setDisplayZoom(1); pantallaEncendida(false); S.stream?.getTracks().forEach((t) => t.stop()); S.stream = null; S.track = null; S.facing = null; S.torchOn = false; }
   async function useCamera(facing) {
     if (S.stream && S.wantFacing === facing && (S.camOpenMax || 0) === (S.camMax || 0)) return;
     closeCamera(); S.wantFacing = facing; await openCamera(facing); S.camOpenMax = S.camMax || 0;
@@ -2653,7 +2715,7 @@
   // Geometría: la imagen de video cubre la pantalla (object-fit: cover)
   function geo() {
     const sw = ov.clientWidth, sh = ov.clientHeight, vw = video.videoWidth, vh = video.videoHeight;
-    const k = Math.max(sw / vw, sh / vh);
+    const k = Math.max(sw / vw, sh / vh) * (S.dz || 1);   // S.dz: ampliación de la vista (scale centrado del <video>)
     return { sw, sh, vw, vh, k, ox: (sw - vw * k) / 2, oy: (sh - vh * k) / 2, mirror: S.facing === 'user' };
   }
   // pantalla → video (si la vista está espejada, se refleja la coordenada x)
@@ -2673,8 +2735,15 @@
     const top = Math.max(0, STAGE.top) + 8, bottom = Math.min(G.sh, STAGE.bottom) - 8;
     return bottom - top > G.sh * 0.3 ? { top, bottom } : { top: 0, bottom: G.sh };   // sin espacio razonable: la pantalla completa
   }
-  // mismo tamaño de siempre (el tamaño cambia cuántos surcos se ven); solo se achica si no cabe en la zona libre
-  function circleGuide(G) { const Z = stage(G), h = Z.bottom - Z.top, d = Math.min(G.sw * 0.74, G.sh * 0.46, h * 0.94); return { cx: G.sw / 2, cy: Z.top + h / 2, r: d / 2 }; }
+  // Punta del dedo: la yema (semicírculo de arriba, cx/cy/r) es la zona que se analiza; los costados bajan
+  // FTIP.sides·r y se desvanecen. Debajo va el medidor de distancia (FTIP.meter px). Se achica si no cabe.
+  const FTIP = { sides: 1.2, meter: 62 };
+  function fingerGuide(G) {
+    const Z = stage(G), h = Z.bottom - Z.top, tall = (1 + FTIP.sides) / 2;   // alto de la silueta / ancho
+    const w = Math.min(G.sw * 0.8, (h - FTIP.meter) / tall, 420), r = w / 2;
+    const y = Z.top + Math.max(6, (h - w * tall - FTIP.meter) / 2);
+    return { cx: G.sw / 2, cy: y + r, r };
+  }
   // Copia una región del video (coords de video) a gris, escalada a maxDim
   function grab(r, maxDim, channel) {
     const x = Math.max(0, r.x), y = Math.max(0, r.y), w = Math.min(video.videoWidth - x, r.w), h = Math.min(video.videoHeight - y, r.h);
@@ -2722,6 +2791,7 @@
     S.mode = 'card';
   }
   function enterPhase(ph) {
+    if (S.prueba && S.prueba.arrancado && ph !== LAB_FASE[S.prueba.punto]) { labDone(); return; }   // laboratorio: terminó el punto
     $('#useBack').hidden = true; $('#useFront').hidden = true; S.cp.offeredFallback = false;   // el enlace de la huella del reverso se ofrece de nuevo tras el tiempo de espera de la fase
     const C = S.cp; C.phase = ph; C.stable = 0; C.box = null; C.boxV = null; C.t0 = performance.now(); C.flipSeen = false;
     C.okRun = 0; C.peak = 0; C.lastSharp = 0; C.retries = 0; C.sigRun = 0; C.liveHist = []; C.faceRes = null; C.faceAt = 0; C.pauseUntil = performance.now() + (ph === 'front' ? 2500 : 1400);   // pausa: tiempo para acomodarse
@@ -2992,6 +3062,7 @@
     showCardSheet(t);
   }
   function showCardSheet(t) {
+    if (S.prueba) { labDone(); return; }   // laboratorio: huella de la cédula lista
     S.mode = 'card-done'; $('#camBottom').hidden = true;
     const sh = $('#sheet'); sh.hidden = false;
     const ends = t.minutiae.filter((m) => m.type === 'ending').length;
@@ -3124,65 +3195,157 @@
     await call('frameStart', {});
     S.attempts = []; S.best = null;
     if (S.raw) { S.raw.fragments = []; try { S.raw.video = S.track.getSettings(); } catch (e) {} }
-    S.fp = { lastAssess: 0, lastFilter: 0, lastCap: 0, thumb: null, marks: null, busy: false, filtered: null, state: null, t0: performance.now(),
+    S.fp = { lastAssess: 0, lastFilter: 0, lastCap: 0, thumb: null, marks: null, busy: false, state: null, t0: performance.now(),
       cov: 0, patches: 0, tried: 0, rejects: 0, preview: null, interim: null, flashBad: 0 };
     $('#camTitle').textContent = 'Escanea tu pulgar'; $('#camSub').textContent = 'Paso 2 de 2 · Tú · recorre la yema con la cámara';
     $('#phases').hidden = true; $('#yoCam').hidden = false; yoEstado('finger', 'now', null);
-    $('#flip').hidden = true; lightButton(true); await setLight(true);
-    const z = $('#zoom'); if ((IS_IOS || PROFILE.zoom2) && !z.hidden && +z.value < 1.6 && +z.max >= 2) { z.value = 2; S.track.applyConstraints({ advanced: [{ zoom: 2 }] }).then(keepFocus).catch(() => {}); }
-    $('#scanRow').hidden = true; $('#finishScan').hidden = false; $('#manual').hidden = true; S.fp.joint = null;   // sin vista doble ni puntitos: el círculo queda libre
+    $('#flip').hidden = true; lightButton(true); await setLight(labAj('linterna', true));
+    // zoom FIJO: 2× (o lo más cercano) sobre la lente principal. Más de 2× puede pasar al teleobjetivo, que no
+    // enfoca de cerca, y cambiarlo en vivo obliga a reenfocar cada vez. La vista se amplía aparte (DISPLAY_ZOOM).
+    const z = $('#zoom'); S.fp.zoom = 1;
+    if (!z.hidden) { const zt = Math.max(+z.min, Math.min(labAj('zoom', 2), +z.max)); S.fp.zoom = zt; if (Math.abs(+z.value - zt) > 0.05) { z.value = zt; S.track.applyConstraints({ advanced: [{ zoom: zt }] }).then(keepFocus).catch(() => {}); } }
+    S.fp.dz = labAj('vista', DISPLAY_ZOOM); setDisplayZoom(S.fp.dz);
+    $('#scanRow').hidden = true; $('#finishScan').hidden = false; $('#manual').hidden = true; S.fp.joint = null;   // sin vista doble ni puntitos: la silueta queda libre
     $('#covPct').textContent = '—'; $('#covLbl').textContent = 'buscando fragmentos nítidos'; drawMini();
-    say(FLAGS.zoomauto && !$('#zoom').hidden ? 'Pon la yema dentro del círculo, a un palmo (unos 15 cm) de la cámara. El zoom y el enfoque se ajustan solos' : PROFILE.zoom2 && !IS_IOS && !$('#zoom').hidden ? 'Zoom activado: pon la yema a unos 12–15 cm de la cámara' : 'Acerca la cámara a la yema hasta ver los surcos grandes');
+    fingerRef();
+    say('Pon la yema dentro de la silueta, a unos 10–15 cm de la cámara');
     await fingerIntro();   // demostración animada (una vez)
     S.mode = 'finger';
   }
+  // Ampliación SOLO de la vista: el dedo se ve grande en pantalla mientras está a 10–15 cm, donde la cámara enfoca.
+  // (Para llenar una guía grande sin ampliar, el dedo tendría que estar a ~5 cm, y ahí ninguna cámara enfoca.)
+  // geo() la incluye, así que la silueta, los recortes y el toque para enfocar siguen calzando con el video.
+  const DISPLAY_ZOOM = 2;
+  function setDisplayZoom(d) { S.dz = d; video.style.transform = d > 1 ? `scale(${d})` : ''; }
+  // panel bajo la barra: la huella de la cédula (el dedo que hay que escanear) junto a una lupa en vivo de la yema
+  async function fingerRef() {
+    const el = $('#fpRef'), d = S.doc && S.doc.close;
+    let ref = '';
+    if (d && d.jpeg && d.box) {
+      const im = await imgEl(d.jpeg);
+      if (im) {
+        const k = im.width / (d.w || im.width), b = d.box, p = 0.1;
+        const x = Math.max(0, (b.x - b.w * p) * k), y = Math.max(0, (b.y - b.h * p) * k);
+        const w = Math.min(im.width - x, b.w * (1 + 2 * p) * k), h = Math.min(im.height - y, b.h * (1 + 2 * p) * k);
+        const c = document.createElement('canvas'); c.width = c.height = 160;
+        const s = Math.min(w, h); c.getContext('2d').drawImage(im, x + (w - s) / 2, y + (h - s) / 2, s, s, 0, 0, 160, 160);
+        ref = `<figure><img src="${c.toDataURL('image/jpeg', 0.85)}" alt="Huella de tu cédula"><figcaption>Tu cédula</figcaption></figure>`;
+      }
+    }
+    if (!/^finger/.test(S.mode || '')) return;
+    el.innerHTML = `${ref}<figure><canvas id="fpLive" width="160" height="160" aria-label="Tu dedo, ampliado"></canvas><figcaption id="fpLiveCap">Tu dedo</figcaption></figure>
+      <span class="fptxt"><b>Pulgar derecho</b><span class="muted">Vas bien cuando en «Tu dedo» se ven líneas nítidas, como en la cédula</span></span>`;
+    el.hidden = false;
+  }
+  // lupa: el centro de la yema, ampliado otra vez al doble (≈10 cuadros por segundo)
+  function drawLoupe(G, c, F, now) {
+    const L = $('#fpLive'); if (!L || now - (F.loupeAt || 0) < 100) return; F.loupeAt = now;
+    const s = c.r / G.k, x = (c.cx - G.ox) / G.k - s / 2, y = (c.cy - G.oy) / G.k - s / 2;
+    try { L.getContext('2d').drawImage(video, x, y, s, s, 0, 0, L.width, L.height); } catch (e) {}
+    const on = !!F.sharpNow; if (L.classList.contains('on') !== on) { L.classList.toggle('on', on); $('#fpLiveCap').textContent = on ? 'Tu dedo ✓' : 'Tu dedo'; }
+  }
   // Prueba de vida básica: la piel refleja más rojo que azul; el papel o plástico de la cédula es neutro o azulado.
   const isSkin = ([r, g, b]) => r > 40 && r >= g && (r - b) / (r + 1) > 0.1;
-  function gate(a, periodVideo, across, skin) {
+  const GLARE_MAX = 0.06;   // fracción de la yema quemada por la linterna (brillo especular) que se tolera
+  // Tamaño del dedo respecto de la silueta (1 = la llena de lado a lado). Se mide por el color de la piel en una
+  // franja más ancha que la yema, así que funciona aunque la imagen esté borrosa (no depende de ver surcos).
+  // Solo la parte alta de la yema: más abajo aparecen el resto de la mano y los otros dedos, también iluminados,
+  // y la medida se inflaba (pedía alejar el dedo de más). Es una guía para cuando está borroso, no un filtro.
+  const FSIZE = { lo: 0.72, hi: 1.45, ok0: 0.85, ok1: 1.2 };
+  const FOCUS_FP = { settleMs: 600, shootMs: 1300 };   // espera tras pedir enfoque · ventana de disparo
+  const sizeC = document.createElement('canvas'), sizeG = sizeC.getContext('2d', { willReadFrequently: true });
+  function fingerSize(G, c) {
+    const vr = toVideo(G, { x: c.cx - 1.6 * c.r, y: c.cy - 0.55 * c.r, w: 3.2 * c.r, h: 0.7 * c.r });
+    const x = Math.max(0, vr.x), y = Math.max(0, vr.y), w = Math.min(video.videoWidth - x, vr.w + Math.min(0, vr.x)), h = Math.min(video.videoHeight - y, vr.h);
+    if (w < 16 || h < 8) return 0;
+    const n = 96, rows = 12, k = n / vr.w;   // k: píxeles de la franja por píxel de video
+    sizeC.width = n; sizeC.height = rows; sizeG.clearRect(0, 0, n, rows);
+    sizeG.drawImage(video, x, y, w, h, (x - vr.x) * k, 0, w * k, rows);
+    const px = sizeG.getImageData(0, 0, n, rows).data, mid = n >> 1, widths = [];
+    const lum = (i) => 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+    for (let r = 0; r < rows; r++) {
+      const o = r * n * 4, ic = o + mid * 4, Lc = lum(ic);
+      if (!isSkin([px[ic], px[ic + 1], px[ic + 2]]) || Lc < 30) continue;
+      const like = (j) => { const i = o + j * 4; return lum(i) > 0.65 * Lc && px[i] >= px[i + 1] * 0.95; };   // casi tan claro y rojizo como el centro (lo más lejano recibe menos linterna)
+      let a = mid, b = mid; while (a > 0 && like(a - 1)) a--; while (b < n - 1 && like(b + 1)) b++;
+      widths.push(b - a + 1);
+    }
+    if (widths.length < rows / 2) return 0;
+    widths.sort((p, q) => p - q);
+    return widths[widths.length >> 1] / (n / 1.6);   // la silueta ocupa n/1.6 de la franja
+  }
+  function gate(a, across, skin, glare, size, phase) {
     // ¿este cuadro sirve como fragmento? Devuelve [mensaje, clase, sirve]
-    if (autoZoomBusy()) return ['Ajustando zoom y enfoque…', 'ok', false];
+    // Mientras está borroso, la distancia se guía por el TAMAÑO del dedo. Si ya se ven los surcos nítidos, la
+    // distancia sirve y el tamaño no bloquea: solo se corrigen los extremos de surcos (muy finos o muy grandes).
+    const sharp = !!a.period && a.cohMean >= 0.34 && a.coverage >= 0.25;
     if (a.brightness < 0.1) return ['Necesitas más luz: activa la linterna', 'warn', false];
     if (!skin) return ['Apunta a la yema de tu pulgar, no a la cédula ni a una foto', 'warn', false];
-    if (a.coverage < 0.25) return [S.fp.patches ? 'Vuelve a apuntar al dedo' : 'Apunta la cámara a la yema del pulgar', '', false];
-    if (!a.period || across > 48) return ['Acerca más la cámara: los surcos deben verse grandes', 'warn', false];
-    if (tooCloseFinger(a, across) || a.period > 22) return ['Aleja un poco el dedo: de tan cerca la cámara no alcanza a enfocar los surcos', 'warn', false];
-    if (a.motion > 0.07) return ['Más despacio…', 'warn', false];
-    if (a.cohMean < 0.34) return ['Enfocando… mantén la distancia', 'warn', false];
+    if (!sharp && size && size < FSIZE.lo) return ['Acerca un poco el dedo', 'warn', false];
+    if (!sharp && size > FSIZE.hi) return ['Aleja un poco el dedo', 'warn', false];
+    if (a.motion > 0.07) return ['Mantén el dedo quieto', 'warn', false];
+    if (glare > GLARE_MAX) return ['La luz se refleja en el dedo: inclínalo un poco', 'warn', false];
+    if (phase === 'focusing' || !sharp) return ['Enfocando… mantén el dedo quieto', '', false];
+    // (textos distintos de los de tamaño: en el ZIP se cuentan por separado)
+    if (across > 56) return ['Acerca el dedo, los surcos se ven muy finos', 'warn', false];
+    if (across < 9 || a.period > 22 * a.w / 200) return ['Aleja el dedo, los surcos se ven muy grandes', 'warn', false];
     return ['', 'ok', true];
   }
   function scanHint() {
     const F = S.fp, J = F.joint;
-    if (!J) return 'Mantén la yema del pulgar dentro del círculo, quieta y enfocada';
+    if (!J) return 'Mantén la yema del pulgar dentro de la silueta, quieta y enfocada';
     if (J.P < 0.5) return 'Sigue: acerca o gira levemente el dedo para otras tomas nítidas';
     if (J.P < 0.995) return 'Muy bien: unas tomas más para confirmar';
     return 'Confirmando…';
   }
 
   function tickFinger(G, now) {
-    const F = S.fp, c = circleGuide(G);
+    const F = S.fp, c = fingerGuide(G);
     const vr = toVideo(G, { x: c.cx - c.r, y: c.cy - c.r, w: 2 * c.r, h: 2 * c.r });
     if (now - F.lastFilter > S.perf.filterEvery) {
       F.lastFilter = now; const tStart = performance.now();
-      const { gray, s, rgb } = grab(vr, S.perf.slow ? 160 : 200, 'gb');
-      if (!PROFILE.noLiveFilter) {   // en teléfonos lentos no se dibuja el filtro de surcos en vivo (ahorra la mitad del trabajo)
-      const f = E.ridgeFilter(E.invert(gray), 1.1);
-      filtC.width = f.w; filtC.height = f.h;
-      const id = filtG.createImageData(f.w, f.h);
-      for (let i = 0, j = 0; i < f.w * f.h; i++, j += 4) { const v = Math.max(0, Math.min(255, f.data[i] * 255)); id.data[j] = id.data[j + 1] = id.data[j + 2] = v; id.data[j + 3] = 255; }
-      filtG.putImageData(id, 0, 0); F.filtered = true;
-      }
+      // 240 px (antes 200): con la vista ampliada caben más surcos en la yema y deben seguir distinguiéndose
+      const { gray, s, rgb } = grab(vr, S.perf.slow ? 190 : 240, 'gb');
       if (now - F.lastAssess > S.perf.assessEvery) {
         F.lastAssess = now;
-        const a = E.assessFrame(gray); a.motion = E.motionBetween(a.thumb, F.thumb); F.thumb = a.thumb;
+        const a = E.assessFrame(gray); a.motion = E.motionBetween(a.thumb, F.thumb); F.thumb = a.thumb; a.w = gray.w;
         const periodVideo = a.period / s, across = a.period ? (2 * c.r / G.k) / periodVideo : 0;
         if (a.period) F.periodVideo = periodVideo;
-        const [text, cls, ok] = gate(a, periodVideo, across, isSkin(rgb));
-        fingerAssist(F, now, ok, text, a, across, isSkin(rgb));   // zoom y enfoque automáticos, consejos
+        const size = fingerSize(G, c), skin = isSkin(rgb);
+        F.size = size; F.sizeAt = now;   // medidor de distancia
+        F.sharpNow = !!a.period && a.cohMean >= 0.34 && a.coverage >= 0.25;
+        const glare = a.brightness > 0.3 ? E.glareIn(gray, { x: 0, y: 0, w: gray.w, h: gray.h }) : 0;
+        // enfocar y después disparar: con el dedo del tamaño justo y quieto se pide un enfoque puntual en la yema,
+        // se espera a que asiente y recién ahí se capturan cuadros. Si en la ventana de disparo salen tomas buenas,
+        // la ventana se alarga (el enfoque sirve); si no, se vuelve a enfocar.
+        const Fc = F.fc || (F.fc = { phase: 'idle', until: 0, still: 0, patches: 0, cycles: 0 });
+        const placed = skin && (!size || (size >= FSIZE.lo && size <= FSIZE.hi) || F.sharpNow);   // sin medida, o ya nítido: no se bloquea
+        if (!placed) { Fc.phase = 'idle'; Fc.still = 0; }
+        else if (a.motion > 0.07) Fc.still = 0;
+        else Fc.still++;
+        const conEnfoque = labAj('enfoque', true);   // laboratorio: se puede comparar contra el enfoque continuo
+        if (conEnfoque && Fc.phase === 'idle' && Fc.still >= 2) {
+          Fc.phase = 'focusing'; Fc.until = now + FOCUS_FP.settleMs; Fc.cycles++; F.peak = 0;
+          focusAt(Math.max(0, Math.min(1, ((c.cx - G.ox) / G.k) / G.vw)), Math.max(0, Math.min(1, ((c.cy - G.oy) / G.k) / G.vh)));
+        } else if (Fc.phase === 'focusing' && now >= Fc.until) { Fc.phase = 'shoot'; Fc.until = now + FOCUS_FP.shootMs; Fc.patches = F.patches; }
+        else if (Fc.phase === 'shoot' && now >= Fc.until) {
+          if (F.patches > Fc.patches) { Fc.until = now + FOCUS_FP.shootMs; Fc.patches = F.patches; } else { Fc.phase = 'idle'; Fc.still = 0; }
+        }
+        const fase = conEnfoque ? Fc.phase : 'shoot', [text, cls, ok] = gate(a, across, skin, glare, size, fase);
+        fingerAssist(F, now, ok, text, a, across, skin);   // consejos y cierre
         F.state = ok ? 'ok' : cls;
-        chips([['surcos ' + (a.period ? Math.round(across) : '—'), !!a.period && across >= 7 && across <= 48], ['nitidez ' + Math.round(a.cohMean * 100) + '%', a.cohMean >= 0.34],
-               ['fragmentos ' + F.patches, null]]);
-        if (now > (F.holdUntil || 0)) say(ok ? scanHint() : text, ok ? 'ok' : cls);
-        if (ok && !F.busy && now - F.lastCap > SCAN.minGap) captureFragment(vr);
+        chips([['tamaño ' + (size ? Math.round(size * 100) + '%' : '—'), size >= FSIZE.lo && size <= FSIZE.hi], ['surcos ' + (a.period ? Math.round(across) : '—'), F.sharpNow],
+               ['nitidez ' + Math.round(a.cohMean * 100) + '%', a.cohMean >= 0.34], ['reflejo ' + Math.round(glare * 100) + '%', glare <= GLARE_MAX], [Fc.phase, null], ['fragmentos ' + F.patches, null]]);
+        // mensajes estables: un aviso se muestra solo si se repite en dos evaluaciones seguidas, y el texto
+        // cambia a lo más una vez por segundo (antes saltaba entre «acerca» y «aleja» en cada cuadro)
+        if (!ok) { F.candN = text === F.candText ? (F.candN || 0) + 1 : 1; F.candText = text; }
+        const msg = ok ? scanHint() : text, cur = $('#msg').textContent;
+        if (now > (F.holdUntil || 0) && (ok || F.candN >= 2) && (msg === cur || now - (F.sayAt || 0) > 1000)) { if (msg !== cur) F.sayAt = now; say(msg, ok ? 'ok' : cls); }
+        // captura en el pico de nitidez: con el dedo en posición, solo se envían los cuadros cercanos a la mejor
+        // nitidez reciente (el enfoque continuo «respira» y los cuadros intermedios salen blandos)
+        F.peak = Math.max((F.peak || 0) * 0.985, ok ? a.sharpness : 0);
+        const sharpOk = a.sharpness >= F.peak * 0.75;
+        if (ok && sharpOk && fase === 'shoot' && !F.busy && now - F.lastCap > SCAN.minGap) captureFragment(vr);
         if ((now - F.t0) / 1000 > SCAN.timeout && !F.busy) fingerTimeUp(F, now);
       }
       // ritmo adaptativo: si el teléfono tarda, se baja la frecuencia del filtro y de la evaluación
@@ -3194,10 +3357,19 @@
     if (!S.perf.drawEvery || now - S.perf.lastDraw >= S.perf.drawEvery) { S.perf.lastDraw = now; drawFingerOverlay(G, c); }
   }
   function drawFingerOverlay(G, c) {
-    const F = S.fp, now = performance.now();
+    const F = S.fp, now = performance.now(), bot = c.cy + c.r * FTIP.sides;
+    // punta del dedo: yema redonda arriba y costados cortos que se desvanecen (el dedo sigue, la guía no)
+    const finger = (g, d, side) => {
+      const r = c.r + d;
+      if (!side) { g.moveTo(c.cx - r, bot); g.lineTo(c.cx - r, c.cy); g.arc(c.cx, c.cy, r, Math.PI, 0); g.lineTo(c.cx + r, bot); return; }
+      g.moveTo(c.cx, c.cy - r); g.arc(c.cx, c.cy, r, -Math.PI / 2, side < 0 ? Math.PI : 0, side < 0); g.lineTo(c.cx + side * r, bot);
+    };
+    const fade = (rgba) => { const gr = og.createLinearGradient(0, c.cy, 0, bot); gr.addColorStop(0, rgba(1)); gr.addColorStop(0.55, rgba(1)); gr.addColorStop(1, rgba(0)); return gr; };
     og.clearRect(0, 0, G.sw, G.sh);
-    og.fillStyle = 'rgba(0,0,0,.5)'; og.beginPath(); og.rect(0, 0, G.sw, G.sh); og.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); og.fill('evenodd');
-    if (F.filtered) { og.save(); og.beginPath(); og.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); og.clip(); og.imageSmoothingEnabled = true; og.drawImage(filtC, c.cx - c.r, c.cy - c.r, 2 * c.r, 2 * c.r); og.restore(); }
+    // oscurece todo menos la punta; el borde de abajo se difumina
+    og.fillStyle = 'rgba(0,0,0,.55)'; og.beginPath(); og.rect(0, 0, G.sw, G.sh); finger(og, 0); og.closePath(); og.fill('evenodd');
+    const fb = og.createLinearGradient(0, c.cy + c.r * 0.6, 0, bot); fb.addColorStop(0, 'rgba(0,0,0,0)'); fb.addColorStop(1, 'rgba(0,0,0,.55)');
+    og.fillStyle = fb; og.fillRect(c.cx - c.r, c.cy + c.r * 0.6, 2 * c.r, bot - c.cy - c.r * 0.6);
     if (F.marks && now - F.marks.t < 900) {
       og.save(); og.globalAlpha = 1 - (now - F.marks.t) / 900; og.beginPath(); og.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); og.clip();
       og.strokeStyle = '#3FD49A'; og.lineWidth = 2; for (const m of F.marks.pts) { og.beginPath(); og.arc(m.x, m.y, 4.5, 0, Math.PI * 2); og.stroke(); }
@@ -3205,11 +3377,30 @@
     }
     const bad = now - F.flashBad < 350;
     const col = bad ? '#F2786A' : F.state === 'ok' ? '#3FD49A' : F.state === 'warn' ? '#F1B84B' : '#F2786A';   // semáforo: rojo no se ve, amarillo casi, verde bien
-    // anillo = cobertura de la huella
-    og.lineWidth = 6; og.strokeStyle = 'rgba(255,255,255,.16)'; og.beginPath(); og.arc(c.cx, c.cy, c.r + 8, 0, Math.PI * 2); og.stroke();
-    og.strokeStyle = '#3FD49A'; og.beginPath(); og.arc(c.cx, c.cy, c.r + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * F.cov); og.stroke();
-    og.lineWidth = 5; og.strokeStyle = col; og.beginPath(); og.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); og.stroke();
+    // contorno exterior = avance (confianza): crece desde la punta del dedo hacia los dos lados
+    og.lineWidth = 6; og.lineCap = 'round'; og.strokeStyle = fade((a) => `rgba(255,255,255,${0.16 * a})`); og.beginPath(); finger(og, 8); og.stroke();
+    const half = (c.r + 8) * Math.PI / 2 + (bot - c.cy), done = Math.max(0, Math.min(1, F.cov)) * half;
+    if (done > 1) { og.strokeStyle = '#3FD49A'; og.setLineDash([done, half * 2]); og.beginPath(); finger(og, 8, -1); finger(og, 8, 1); og.stroke(); og.setLineDash([]); }
+    const rgb = col === '#3FD49A' ? '63,212,154' : col === '#F1B84B' ? '241,184,75' : '242,120,106';
+    og.lineWidth = 5; og.strokeStyle = fade((a) => `rgba(${rgb},${a})`); og.beginPath(); finger(og, 0); og.stroke(); og.lineCap = 'butt';
+    if (S.mode === 'finger') { drawDistance(c, F, now, bot); drawLoupe(G, c, F, now); }
     duoDraw(now);
+  }
+  // medidor de distancia bajo la punta: ancho del dedo respecto de la silueta (escala logarítmica).
+  // Izquierda = muy lejos (dedo chico), derecha = muy cerca (dedo más ancho que la silueta); verde = se acepta.
+  function drawDistance(c, F, now, bot) {
+    if (!F.size || now - (F.sizeAt || 0) > 800) return;
+    const lo = Math.log(0.45), hi = Math.log(1.8), at = (v) => Math.max(0, Math.min(1, (Math.log(v) - lo) / (hi - lo)));
+    const w = c.r * 1.3, x = c.cx - w / 2, y = bot + 14, h = 8;
+    og.fillStyle = 'rgba(0,0,0,.55)'; og.beginPath(); roundRect(og, x - 8, y - 8, w + 16, h + 36, 10); og.fill();
+    og.fillStyle = 'rgba(255,255,255,.18)'; og.beginPath(); roundRect(og, x, y, w, h, 4); og.fill();
+    og.fillStyle = 'rgba(63,212,154,.45)'; og.fillRect(x + at(FSIZE.lo) * w, y, (at(FSIZE.hi) - at(FSIZE.lo)) * w, h);
+    og.fillStyle = 'rgba(63,212,154,.9)'; og.fillRect(x + at(FSIZE.ok0) * w, y, (at(FSIZE.ok1) - at(FSIZE.ok0)) * w, h);
+    const mx = x + at(F.size) * w, good = F.size >= FSIZE.lo && F.size <= FSIZE.hi;
+    og.fillStyle = good ? '#3FD49A' : '#F1B84B'; og.strokeStyle = '#191A1C'; og.lineWidth = 2;
+    og.beginPath(); og.arc(mx, y + h / 2, 8, 0, Math.PI * 2); og.fill(); og.stroke();
+    og.fillStyle = 'rgba(232,238,241,.85)'; og.font = '500 12px sans-serif'; og.textBaseline = 'alphabetic';
+    og.textAlign = 'left'; og.fillText('muy lejos', x, y + h + 20); og.textAlign = 'right'; og.fillText('muy cerca', x + w, y + h + 20); og.textAlign = 'start';
   }
   async function captureFragment(vr) {
     const F = S.fp; F.busy = true; F.lastCap = performance.now();
@@ -3239,6 +3430,7 @@
       if (!r.session) { $('#covSub').textContent = `${F.tried} fotograma${F.tried === 1 ? '' : 's'} revisado${F.tried === 1 ? '' : 's'}`; progress(0); $('#covPct').textContent = '—'; }
       $('#finishScan').disabled = F.patches < 3;
       if (r.accepted) {
+        if (!F.firstAt) F.firstAt = performance.now();   // primera toma nítida (laboratorio)
         yoPulgar(vr);    // la última toma buena queda como miniatura del pulgar
         uxGoodShot(F);   // tono suave + vibración + avance
         if (r.ridge) duoLive(r.ridge);
@@ -3295,7 +3487,7 @@
   const ZC = { key: '' };
   function zoomSync() {
     const z = $('#zoom'), box = $('#zoomChips'); if (!box) return;
-    const on = !z.hidden && S.facing !== 'user', min = +z.min, max = +z.max, v = +z.value;
+    const on = !z.hidden && S.facing !== 'user' && !/^finger/.test(S.mode || ''), min = +z.min, max = +z.max, v = +z.value;
     const niveles = [...new Set([min, 2, 3, 5].filter((x) => x >= min && x <= max).map((x) => +x.toFixed(1)))];
     const act = niveles.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a), niveles[0]);
     const key = `${on}|${niveles.join(',')}|${act}`; if (key === ZC.key) return; ZC.key = key;   // solo se redibuja si cambió algo
@@ -3308,7 +3500,7 @@
   });
 
   function loop(now) {
-    if (S.mode === 'home' || S.mode === 'result' || S.mode === 'sig') { S.looping = false; return; }
+    if (S.mode === 'home' || S.mode === 'result' || S.mode === 'final' || S.mode === 'sig' || S.mode === 'lab') { S.looping = false; return; }
     requestAnimationFrame(loop);
     zoomSync();
     if (!video.videoWidth) return;
@@ -3316,7 +3508,7 @@
     if (S.mode === 'card' || S.mode === 'card-busy') { if (!S.perf.drawEvery || now - S.perf.lastDraw >= S.perf.drawEvery) { S.perf.lastDraw = now; drawCardOverlay(G); } if (S.mode === 'card') tickCard(G, now); }
     else if (S.mode === 'card-done') { og.clearRect(0, 0, G.sw, G.sh); }
     else if (S.mode === 'finger') tickFinger(G, now);
-    else if (S.mode === 'finger-done') drawFingerOverlay(G, circleGuide(G));
+    else if (S.mode === 'finger-done') drawFingerOverlay(G, fingerGuide(G));
     else if (S.mode === 'face') tickFace(G, now);
     else if (S.mode === 'face-done') drawFaceOverlay(G);
     else og.clearRect(0, 0, G.sw, G.sh);
@@ -4342,6 +4534,7 @@
   // ───────── secuencia de pasos y resultado consolidado ─────────
   function nextStep() {
     fingerProfileOff();   // termina la huella: se reanudan las tareas de fondo
+    if (S.prueba) { labDone(); return; }   // laboratorio: un solo punto
     if (!S.best) { if (!S.looping) begin(startFinger); else startFinger().catch(camError); return; }   // se repitió el pulgar desde la firma
     if (!S.face.result) { if (!S.looping) begin(startFace); else startFace().catch(camError); return; }
     if (!S.sig.result) { startSig(false); return; }
@@ -4388,7 +4581,7 @@
   }
   $('#retryFace').addEventListener('click', () => { S.face.result = null; begin(startFace); });
   $('#retrySig').addEventListener('click', () => { S.sig.result = null; startSig(); });
-  $('#sigBack').addEventListener('click', () => { if (S.best && S.face.result) { if (S.sig.result) finish(); else { S.mode = 'home'; show('home'); } } else { S.mode = 'home'; show('home'); } });
+  $('#sigBack').addEventListener('click', () => { if (S.prueba) { labVolver(); return; } if (S.best && S.face.result) { if (S.sig.result) finish(); else { S.mode = 'home'; show('home'); } } else { S.mode = 'home'; show('home'); } });
 
   // huella digital SHA-256 de cada archivo del paquete de evidencia
   async function sha256(data) {
@@ -4407,6 +4600,7 @@
       cierreAnticipadoHuella: !!(S.fp && S.fp.earlyEnd),
       huellaRechazosPorMotivo: (S.fp && S.fp.gateStats) || null,
       huellaZoomAutomatico: (S.fp && S.fp.zoomLog) || null,
+      huellaCaptura: S.fp ? { zoomCamara: S.fp.zoom || null, vistaAmpliada: S.fp.dz || null, ciclosEnfoque: (S.fp.fc && S.fp.fc.cycles) || 0, ultimoTamano: S.fp.size || null } : null,
       funcionesExperimentales: S.flags || null,
       diagnostico: S.diagAt ? { momento: S.diagAt, modo: S.mode, fase: S.cp && S.cp.phase, mensaje: $('#msg').textContent, indicadores: $('#chips').textContent } : null,
       perfilDispositivo: { id: PROFILE.id, nombre: PROFILE.name, modelo: PROFILE.model, pruebaRendimientoMs: PROFILE.benchMs, motivos: PROFILE.reasons, forzado: PROFILE.forced, camaraMaxHuella: PROFILE.fingerMax || null, zoom2: PROFILE.zoom2 },
@@ -4469,17 +4663,19 @@
   // Se puede forzar con ?perfil=ios|android|ajustado|default o COTEJO_CONFIG.perfil.
   const PROFILES = {
     ios: { id: 'ios', name: 'iPhone / iPad', zoom2: false, fingerMax: 0, pauseBg: false },
-    android: { id: 'android', name: 'Android', zoom2: true, fingerMax: 0, pauseBg: false, noLiveFilter: true },   // zoom 2× en la huella: la mayoría de las cámaras Android no enfoca a menos de 10 cm; sin filtro de surcos en vivo (se lagea)
-    ajustado: { id: 'ajustado', name: 'Android ajustado', zoom2: true, fingerMax: 1920, pauseBg: true, slowTick: true, noLiveFilter: true },
+    android: { id: 'android', name: 'Android', zoom2: true, fingerMax: 0, pauseBg: false },   // zoom 2× en la huella: la mayoría de las cámaras Android no enfoca a menos de 10 cm
+    ajustado: { id: 'ajustado', name: 'Android ajustado', zoom2: true, fingerMax: 1920, pauseBg: true, slowTick: true },
     default: { id: 'default', name: 'Estándar', zoom2: false, fingerMax: 0, pauseBg: false },
   };
   // ── funciones experimentales de captura: apagadas por defecto (versión estable) ──
-  //   ?zoomauto=1  zoom automático en la huella (dedo y cédula)
-  //   ?distancia=0 NO pedir alejar el dedo con menos de 16 surcos a la vista (activo por defecto)
-  //   ?enfoque=1   reenfoque forzado cada 3 s durante el escaneo del dedo
+  //   ?zoomauto=1      zoom automático en el pulgar (apagado: el pulgar usa zoom fijo 2× y la vista ampliada;
+  //                    cambiar el zoom en vivo obliga a reenfocar y sobre 2× puede pasar al teleobjetivo)
+  //   ?zoomcedula=1    zoom automático en la huella de la cédula
+  //   ?distancia=0     NO pedir alejar el dedo con menos de 16 surcos a la vista (activo por defecto)
+  //   ?enfoque=1       reenfoque forzado cada 3 s durante el escaneo del dedo
   const QS = new URLSearchParams(location.search), flag = (k) => QS.get(k) === '1' || !!(CFG.experimental && CFG.experimental[k]);
   // distancia: activa por defecto (respaldada por evidencia de iPhone y Pixel); se apaga con ?distancia=0
-  const FLAGS = { zoomauto: flag('zoomauto'), distancia: QS.get('distancia') !== '0', enfoque: flag('enfoque') };
+  const FLAGS = { zoomauto: flag('zoomauto'), zoomCedula: flag('zoomcedula'), distancia: QS.get('distancia') !== '0', enfoque: flag('enfoque') };
   const PROFILE = { ...PROFILES.default, model: null, benchMs: null, reasons: [], forced: false };
   S.profile = PROFILE;
   function setProfile(id, why) { Object.assign(PROFILE, PROFILES[id] || PROFILES.default); if (why) PROFILE.reasons.push(why); showProfile(); }
@@ -4532,9 +4728,9 @@
     if (PROFILE.fingerMax) S.camMax = PROFILE.fingerMax;
     bgPause(true);
     if (PROFILE.slowTick) { S.perf.slow = true; S.perf.filterEvery = Math.max(S.perf.filterEvery, 150); S.perf.assessEvery = Math.max(S.perf.assessEvery, 230); S.perf.drawEvery = 50; }
-    if (PROFILE.noLiveFilter) S.perf.filterEvery = S.perf.assessEvery;   // sin filtro en vivo: una sola lectura de cámara por evaluación
+    S.perf.filterEvery = S.perf.assessEvery;   // sin filtro de surcos en vivo: una sola lectura de cámara por evaluación
   }
-  function fingerProfileOff() { S.camMax = 0; bgPause(false); uxFingerOff(); }
+  function fingerProfileOff() { S.camMax = 0; bgPause(false); uxFingerOff(); setDisplayZoom(1); }
 
   // ═════════════ huella impresa en la cédula: muestra contundente ═════════════
   // Una huella muy entintada se ve como mancha oscura: se prueban versiones de la imagen (sombras aclaradas,
@@ -4604,7 +4800,7 @@
     Z.el.value = nv.toFixed(2);
     S.track.applyConstraints({ advanced: [{ zoom: +Z.el.value }] }).then(keepFocus).catch(() => {});
     setTimeout(() => focusAt(0.5, 0.45), 250);
-    if (S.fp) S.fp.zoomLog = (S.fp.zoomLog || []).concat([{ t: Math.round(performance.now() - S.fp.t0), z: +Z.el.value }]).slice(-40);
+    if (S.fp) { S.fp.zoomLog = (S.fp.zoomLog || []).concat([{ t: Math.round(performance.now() - S.fp.t0), z: +Z.el.value }]).slice(-40); S.fp.peak = 0; }   // otro zoom, otra escala de nitidez
     return true;
   }
   // si la persona mueve el control de zoom a mano, el automático se pausa unos segundos
@@ -4628,7 +4824,7 @@
   }
   // huella de la cédula de cerca: si se ve chica o fina, se acerca con zoom en vez de pedir moverse
   function cardAutoZoom(C, now) {
-    if (!FLAGS.zoomauto) return false;
+    if (!FLAGS.zoomCedula) return false;
     const Z = zoomInfo(); if (!Z || Z.v >= Z.max - 0.05 || now < AZ.pauseUntil) return false;
     if (now < (C.azUntil || 0)) return true;
     C.azN = (C.azN || 0) + 1; if (C.azN > 8) return false;
@@ -4753,7 +4949,7 @@
         <circle cx="236" cy="42" r="7" fill="#191A1C" stroke="#A9B6BF" stroke-width="1.5"/><circle cx="256" cy="42" r="3.5" fill="#F1B84B" class="iflash"/></g>
       <g class="irays" stroke="#F1B84B" stroke-width="2" stroke-linecap="round" opacity=".8"><path d="M205 38 176 30"/><path d="M205 46 172 50"/><path d="M205 54 178 68"/></g>
       <g stroke="#E8EEF1" stroke-width="2" fill="none" stroke-linecap="round"><path d="M118 150h86"/><path d="M118 150l8-5M118 150l8 5M204 150l-8-5M204 150l-8 5"/></g>
-      <text x="161" y="166" fill="#E8EEF1" font-size="12" text-anchor="middle" font-family="sans-serif">un palmo · 15 cm</text>
+      <text x="161" y="166" fill="#E8EEF1" font-size="12" text-anchor="middle" font-family="sans-serif">10–15 cm</text>
       <g class="icheck"><circle cx="160" cy="80" r="16" fill="#3FD49A"/><path d="m152 80 6 6 11-12" stroke="#08161D" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
     </svg>`;
   function fingerIntro(force) {
@@ -4762,12 +4958,12 @@
       const prev = S.mode; S.mode = 'finger-intro';
       const sh = $('#sheet'); sh.hidden = false; $('#camBottom').hidden = true;
       sh.innerHTML = `<b style="font-size:18px">Así se escanea tu pulgar</b>${INTRO_SVG}
-        <ol class="introsteps"><li>Pon la <b>yema del pulgar</b> frente a la cámara de atrás, a <b>un palmo</b>.</li>
-        <li>La <b>luz</b> se enciende sola. Mantén el dedo <b>quieto</b> dentro del círculo.</li>
-        <li>Cuando el círculo se ponga <b style="color:var(--ok)">verde</b> y suene un tono, vas bien.</li></ol>
+        <ol class="introsteps"><li>Pon la <b>yema del pulgar</b> frente a la cámara de atrás, a unos <b>10–15 cm</b>.</li>
+        <li>La <b>luz</b> se enciende sola. Mantén el dedo <b>quieto</b> dentro de la silueta. Arriba ves la huella de tu cédula: usa ese mismo dedo.</li>
+        <li>Mira «Tu dedo» arriba: cuando se vean líneas nítidas, vas bien. Si la marca de la barra de distancia se va a un lado, acerca o aleja el dedo. Cuando la silueta se ponga <b style="color:var(--ok)">verde</b> y suene un tono, vas bien.</li></ol>
         <p class="muted" style="font-size:14px">Tranquilo: esto toma menos de un minuto.</p>
-        <button class="btn primary" id="introOk" style="width:100%">Entendido, empezar</button>`;
-      voice('Así se escanea tu pulgar. Pon la yema frente a la cámara de atrás, a un palmo. Mantén el dedo quieto dentro del círculo. Cuando se ponga verde y suene un tono, vas bien.');
+        <div class="sheetfoot"><button class="btn primary" id="introOk" style="width:100%">Entendido, empezar</button></div>`;
+      voice('Así se escanea tu pulgar. Pon la yema frente a la cámara de atrás, a unos 10 a 15 centímetros. Mantén el dedo quieto dentro de la silueta. Cuando se ponga verde y suene un tono, vas bien.');
       $('#introOk').onclick = () => { uxUnlock(); UX.introSeen = true; sh.hidden = true; $('#camBottom').hidden = false; voiceStop();
         S.mode = prev === 'finger-intro' ? 'finger' : prev; if (S.fp) { S.fp.t0 = performance.now(); S.fp.lastCap = performance.now(); } resolve(); };
     });
@@ -4840,7 +5036,7 @@
     $('#duoBar').style.width = Math.round(info * 100) + '%';
     $('#duoCap').textContent = J && J.P >= 0.99 ? 'Cédula ✓' : 'Cédula ' + Math.round(info * 100) + '%';
   }
-  function uxFingerOff() { $('#cam').classList.remove('simple'); $('#helpBtn').hidden = true; $('#simpleProg').hidden = true; $('#skipFinger').hidden = true; if ($('#duo')) $('#duo').hidden = true; }
+  function uxFingerOff() { $('#fpRef').hidden = true; $('#cam').classList.remove('simple'); $('#helpBtn').hidden = true; $('#simpleProg').hidden = true; $('#skipFinger').hidden = true; if ($('#duo')) $('#duo').hidden = true; }
 
   // ── menos fricción en la huella (no cambia el FPEngine, solo cuándo se termina) ──
   //  · 99 % sostenido 8 s → se termina; tope de 45 s: con 3+ fotos nítidas se sigue con lo que hay.
@@ -4860,7 +5056,7 @@
       <button class="btn primary" id="skipRetry" style="width:100%">Intentar de nuevo</button>
       <button class="btn" id="skipGo" style="width:100%">Continuar sin huella</button>`;
     voice(porTiempo ? 'No logramos leer tu huella. Puedes intentarlo otra vez o continuar sin huella.' : 'Puedes intentarlo otra vez o continuar sin huella.');
-    $('#skipRetry').onclick = () => { sh.hidden = true; $('#camBottom').hidden = false; voiceStop(); if (S.fp) { S.fp.t0 = performance.now(); } S.mode = 'finger'; say('Pon la yema dentro del círculo, quieta, a un palmo de la cámara', ''); };
+    $('#skipRetry').onclick = () => { sh.hidden = true; $('#camBottom').hidden = false; voiceStop(); if (S.fp) { S.fp.t0 = performance.now(); } S.mode = 'finger'; say('Pon la yema dentro de la silueta, quieta, a unos 10–15 cm de la cámara', ''); };
     $('#skipGo').onclick = () => { sh.hidden = true; $('#camBottom').hidden = false; voiceStop(); skipFinger(porTiempo ? 'sin_fotos_nitidas' : 'omitida_por_usuario'); };
   }
   function skipFinger(motivo) {
@@ -4876,7 +5072,7 @@
 
   // 5) mensajes que dan calma cuando tarda (reemplazan los consejos técnicos)
   FTIPS.splice(0, FTIPS.length,
-    'Tranquilo, lo estás haciendo bien. Mantén el dedo quieto dentro del círculo',
+    'Tranquilo, lo estás haciendo bien. Mantén el dedo quieto dentro de la silueta',
     'Acércate a una luz o busca un lugar más iluminado',
     'Limpia suavemente el lente de la cámara con tu ropa',
     'Si tu dedo está muy seco, frótalo un poco con la otra mano',
@@ -4921,10 +5117,46 @@
       else $('#homeWarn').style.cssText = 'background:rgba(209,195,254,.1);border:1px solid rgba(209,195,254,.3);color:var(--ink)';
       delete $('#start').dataset.api; $('#start').disabled = !$('#consent').checked;
     } catch (e) {
+      if (e.status === 404 || e.status === 410) { apiLinkCerrado(e); return; }
       $('#homeWarn').style.cssText = '';
       apiHomeMsg((e.status === 404 || e.status === 410 ? '' : 'No pudimos conectar con el servidor. ') + e.message, true);
       $('#start').dataset.api = 'off'; $('#start').disabled = true;
     }
+  }
+  // pantalla de cierre: reemplaza todo lo demás (no quedan botones para seguir ni repetir)
+  const FINAL_ICO = {
+    ok: '<path d="M10 22l8 8 16-16" stroke-width="4"/>',
+    warn: '<path d="M22 12v12M22 31v.5" stroke-width="4"/>',
+    bad: '<path d="M14 14l16 16M30 14L14 30" stroke-width="4"/>',
+  };
+  function apiFinal(level, title, text, note) {
+    document.documentElement.classList.remove('pc');
+    try { closeCamera(); } catch (e) {}
+    S.mode = 'final'; show('final');
+    $('#finalIco').className = 'final-ico ' + level;
+    $('#finalIco').innerHTML = `<svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${FINAL_ICO[level]}</svg>`;
+    $('#finalTitle').textContent = title;
+    $('#finalText').textContent = text;
+    $('#finalNote').textContent = note || '';
+    $('#finalBack').hidden = true;
+    window.scrollTo(0, 0);
+  }
+  // vuelta al sitio del cliente (url_retorno): botón y redirección automática a los 5 s
+  function apiVolver(url) {
+    let u; try { u = new URL(url); } catch (e) { return; }
+    if (!/^https?:$/.test(u.protocol)) return;
+    const b = $('#finalBack'); b.href = u.href; b.textContent = 'Volver a ' + u.hostname.replace(/^www\./, ''); b.hidden = false;
+    let n = 5;
+    const tick = () => { $('#finalNote').textContent = `Te llevaremos de vuelta en ${n} s…`; if (n-- <= 0) location.assign(u.href); else setTimeout(tick, 1000); };
+    tick();
+  }
+  // link vencido, ya usado o inexistente (404/410 del servidor) o validación cerrada a mitad del envío (409/410)
+  function apiLinkCerrado(e) {
+    const usado = /complet|cerr/i.test(e.message);
+    apiFinal(usado ? 'ok' : 'warn',
+      e.status === 404 ? 'Enlace no válido' : usado ? 'Esta validación ya se completó' : 'Este enlace ya no está disponible',
+      e.message,
+      usado ? 'Este enlace no se puede volver a usar. Si necesitas validar de nuevo, pide un enlace nuevo a quien te lo envió.' : 'Pide un enlace nuevo a quien te lo envió.');
   }
   function apiSendConsent() {
     if (!API || !S.consent) return null;
@@ -5023,14 +5255,17 @@
       if (!put.ok) throw new Error('la subida de la evidencia falló (' + put.status + ')');
       const res = await apiPost('/v1/captura/resultado', { resultado: apiResumen(), evidencia_sha256: sha, manifiesto_sha256: manifest, bytes_cifrados: body.size });
       API.enviado = true; API.estado = res.estado;
-      ['#retryFace', '#retrySig'].forEach((q) => { if ($(q)) $(q).hidden = true; });
-      const txt = res.documento ? res.mensaje.replace('Ya puedes volver a tu documento.', '').trim() + ' ' + res.documento : res.mensaje;
-      apiBox('✓ ' + txt, 'ok');
-      try { uxGood(); voice(txt); } catch (e) {}
+      const habilita = ['aprobada', 'revision'].includes(res.estado);
+      const txt = res.documento || res.mensaje.replace('Validación enviada. ', '');
+      apiFinal(habilita || !res.documento ? 'ok' : 'warn', 'Tu validación fue enviada', txt,
+        'Ya puedes cerrar esta página. Este enlace no se puede volver a usar.');
+      if (res.url_retorno) apiVolver(res.url_retorno);
+      try { uxGood(); voice('Tu validación fue enviada. ' + txt); } catch (e) {}
     } catch (e) {
       const cerrada = e.status === 409 || e.status === 410;
-      const b = apiBox(cerrada ? e.message : 'No se pudo enviar: ' + e.message + '. Revisa tu conexión e inténtalo de nuevo.', 'bad');
-      if (!cerrada) { const btn = document.createElement('button'); btn.className = 'btn primary'; btn.style.width = '100%'; btn.textContent = 'Reintentar envío'; btn.onclick = () => apiSubmit(); b.appendChild(btn); }
+      if (cerrada) { apiLinkCerrado(e); return; }
+      const b = apiBox('No se pudo enviar: ' + e.message + '. Revisa tu conexión e inténtalo de nuevo.', 'bad');
+      const btn = document.createElement('button'); btn.className = 'btn primary'; btn.style.width = '100%'; btn.textContent = 'Reintentar envío'; btn.onclick = () => apiSubmit(); b.appendChild(btn);
     } finally { API.enviando = false; }
   }
   if (CFG.debug && window.__v3p) Object.assign(window.__v3p, { API, apiSubmit, apiResumen, apiOnResult });
@@ -5057,6 +5292,7 @@
   $('#start').addEventListener('click', () => { if (!S.consent) return; begin(startCard); });
   $('#back').addEventListener('click', () => {
     clearInterval(S.cdTimer);
+    if (S.prueba) { labVolver(); return; }
     if (S.mode === 'finger' && S.card) { startCard().catch(camError); return; }
     if ((S.mode === 'face' || S.mode === 'face-done' || S.mode === 'face-wait') && S.card) { S.fc = null; startFinger().catch(camError); return; }
     S.mode = 'home'; $('#cam').classList.remove('screenlight'); closeCamera(); show('home');
@@ -5107,6 +5343,239 @@
       const r = await call('finger', { gray: cr, mirror: true, invert: true }); S.attempts = [{ tpl: r.tpl, match: r.match }]; S.best = S.attempts[0]; finish();
     } catch (err) { w.className = 'notice bad'; w.textContent = err.message; }
   });
+
+  // ═════════════════════════ LABORATORIO (/demo?prueba=1) ═════════════════════════
+  // Prueba cada punto por separado con la MISMA lógica de la validación: se llama a las mismas funciones
+  // (startCard/enterPhase, startFinger, startFace, startSig) y solo cambia qué pasa al terminar el punto:
+  // en vez de seguir al siguiente, se vuelve aquí con su resultado (ganchos en enterPhase, showCardSheet y nextStep).
+  // Nada se envía. Las referencias de la cédula (fotos) quedan en este teléfono (IndexedDB) para repetir un punto
+  // sin volver a fotografiar la cédula; el historial y los ajustes (solo números) en localStorage.
+  const LAB_ON = !API && new URLSearchParams(location.search).get('prueba') === '1';
+  const LAB_PUNTOS = [
+    { k: 'front', g: 'cedula', n: 'Frente', fase: 'front' },
+    { k: 'sigc', g: 'cedula', n: 'Firma de cerca', fase: 'sig' },
+    { k: 'back', g: 'cedula', n: 'Reverso', fase: 'back', necesita: ['front'] },
+    { k: 'close', g: 'cedula', n: 'Huella de cerca', fase: 'close' },
+    { k: 'finger', g: 'tu', n: 'Pulgar', necesita: ['close'] },
+    { k: 'face', g: 'tu', n: 'Rostro', necesita: ['front'] },
+    { k: 'sig', g: 'tu', n: 'Firma', necesita: ['front'] },
+  ];
+  const LAB_FASE = { front: 'front', sigc: 'sig', back: 'back', close: 'close' };
+  const LAB_REF_NOMBRE = { front: 'Frente', close: 'Huella de cerca' };
+  // ajustes del pulgar para comparar (A/B); fuera del laboratorio rigen los valores por defecto
+  const LAB_AJ = [
+    { k: 'vista', n: 'Ampliación de la vista', ops: [[1, '1×'], [1.5, '1,5×'], [2, '2× (actual)'], [2.5, '2,5×']] },
+    { k: 'zoom', n: 'Zoom de la cámara', ops: [[1, '1×'], [1.5, '1,5×'], [2, '2× (actual)']] },
+    { k: 'linterna', n: 'Linterna', ops: [[true, 'Encendida (actual)'], [false, 'Apagada']] },
+    { k: 'enfoque', n: 'Enfoque', ops: [[true, 'Enfocar y disparar (actual)'], [false, 'Continuo']] },
+  ];
+  const lsGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const LAB = { refs: {}, aj: lsGet('v3p.lab.aj', {}), hist: lsGet('v3p.lab.hist', {}) };
+  function labAj(k, def) { return S.prueba && LAB.aj[k] != null ? LAB.aj[k] : def; }
+  const labAjTexto = (aj) => LAB_AJ.map((a) => {
+    const v = aj[a.k] != null ? aj[a.k] : a.ops.find((o) => /actual/.test(o[1]))[0], op = a.ops.find((o) => o[0] === v);
+    return op ? op[1].replace(' (actual)', '') : String(v);
+  }).join(' · ');
+
+  // referencias en IndexedDB (las fotos no caben en localStorage)
+  let labDbP = null;
+  function labDb() {
+    if (!labDbP) labDbP = new Promise((res, rej) => { const r = indexedDB.open('v3p-lab', 1); r.onupgradeneeded = () => r.result.createObjectStore('ref'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    return labDbP;
+  }
+  async function refGet(k) {
+    try { const db = await labDb(); return await new Promise((res) => { const q = db.transaction('ref').objectStore('ref').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch (e) { return null; }
+  }
+  async function refSet(k, v) {
+    LAB.refs[k] = v || null;
+    try { const db = await labDb(); await new Promise((res) => { const t = db.transaction('ref', 'readwrite'), st = t.objectStore('ref'); if (v) st.put(v, k); else st.delete(k); t.oncomplete = res; t.onerror = res; }); } catch (e) {}
+  }
+  async function jpegCanvas(jpeg) { const im = await imgEl(jpeg); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; c.getContext('2d').drawImage(im, 0, 0); return c; }
+  async function jpegGray(jpeg) { const c = await jpegCanvas(jpeg); return E.fromRGBA(c.getContext('2d').getImageData(0, 0, c.width, c.height).data, c.width, c.height, 'lum'); }
+  const labFalta = (P) => (P.necesita || []).filter((r) => !LAB.refs[r]);
+  // estado limpio, igual al que deja startCard (los puntos «Tú» no pasan por la cédula)
+  function labState() {
+    S.doc = { front: null, back: null, close: null, ocr: { front: null, mrz: null, check: null, status: 'pendiente' } };
+    S.face = { card: null, result: null, status: 'pendiente' };
+    S.sig = { box: null, boxAuto: false, ref: null, refInfo: null, tries: [], result: null, status: 'pendiente' };
+    S.raw = { started: new Date().toISOString(), closeups: [], fragments: [], ua: navigator.userAgent };
+  }
+  // si al punto le falta una referencia de la cédula, primero se toma esa y después se sigue con él (LAB.sigue)
+  async function labStart(k) {
+    const P = LAB_PUNTOS.find((p) => p.k === k), R = LAB.refs;
+    if (!P || !S.consent) return;
+    const falta = labFalta(P); if (falta.length) { LAB.sigue = k; return labStart(falta[0]); }
+    $('#labRes').hidden = true; voiceStop(); clearInterval(S.cdTimer);
+    S.prueba = { punto: k, arrancado: false, t0: performance.now(), aj: { ...LAB.aj } };
+    S.yo = null; S.best = null; S.attempts = []; S.overall = null; S.fp = null; S.fc = null; S.card = null;
+    // el reverso necesita el frente (detecta el giro comparando con él); la firma y el rostro se comparan con él
+    const front = R.front && ['sigc', 'back', 'face', 'sig'].includes(k) ? await jpegCanvas(R.front.jpeg) : null;
+    const ponerFrente = () => { if (front) { S.doc.front = { ...R.front, thumb: Float32Array.from(R.front.thumb) }; S.doc.frontCanvas = front; } };
+    if (P.fase) {
+      return begin(async () => {
+        await startCard();   // misma preparación que la validación (cámara, estado de la cédula, OCR, motor facial)
+        ponerFrente();
+        S.prueba.arrancado = true;
+        if (P.fase !== 'front') enterPhase(P.fase);
+      });
+    }
+    labState(); ponerFrente();
+    if (k === 'finger') {
+      S.doc.close = { ...R.close };
+      return begin(async () => {
+        say('Preparando la huella de tu cédula…');
+        // la plantilla se calcula como en la fase de la cédula: mismas variantes de imagen y se queda la mejor
+        const best = await bestCardTemplate(await jpegGray(R.close.jpeg), R.close.box);
+        await call('setCard', { tpl: best.tpl }); S.card = best.tpl;
+        S.prueba.arrancado = true; S.prueba.t0 = performance.now();
+        await startFinger();
+      });
+    }
+    if (k === 'face') { S.prueba.arrancado = true; return begin(startFace); }
+    if (R.sigClose) { S.sig.srcCanvas = await jpegCanvas(R.sigClose.jpeg); S.sig.source = 'acercamiento'; S.sig.box = R.sigClose.box; S.sig.boxAuto = true; S.doc.sigClose = { ...R.sigClose }; buildSigRef(); }
+    S.prueba.arrancado = true; startSig(true);
+  }
+  function labSalir() {
+    voiceStop(); clearInterval(S.cdTimer); try { fingerProfileOff(); } catch (e) {}
+    S.mode = 'lab'; ['#sheet', '#yoSheet', '#sigPick'].forEach((q) => { const el = $(q); if (el) el.hidden = true; });
+    $('#camBottom').hidden = false; $('#cam').classList.remove('screenlight'); closeCamera(); show('lab'); window.scrollTo(0, 0);
+  }
+  function labVolver() { if (S.prueba) S.prueba.fin = true; labSalir(); labRender(); }
+  async function labDone() {
+    const P = S.prueba; if (!P || P.fin) return; P.fin = true;
+    const t = (performance.now() - P.t0) / 1000;
+    labSalir();
+    $('#labRes').hidden = false; $('#labRes').innerHTML = '<div class="card"><span class="busy">Analizando el resultado…</span></div>';
+    let r;
+    try { r = await labResultado(P.punto, t); } catch (e) { r = { nivel: 'bad', titulo: 'Error', facts: [['Detalle', e.message]], imgs: [], hist: { nivel: 'bad' } }; }
+    await labGuardarRef(P.punto);
+    const h = LAB.hist[P.punto] = (LAB.hist[P.punto] || []).concat([{ at: new Date().toISOString(), t: +t.toFixed(1), ...r.hist, ...(P.punto === 'finger' ? { aj: labAjTexto(P.aj) } : {}) }]).slice(-40);
+    lsSet('v3p.lab.hist', LAB.hist);
+    labMostrar(P, r, h.length); labRender();
+  }
+  const espera = async (cond, ms) => { const t0 = performance.now(); while (!cond() && performance.now() - t0 < ms) await new Promise((r) => setTimeout(r, 250)); };
+  const seg = (x) => (x == null ? '—' : x.toFixed(1).replace('.', ',') + ' s');
+  async function labResultado(k, t) {
+    const lv = (ok, warn) => (ok ? 'ok' : warn ? 'warn' : 'bad');
+    const nada = (titulo) => ({ nivel: 'bad', titulo, facts: [['Tiempo', seg(t)]], imgs: [], hist: { nivel: 'bad' } });
+    if (k === 'front') {
+      const d = S.doc.front; if (!d) return nada('Sin foto');
+      await espera(() => S.face.status !== 'buscando' && S.sig.status !== 'buscando', 12000);
+      const q = S.sig.refInfo ? S.sig.refInfo.quality : null, nivel = lv(S.face.card && q >= 40, S.face.card || q);
+      return { nivel, titulo: nivel === 'ok' ? 'Rostro y firma detectados' : 'Revisar', imgs: [d.jpeg, S.face.card && S.face.card.jpeg, S.sig.refInfo && S.sig.refInfo.cropJpeg],
+        facts: [['Tiempo', seg(t)], ['Nitidez (pico · foto)', `${(+d.sharp || 0).toFixed(3)} · ${d.shotSharp}`], ['Rostro', S.face.card ? 'detectado' : S.face.status],
+          ['Firma', q != null ? `detectada · calidad ${q}` : S.sig.status], ['Nombre (OCR)', S.doc.ocr.status || '—']],
+        hist: { nivel, rostro: !!S.face.card, firmaQ: q } };
+    }
+    if (k === 'sigc') {
+      const ri = S.sig.refInfo, acerc = S.sig.source === 'acercamiento' && !!S.doc.sigClose, nivel = lv(acerc && ri && ri.quality >= 40, ri);
+      return { nivel, titulo: acerc ? 'Firma capturada de cerca' : 'Se usó la firma del frente', imgs: [ri && ri.cropJpeg, ri && ri.inkJpeg],
+        facts: [['Tiempo', seg(t)], ['Origen', acerc ? 'acercamiento' : 'frente'], ['Calidad', ri ? ri.quality : '—'], ['Completa', S.doc.sigClose ? (S.doc.sigClose.complete ? 'sí' : 'no') : '—'],
+          ['Nitidez de la foto', S.doc.sigClose ? S.doc.sigClose.sharp : '—']],
+        hist: { nivel, calidad: ri ? ri.quality : null } };
+    }
+    if (k === 'back') {
+      const b = S.doc.back; if (!b) return nada('Sin foto');
+      const nivel = lv(b.box && b.boxAuto, b.box);
+      return { nivel, titulo: b.boxAuto ? 'Huella ubicada sola' : b.box ? 'Huella marcada a mano' : 'Huella no ubicada', imgs: [b.jpeg],
+        facts: [['Tiempo', seg(t)], ['Huella en el reverso', b.box ? (b.boxAuto ? 'automática' : 'manual') : 'no'], ['MRZ (OCR)', S.doc.ocr.mrz ? 'leída' : 'pendiente o sin lectura']],
+        hist: { nivel, auto: !!b.boxAuto } };
+    }
+    if (k === 'close') {
+      const T = S.card; if (!T) return nada('Sin huella');
+      const nivel = lv(solidPrint(T), T.quality >= 35);
+      return { nivel, titulo: solidPrint(T) ? 'Huella sólida' : 'Huella débil', imgs: [S.doc.close && S.doc.close.jpeg], tpl: T,
+        facts: [['Tiempo', seg(t)], ['Calidad', `${T.quality}/100`], ['Puntos clave', T.minutiae.length], ['Intentos', S.cp ? S.cp.tries : '—'], ['Variante de imagen', T.variant || 'original'], ['Patrón', T.pattern]],
+        hist: { nivel, calidad: T.quality, minucias: T.minutiae.length } };
+    }
+    if (k === 'finger') {
+      const B = S.best, F = S.fp || {}; if (!B) return nada('Sin resultado');
+      const J = B.joint, V = B.skipped ? { text: 'No capturada', level: 'warn' } : verdictOf(J), scan = F.t0 ? (performance.now() - F.t0) / 1000 : null;
+      const primera = F.firstAt && F.t0 ? (F.firstAt - F.t0) / 1000 : null;
+      const rech = Object.entries(F.gateStats || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([m, n]) => `${m} (${n})`).join(' · ') || '—';
+      return { nivel: V.level, titulo: V.text, imgs: [yoPulgarImg(), S.doc.close && S.doc.close.jpeg],
+        facts: [['Probabilidad', B.skipped ? '—' : pct(J.P) + ' %'], ['Escaneo', seg(scan)], ['Primera toma nítida', seg(primera)],
+          ['Tomas nítidas · coinciden', `${J.fragments} · ${J.agree}`], ['Ciclos de enfoque', (F.fc && F.fc.cycles) || 0], ['Tamaño del dedo (último)', F.size ? Math.round(F.size * 100) + ' %' : '—'],
+          ['Más rechazos', rech], ['Ajustes', labAjTexto(S.prueba.aj)]],
+        hist: { nivel: V.level, P: B.skipped ? null : J.P, scan: scan == null ? null : +scan.toFixed(1), primera: primera == null ? null : +primera.toFixed(1), tomas: J.fragments } };
+    }
+    if (k === 'face') {
+      const R = S.face.result; if (!R) return nada('Sin resultado');
+      return { nivel: R.verdict.level, titulo: R.verdict.text, imgs: [R.selfies[0] && R.selfies[0].jpeg, S.face.card && S.face.card.jpeg],
+        facts: [['Tiempo', seg(t)], ['Distancia', R.distance ?? '—'], ['Prueba de vida', R.liveness.ok ? livText(R) : 'no superada'], ['Alertas', R.flags.join(' · ') || '—']],
+        hist: { nivel: R.verdict.level, d: R.distance, vida: !!R.liveness.ok } };
+    }
+    const G = S.sig.result; if (!G) return nada('Sin resultado');
+    return { nivel: G.verdict.level, titulo: G.verdict.text, imgs: [S.sig.tries[G.best] && S.sig.tries[G.best].png, S.sig.refInfo && S.sig.refInfo.cropJpeg],
+      facts: [['Tiempo', seg(t)], ['Parecido con la cédula', `${G.match}/100`], ['Consistencia', `${G.consistency ?? '—'}/100`], ['Por firma', G.vsRef.map((r) => r.score).join(' · ')]],
+      hist: { nivel: G.verdict.level, match: G.match } };
+  }
+  // lo capturado en los puntos de la cédula queda como referencia de los demás
+  async function labGuardarRef(k) {
+    if (k === 'front' && S.doc.front) { const d = S.doc.front; await refSet('front', { jpeg: d.jpeg, w: d.w, h: d.h, thumb: Array.from(d.thumb || []), sharp: d.sharp, shotSharp: d.shotSharp, at: d.at }); }
+    if (k === 'sigc') await refSet('sigClose', S.sig.source === 'acercamiento' && S.doc.sigClose && S.sig.box ? { jpeg: S.doc.sigClose.jpeg, box: S.sig.box, complete: S.doc.sigClose.complete, sharp: S.doc.sigClose.sharp, at: S.doc.sigClose.at } : null);
+    if (k === 'back' && S.doc.back) { const b = S.doc.back; await refSet('back', { jpeg: b.jpeg, w: b.w, h: b.h, box: b.box, at: b.at }); }
+    if (k === 'close' && S.doc.close) await refSet('close', { ...S.doc.close });
+  }
+  function labMostrar(P, r, n) {
+    const el = $('#labRes'), nom = LAB_PUNTOS.find((p) => p.k === P.punto).n;
+    // se tomó una referencia pedida por otro punto: si ya no le falta nada, se ofrece seguir con él
+    const sigue = LAB.sigue && LAB_PUNTOS.find((p) => p.k === LAB.sigue && !labFalta(p).length && p.k !== P.punto);
+    el.innerHTML = `<div class="card labres"><div class="sumhead"><b>${nom} · intento ${n}</b><span class="pill ${r.nivel}">${r.titulo}</span></div>
+      <div class="labimgs">${r.imgs.filter(Boolean).map((s) => `<img src="${s}" alt="">`).join('')}${r.tpl ? '<canvas id="labTpl"></canvas>' : ''}</div>
+      <dl class="facts">${r.facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+      <div class="row"><button class="btn" id="labZip">Descargar datos (ZIP)</button><button class="btn${sigue ? '' : ' primary'}" id="labOtra">Repetir</button></div>
+      ${sigue ? `<button class="btn primary" id="labSigue" style="width:100%">Seguir con ${sigue.n}</button>` : ''}</div>`;
+    if (r.tpl) renderTpl(r.tpl, $('#labTpl'));
+    $('#labOtra').onclick = () => labStart(P.punto).catch(camError);
+    if (sigue) $('#labSigue').onclick = () => { LAB.sigue = null; labStart(sigue.k).catch(camError); };
+    $('#labZip').onclick = async () => {
+      const b = $('#labZip'); b.disabled = true; b.textContent = 'Preparando…';
+      try { if (S.best && S.best.mosaic) drawMosaic($('#mosaic'), S.best.mosaic); await makeRawZip(); b.textContent = 'Descargar datos (ZIP)'; }
+      catch (e) { b.textContent = 'No se pudo: ' + e.message; } finally { b.disabled = false; }
+    };
+  }
+  function labResumen(k) {
+    const h = LAB.hist[k] || []; if (!h.length) return 'Sin intentos';
+    const ok = h.filter((x) => x.nivel === 'ok').length, tm = h.reduce((a, x) => a + (x.t || 0), 0) / h.length;
+    return `${h.length} intento${h.length === 1 ? '' : 's'} · ${ok} ok · ${seg(tm)} promedio`;
+  }
+  // pulgar: resumen por combinación de ajustes (para comparar A/B)
+  function labPorAjuste() {
+    const h = LAB.hist.finger || [], g = {}, prom = (xs, f) => { const v = xs.map(f).filter((x) => x != null); return v.length ? seg(v.reduce((a, x) => a + x, 0) / v.length) : '—'; };
+    for (const x of h) (g[x.aj || '—'] = g[x.aj || '—'] || []).push(x);
+    return Object.entries(g).map(([k, xs]) => `<li><b>${k}</b>: ${xs.length} intento${xs.length === 1 ? '' : 's'} · ${xs.filter((x) => x.nivel === 'ok').length} coinciden · escaneo ${prom(xs, (x) => x.scan)} · primera toma ${prom(xs, (x) => x.primera)}</li>`).join('');
+  }
+  function labRender() {
+    const REF = { front: 'front', sigc: 'sigClose', back: 'back', close: 'close' };
+    for (const [g, id] of [['cedula', '#labCedula'], ['tu', '#labTu']]) {
+      $(id).innerHTML = LAB_PUNTOS.filter((p) => p.g === g).map((P) => {
+        const falta = labFalta(P), ref = REF[P.k] && LAB.refs[REF[P.k]];
+        const nota = falta.length ? `Primero se toma: ${falta.map((r) => LAB_REF_NOMBRE[r]).join(', ')} de la cédula` : labResumen(P.k);
+        return `<div class="labrow"><div><b>${P.n}</b>${ref ? ' <span class="pill ok" style="font-size:11px">referencia ✓</span>' : ''}<div class="muted small2">${nota}</div></div>
+          <button class="btn primary" data-lab="${P.k}"${S.consent ? '' : ' disabled'}>Probar</button></div>`;
+      }).join('');
+    }
+    if (!S.consent) $('#labCedula').insertAdjacentHTML('afterbegin', '<p class="muted small2" style="margin:4px 0 0;color:var(--warn)">Marca la autorización de arriba para habilitar las pruebas.</p>');
+    const pa = labPorAjuste(); $('#labAjRes').innerHTML = pa ? `<ul class="muted small3">${pa}</ul>` : '<p class="muted small2">Todavía no hay intentos del pulgar.</p>';
+  }
+  async function labInit() {
+    document.documentElement.classList.remove('pc');   // en un computador también (cámara web)
+    S.mode = 'lab'; labState(); show('lab');
+    for (const k of ['front', 'sigClose', 'back', 'close']) LAB.refs[k] = await refGet(k);
+    $('#labAj').innerHTML = LAB_AJ.map((a) => `<label>${a.n}<select data-aj="${a.k}">${a.ops.map(([v, t]) => `<option value='${JSON.stringify(v)}'${(LAB.aj[a.k] != null ? LAB.aj[a.k] === v : /actual/.test(t)) ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`).join('');
+    $('#labAj').addEventListener('change', (e) => { const s = e.target.closest('select'); if (!s) return; LAB.aj[s.dataset.aj] = JSON.parse(s.value); lsSet('v3p.lab.aj', LAB.aj); });
+    $('#labConsent').addEventListener('change', () => {
+      S.consent = $('#labConsent').checked ? { at: new Date().toISOString(), version: 'laboratorio', text: $('#labConsent').parentElement.textContent.replace(/\s+/g, ' ').trim(), finalidad: 'Pruebas de captura en este teléfono' } : null;
+      labRender();
+    });
+    document.addEventListener('click', (e) => { const b = e.target.closest('[data-lab]'); if (b && !b.disabled) { LAB.sigue = null; labStart(b.dataset.lab).catch(camError); } });
+    $('#labBorrarRef').onclick = async () => { for (const k of ['front', 'sigClose', 'back', 'close']) await refSet(k, null); labRender(); };
+    $('#labBorrarHist').onclick = () => { LAB.hist = {}; lsSet('v3p.lab.hist', {}); labRender(); };
+    labRender();
+  }
+  if (LAB_ON) labInit();
 
   if (!window.isSecureContext) { const w = $('#homeWarn'); w.hidden = false; w.textContent = 'Esta página no se abrió con HTTPS, así que el navegador no permitirá la cámara en vivo. Publícala en un sitio HTTPS o usa fotos.'; }
 })();
