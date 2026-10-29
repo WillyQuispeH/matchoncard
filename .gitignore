@@ -17,3 +17,6 @@ postman/
 
 # HTTPS de desarrollo en la red local (scripts/certificado-dev.sh)
 certs-dev/
+
+# datos biométricos de prueba (fotos de dedos y cédulas): nunca al repositorio
+experimentos/datos/

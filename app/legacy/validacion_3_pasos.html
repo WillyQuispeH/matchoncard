@@ -170,9 +170,7 @@
   .simpleprog .dots i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); display: block; }
   .simpleprog .dots span.on { color: var(--ok); } .simpleprog .dots span.on i { background: var(--ok); border-color: var(--ok); }
   .simpleprog .pl { font: 600 17px var(--sans); color: var(--ink); }
-  .introsvg { width: 100%; height: auto; max-height: 22vh; background: #191A1C; border-radius: 12px; }
-  /* pie fijo de una hoja larga: el botón principal queda a la vista aunque el contenido se desplace */
-  .sheet .sheetfoot { position: sticky; bottom: -14px; margin: 0 -14px -14px; padding: 10px 14px 14px; background: var(--surface); border-radius: 0 0 16px 16px; }
+  .introsvg { width: 100%; height: auto; background: #191A1C; border-radius: 12px; }
   .introsvg .ithumb { animation: ithumb 2.6s ease-in-out infinite; }
   .introsvg .icheck { opacity: 0; animation: icheck 2.6s ease-in-out infinite; }
   .introsvg .irays, .introsvg .iflash { animation: iflash 1.3s ease-in-out infinite; }
@@ -265,7 +263,8 @@
   .labimgs img, .labimgs canvas { height: 96px; width: auto; max-width: 48%; border-radius: 8px; object-fit: contain; background: var(--deep); }
   .labaj { display: grid; gap: 10px; margin: 12px 0; }
   .labaj label { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px; }
-  .labaj select { font: inherit; color: var(--ink); background: var(--deep); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 8px; max-width: 60%; }
+  .labaj select, .labaj input { font: inherit; color: var(--ink); background: var(--deep); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 8px; max-width: 60%; }
+  .labaj input { width: 8em; text-transform: uppercase; }
   /* huella de la cédula como referencia mientras se escanea el pulgar (bajo la barra, como la firma) */
   .fpref { grid-column: 1 / -1; justify-self: center; display: flex; align-items: center; gap: 10px; max-width: 100%; padding: 6px 14px 6px 6px; background: rgba(34,35,36,.82); border: 1px solid var(--line); border-radius: 12px; backdrop-filter: blur(6px); font-size: 13px; line-height: 1.3; }
   .fpref figure { margin: 0; display: grid; gap: 3px; justify-items: center; flex: none; }
@@ -477,6 +476,18 @@
   <div id="labRes" hidden></div>
   <div class="card"><b>Cédula</b><div class="labgrid" id="labCedula"></div></div>
   <div class="card"><b>Tú</b><div class="labgrid" id="labTu"></div></div>
+  <details class="card" id="labRecBox"><summary><b>Recolección para entrenar (yema) y medir la comparación</b></summary>
+    <p class="muted small2" style="margin:8px 0 0">Mientras escaneas un dedo en «Pulgar», se guardan cuadros del video en este teléfono (unos 3 por segundo, hasta 200 por intento). Después los exportas en un ZIP para dibujar la yema y entrenar el modelo. Cada intento también queda etiquetado para medir la comparación con la cédula. Usa un código por persona (A, B, C…), nunca nombres.</p>
+    <div class="consent" style="margin-top:10px"><label class="check"><input type="checkbox" id="labRecOn"><span>Autorizo guardar cuadros de mi dedo para entrenar y medir el reconocimiento de huella de MatchOnCard.</span></label></div>
+    <div class="labaj">
+      <label>Código de la persona<input id="labRecPersona" maxlength="12" placeholder="A" autocomplete="off"></label>
+      <label>Dedo que escaneas<select id="labRecDedo"></select></label>
+      <label>¿Es el titular de la cédula guardada?<select id="labRecTitular"><option value="1">Sí</option><option value="0">No (otra persona)</option></select></label>
+    </div>
+    <p class="muted small2" id="labRecCuenta" style="margin:0"></p>
+    <div id="labRecRes"></div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="labRecBorrar">Borrar cuadros</button><button class="btn primary" id="labRecExportar">Exportar (ZIP)</button></div>
+  </details>
   <details class="card"><summary><b>Ajustes del pulgar (A/B)</b></summary>
     <p class="muted small2" style="margin:8px 0 0">Se aplican solo en el laboratorio. El historial del pulgar se agrupa por combinación para comparar.</p>
     <div class="labaj" id="labAj"></div>
@@ -2686,7 +2697,7 @@
       setTimeout(keepFocus, 1500);
     } catch (e) {}
   }
-  function closeCamera() { setDisplayZoom(1); pantallaEncendida(false); S.stream?.getTracks().forEach((t) => t.stop()); S.stream = null; S.track = null; S.facing = null; S.torchOn = false; }
+  function closeCamera() { pantallaEncendida(false); S.stream?.getTracks().forEach((t) => t.stop()); S.stream = null; S.track = null; S.facing = null; S.torchOn = false; }
   async function useCamera(facing) {
     if (S.stream && S.wantFacing === facing && (S.camOpenMax || 0) === (S.camMax || 0)) return;
     closeCamera(); S.wantFacing = facing; await openCamera(facing); S.camOpenMax = S.camMax || 0;
@@ -2715,7 +2726,7 @@
   // Geometría: la imagen de video cubre la pantalla (object-fit: cover)
   function geo() {
     const sw = ov.clientWidth, sh = ov.clientHeight, vw = video.videoWidth, vh = video.videoHeight;
-    const k = Math.max(sw / vw, sh / vh) * (S.dz || 1);   // S.dz: ampliación de la vista (scale centrado del <video>)
+    const k = Math.max(sw / vw, sh / vh);
     return { sw, sh, vw, vh, k, ox: (sw - vw * k) / 2, oy: (sh - vh * k) / 2, mirror: S.facing === 'user' };
   }
   // pantalla → video (si la vista está espejada, se refleja la coordenada x)
@@ -2735,15 +2746,8 @@
     const top = Math.max(0, STAGE.top) + 8, bottom = Math.min(G.sh, STAGE.bottom) - 8;
     return bottom - top > G.sh * 0.3 ? { top, bottom } : { top: 0, bottom: G.sh };   // sin espacio razonable: la pantalla completa
   }
-  // Punta del dedo: la yema (semicírculo de arriba, cx/cy/r) es la zona que se analiza; los costados bajan
-  // FTIP.sides·r y se desvanecen. Debajo va el medidor de distancia (FTIP.meter px). Se achica si no cabe.
-  const FTIP = { sides: 1.2, meter: 62 };
-  function fingerGuide(G) {
-    const Z = stage(G), h = Z.bottom - Z.top, tall = (1 + FTIP.sides) / 2;   // alto de la silueta / ancho
-    const w = Math.min(G.sw * 0.8, (h - FTIP.meter) / tall, 420), r = w / 2;
-    const y = Z.top + Math.max(6, (h - w * tall - FTIP.meter) / 2);
-    return { cx: G.sw / 2, cy: y + r, r };
-  }
+  // mismo tamaño de siempre (el tamaño cambia cuántos surcos se ven); solo se achica si no cabe en la zona libre
+  function circleGuide(G) { const Z = stage(G), h = Z.bottom - Z.top, d = Math.min(G.sw * 0.74, G.sh * 0.46, h * 0.94); return { cx: G.sw / 2, cy: Z.top + h / 2, r: d / 2 }; }
   // Copia una región del video (coords de video) a gris, escalada a maxDim
   function grab(r, maxDim, channel) {
     const x = Math.max(0, r.x), y = Math.max(0, r.y), w = Math.min(video.videoWidth - x, r.w), h = Math.min(video.videoHeight - y, r.h);
@@ -3200,23 +3204,16 @@
     $('#camTitle').textContent = 'Escanea tu pulgar'; $('#camSub').textContent = 'Paso 2 de 2 · Tú · recorre la yema con la cámara';
     $('#phases').hidden = true; $('#yoCam').hidden = false; yoEstado('finger', 'now', null);
     $('#flip').hidden = true; lightButton(true); await setLight(labAj('linterna', true));
-    // zoom FIJO: 2× (o lo más cercano) sobre la lente principal. Más de 2× puede pasar al teleobjetivo, que no
-    // enfoca de cerca, y cambiarlo en vivo obliga a reenfocar cada vez. La vista se amplía aparte (DISPLAY_ZOOM).
-    const z = $('#zoom'); S.fp.zoom = 1;
-    if (!z.hidden) { const zt = Math.max(+z.min, Math.min(labAj('zoom', 2), +z.max)); S.fp.zoom = zt; if (Math.abs(+z.value - zt) > 0.05) { z.value = zt; S.track.applyConstraints({ advanced: [{ zoom: zt }] }).then(keepFocus).catch(() => {}); } }
-    S.fp.dz = labAj('vista', DISPLAY_ZOOM); setDisplayZoom(S.fp.dz);
-    $('#scanRow').hidden = true; $('#finishScan').hidden = false; $('#manual').hidden = true; S.fp.joint = null;   // sin vista doble ni puntitos: la silueta queda libre
+    const z = $('#zoom'), zq = labAj('zoom', null);   // laboratorio: zoom elegido para comparar
+    if (zq != null && !z.hidden) { const zt = Math.max(+z.min, Math.min(zq, +z.max)); z.value = zt; S.track.applyConstraints({ advanced: [{ zoom: zt }] }).then(keepFocus).catch(() => {}); }
+    else if ((IS_IOS || PROFILE.zoom2) && !z.hidden && +z.value < 1.6 && +z.max >= 2) { z.value = 2; S.track.applyConstraints({ advanced: [{ zoom: 2 }] }).then(keepFocus).catch(() => {}); }
+    $('#scanRow').hidden = true; $('#finishScan').hidden = false; $('#manual').hidden = true; S.fp.joint = null;   // sin vista doble ni puntitos: el círculo queda libre
     $('#covPct').textContent = '—'; $('#covLbl').textContent = 'buscando fragmentos nítidos'; drawMini();
-    fingerRef();
-    say('Pon la yema dentro de la silueta, a unos 10–15 cm de la cámara');
+    fingerRef();   // panel: huella de la cédula y lupa «Tu dedo»
+    say(FLAGS.zoomauto && !$('#zoom').hidden ? 'Pon la yema dentro del círculo, a un palmo (unos 15 cm) de la cámara. El zoom y el enfoque se ajustan solos' : PROFILE.zoom2 && !IS_IOS && !$('#zoom').hidden ? 'Zoom activado: pon la yema a unos 12–15 cm de la cámara' : 'Acerca la cámara a la yema hasta ver los surcos grandes');
     await fingerIntro();   // demostración animada (una vez)
     S.mode = 'finger';
   }
-  // Ampliación SOLO de la vista: el dedo se ve grande en pantalla mientras está a 10–15 cm, donde la cámara enfoca.
-  // (Para llenar una guía grande sin ampliar, el dedo tendría que estar a ~5 cm, y ahí ninguna cámara enfoca.)
-  // geo() la incluye, así que la silueta, los recortes y el toque para enfocar siguen calzando con el video.
-  const DISPLAY_ZOOM = 2;
-  function setDisplayZoom(d) { S.dz = d; video.style.transform = d > 1 ? `scale(${d})` : ''; }
   // panel bajo la barra: la huella de la cédula (el dedo que hay que escanear) junto a una lupa en vivo de la yema
   async function fingerRef() {
     const el = $('#fpRef'), d = S.doc && S.doc.close;
@@ -3246,106 +3243,46 @@
   }
   // Prueba de vida básica: la piel refleja más rojo que azul; el papel o plástico de la cédula es neutro o azulado.
   const isSkin = ([r, g, b]) => r > 40 && r >= g && (r - b) / (r + 1) > 0.1;
-  const GLARE_MAX = 0.06;   // fracción de la yema quemada por la linterna (brillo especular) que se tolera
-  // Tamaño del dedo respecto de la silueta (1 = la llena de lado a lado). Se mide por el color de la piel en una
-  // franja más ancha que la yema, así que funciona aunque la imagen esté borrosa (no depende de ver surcos).
-  // Solo la parte alta de la yema: más abajo aparecen el resto de la mano y los otros dedos, también iluminados,
-  // y la medida se inflaba (pedía alejar el dedo de más). Es una guía para cuando está borroso, no un filtro.
-  const FSIZE = { lo: 0.72, hi: 1.45, ok0: 0.85, ok1: 1.2 };
-  const FOCUS_FP = { settleMs: 600, shootMs: 1300 };   // espera tras pedir enfoque · ventana de disparo
-  const sizeC = document.createElement('canvas'), sizeG = sizeC.getContext('2d', { willReadFrequently: true });
-  function fingerSize(G, c) {
-    const vr = toVideo(G, { x: c.cx - 1.6 * c.r, y: c.cy - 0.55 * c.r, w: 3.2 * c.r, h: 0.7 * c.r });
-    const x = Math.max(0, vr.x), y = Math.max(0, vr.y), w = Math.min(video.videoWidth - x, vr.w + Math.min(0, vr.x)), h = Math.min(video.videoHeight - y, vr.h);
-    if (w < 16 || h < 8) return 0;
-    const n = 96, rows = 12, k = n / vr.w;   // k: píxeles de la franja por píxel de video
-    sizeC.width = n; sizeC.height = rows; sizeG.clearRect(0, 0, n, rows);
-    sizeG.drawImage(video, x, y, w, h, (x - vr.x) * k, 0, w * k, rows);
-    const px = sizeG.getImageData(0, 0, n, rows).data, mid = n >> 1, widths = [];
-    const lum = (i) => 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-    for (let r = 0; r < rows; r++) {
-      const o = r * n * 4, ic = o + mid * 4, Lc = lum(ic);
-      if (!isSkin([px[ic], px[ic + 1], px[ic + 2]]) || Lc < 30) continue;
-      const like = (j) => { const i = o + j * 4; return lum(i) > 0.65 * Lc && px[i] >= px[i + 1] * 0.95; };   // casi tan claro y rojizo como el centro (lo más lejano recibe menos linterna)
-      let a = mid, b = mid; while (a > 0 && like(a - 1)) a--; while (b < n - 1 && like(b + 1)) b++;
-      widths.push(b - a + 1);
-    }
-    if (widths.length < rows / 2) return 0;
-    widths.sort((p, q) => p - q);
-    return widths[widths.length >> 1] / (n / 1.6);   // la silueta ocupa n/1.6 de la franja
-  }
-  function gate(a, across, skin, glare, size, phase) {
+  function gate(a, periodVideo, across, skin) {
     // ¿este cuadro sirve como fragmento? Devuelve [mensaje, clase, sirve]
-    // Mientras está borroso, la distancia se guía por el TAMAÑO del dedo. Si ya se ven los surcos nítidos, la
-    // distancia sirve y el tamaño no bloquea: solo se corrigen los extremos de surcos (muy finos o muy grandes).
-    const sharp = !!a.period && a.cohMean >= 0.34 && a.coverage >= 0.25;
+    if (autoZoomBusy()) return ['Ajustando zoom y enfoque…', 'ok', false];
     if (a.brightness < 0.1) return ['Necesitas más luz: activa la linterna', 'warn', false];
     if (!skin) return ['Apunta a la yema de tu pulgar, no a la cédula ni a una foto', 'warn', false];
-    if (!sharp && size && size < FSIZE.lo) return ['Acerca un poco el dedo', 'warn', false];
-    if (!sharp && size > FSIZE.hi) return ['Aleja un poco el dedo', 'warn', false];
-    if (a.motion > 0.07) return ['Mantén el dedo quieto', 'warn', false];
-    if (glare > GLARE_MAX) return ['La luz se refleja en el dedo: inclínalo un poco', 'warn', false];
-    if (phase === 'focusing' || !sharp) return ['Enfocando… mantén el dedo quieto', '', false];
-    // (textos distintos de los de tamaño: en el ZIP se cuentan por separado)
-    if (across > 56) return ['Acerca el dedo, los surcos se ven muy finos', 'warn', false];
-    if (across < 9 || a.period > 22 * a.w / 200) return ['Aleja el dedo, los surcos se ven muy grandes', 'warn', false];
+    if (a.coverage < 0.25) return [S.fp.patches ? 'Vuelve a apuntar al dedo' : 'Apunta la cámara a la yema del pulgar', '', false];
+    if (!a.period || across > 48) return ['Acerca más la cámara: los surcos deben verse grandes', 'warn', false];
+    if (tooCloseFinger(a, across) || a.period > 22) return ['Aleja un poco el dedo: de tan cerca la cámara no alcanza a enfocar los surcos', 'warn', false];
+    if (a.motion > 0.07) return ['Más despacio…', 'warn', false];
+    if (a.cohMean < 0.34) return ['Enfocando… mantén la distancia', 'warn', false];
     return ['', 'ok', true];
   }
   function scanHint() {
     const F = S.fp, J = F.joint;
-    if (!J) return 'Mantén la yema del pulgar dentro de la silueta, quieta y enfocada';
+    if (!J) return 'Mantén la yema del pulgar dentro del círculo, quieta y enfocada';
     if (J.P < 0.5) return 'Sigue: acerca o gira levemente el dedo para otras tomas nítidas';
     if (J.P < 0.995) return 'Muy bien: unas tomas más para confirmar';
     return 'Confirmando…';
   }
 
   function tickFinger(G, now) {
-    const F = S.fp, c = fingerGuide(G);
+    const F = S.fp, c = circleGuide(G);
     const vr = toVideo(G, { x: c.cx - c.r, y: c.cy - c.r, w: 2 * c.r, h: 2 * c.r });
     if (now - F.lastFilter > S.perf.filterEvery) {
       F.lastFilter = now; const tStart = performance.now();
-      // 240 px (antes 200): con la vista ampliada caben más surcos en la yema y deben seguir distinguiéndose
-      const { gray, s, rgb } = grab(vr, S.perf.slow ? 190 : 240, 'gb');
+      const { gray, s, rgb } = grab(vr, S.perf.slow ? 160 : 200, 'gb');
       if (now - F.lastAssess > S.perf.assessEvery) {
         F.lastAssess = now;
-        const a = E.assessFrame(gray); a.motion = E.motionBetween(a.thumb, F.thumb); F.thumb = a.thumb; a.w = gray.w;
+        const a = E.assessFrame(gray); a.motion = E.motionBetween(a.thumb, F.thumb); F.thumb = a.thumb;
         const periodVideo = a.period / s, across = a.period ? (2 * c.r / G.k) / periodVideo : 0;
         if (a.period) F.periodVideo = periodVideo;
-        const size = fingerSize(G, c), skin = isSkin(rgb);
-        F.size = size; F.sizeAt = now;   // medidor de distancia
-        F.sharpNow = !!a.period && a.cohMean >= 0.34 && a.coverage >= 0.25;
-        const glare = a.brightness > 0.3 ? E.glareIn(gray, { x: 0, y: 0, w: gray.w, h: gray.h }) : 0;
-        // enfocar y después disparar: con el dedo del tamaño justo y quieto se pide un enfoque puntual en la yema,
-        // se espera a que asiente y recién ahí se capturan cuadros. Si en la ventana de disparo salen tomas buenas,
-        // la ventana se alarga (el enfoque sirve); si no, se vuelve a enfocar.
-        const Fc = F.fc || (F.fc = { phase: 'idle', until: 0, still: 0, patches: 0, cycles: 0 });
-        const placed = skin && (!size || (size >= FSIZE.lo && size <= FSIZE.hi) || F.sharpNow);   // sin medida, o ya nítido: no se bloquea
-        if (!placed) { Fc.phase = 'idle'; Fc.still = 0; }
-        else if (a.motion > 0.07) Fc.still = 0;
-        else Fc.still++;
-        const conEnfoque = labAj('enfoque', true);   // laboratorio: se puede comparar contra el enfoque continuo
-        if (conEnfoque && Fc.phase === 'idle' && Fc.still >= 2) {
-          Fc.phase = 'focusing'; Fc.until = now + FOCUS_FP.settleMs; Fc.cycles++; F.peak = 0;
-          focusAt(Math.max(0, Math.min(1, ((c.cx - G.ox) / G.k) / G.vw)), Math.max(0, Math.min(1, ((c.cy - G.oy) / G.k) / G.vh)));
-        } else if (Fc.phase === 'focusing' && now >= Fc.until) { Fc.phase = 'shoot'; Fc.until = now + FOCUS_FP.shootMs; Fc.patches = F.patches; }
-        else if (Fc.phase === 'shoot' && now >= Fc.until) {
-          if (F.patches > Fc.patches) { Fc.until = now + FOCUS_FP.shootMs; Fc.patches = F.patches; } else { Fc.phase = 'idle'; Fc.still = 0; }
-        }
-        const fase = conEnfoque ? Fc.phase : 'shoot', [text, cls, ok] = gate(a, across, skin, glare, size, fase);
-        fingerAssist(F, now, ok, text, a, across, skin);   // consejos y cierre
+        const [text, cls, ok] = gate(a, periodVideo, across, isSkin(rgb));
+        F.sharpNow = !!a.period && a.cohMean >= 0.34 && a.coverage >= 0.25;   // borde verde de la lupa «Tu dedo»
+        fingerAssist(F, now, ok, text, a, across, isSkin(rgb));   // zoom y enfoque automáticos, consejos
         F.state = ok ? 'ok' : cls;
-        chips([['tamaño ' + (size ? Math.round(size * 100) + '%' : '—'), size >= FSIZE.lo && size <= FSIZE.hi], ['surcos ' + (a.period ? Math.round(across) : '—'), F.sharpNow],
-               ['nitidez ' + Math.round(a.cohMean * 100) + '%', a.cohMean >= 0.34], ['reflejo ' + Math.round(glare * 100) + '%', glare <= GLARE_MAX], [Fc.phase, null], ['fragmentos ' + F.patches, null]]);
-        // mensajes estables: un aviso se muestra solo si se repite en dos evaluaciones seguidas, y el texto
-        // cambia a lo más una vez por segundo (antes saltaba entre «acerca» y «aleja» en cada cuadro)
-        if (!ok) { F.candN = text === F.candText ? (F.candN || 0) + 1 : 1; F.candText = text; }
-        const msg = ok ? scanHint() : text, cur = $('#msg').textContent;
-        if (now > (F.holdUntil || 0) && (ok || F.candN >= 2) && (msg === cur || now - (F.sayAt || 0) > 1000)) { if (msg !== cur) F.sayAt = now; say(msg, ok ? 'ok' : cls); }
-        // captura en el pico de nitidez: con el dedo en posición, solo se envían los cuadros cercanos a la mejor
-        // nitidez reciente (el enfoque continuo «respira» y los cuadros intermedios salen blandos)
-        F.peak = Math.max((F.peak || 0) * 0.985, ok ? a.sharpness : 0);
-        const sharpOk = a.sharpness >= F.peak * 0.75;
-        if (ok && sharpOk && fase === 'shoot' && !F.busy && now - F.lastCap > SCAN.minGap) captureFragment(vr);
+        chips([['surcos ' + (a.period ? Math.round(across) : '—'), !!a.period && across >= 7 && across <= 48], ['nitidez ' + Math.round(a.cohMean * 100) + '%', a.cohMean >= 0.34],
+               ['fragmentos ' + F.patches, null]]);
+        if (now > (F.holdUntil || 0)) say(ok ? scanHint() : text, ok ? 'ok' : cls);
+        if (ok && !F.busy && now - F.lastCap > SCAN.minGap) captureFragment(vr);
+        if (S.prueba) labRecolectar(G, c, F, now, { a, size: 0, ok, text, glare: 0, fase: null });   // laboratorio: cuadros para entrenar
         if ((now - F.t0) / 1000 > SCAN.timeout && !F.busy) fingerTimeUp(F, now);
       }
       // ritmo adaptativo: si el teléfono tarda, se baja la frecuencia del filtro y de la evaluación
@@ -3357,19 +3294,9 @@
     if (!S.perf.drawEvery || now - S.perf.lastDraw >= S.perf.drawEvery) { S.perf.lastDraw = now; drawFingerOverlay(G, c); }
   }
   function drawFingerOverlay(G, c) {
-    const F = S.fp, now = performance.now(), bot = c.cy + c.r * FTIP.sides;
-    // punta del dedo: yema redonda arriba y costados cortos que se desvanecen (el dedo sigue, la guía no)
-    const finger = (g, d, side) => {
-      const r = c.r + d;
-      if (!side) { g.moveTo(c.cx - r, bot); g.lineTo(c.cx - r, c.cy); g.arc(c.cx, c.cy, r, Math.PI, 0); g.lineTo(c.cx + r, bot); return; }
-      g.moveTo(c.cx, c.cy - r); g.arc(c.cx, c.cy, r, -Math.PI / 2, side < 0 ? Math.PI : 0, side < 0); g.lineTo(c.cx + side * r, bot);
-    };
-    const fade = (rgba) => { const gr = og.createLinearGradient(0, c.cy, 0, bot); gr.addColorStop(0, rgba(1)); gr.addColorStop(0.55, rgba(1)); gr.addColorStop(1, rgba(0)); return gr; };
+    const F = S.fp, now = performance.now();
     og.clearRect(0, 0, G.sw, G.sh);
-    // oscurece todo menos la punta; el borde de abajo se difumina
-    og.fillStyle = 'rgba(0,0,0,.55)'; og.beginPath(); og.rect(0, 0, G.sw, G.sh); finger(og, 0); og.closePath(); og.fill('evenodd');
-    const fb = og.createLinearGradient(0, c.cy + c.r * 0.6, 0, bot); fb.addColorStop(0, 'rgba(0,0,0,0)'); fb.addColorStop(1, 'rgba(0,0,0,.55)');
-    og.fillStyle = fb; og.fillRect(c.cx - c.r, c.cy + c.r * 0.6, 2 * c.r, bot - c.cy - c.r * 0.6);
+    og.fillStyle = 'rgba(0,0,0,.5)'; og.beginPath(); og.rect(0, 0, G.sw, G.sh); og.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); og.fill('evenodd');
     if (F.marks && now - F.marks.t < 900) {
       og.save(); og.globalAlpha = 1 - (now - F.marks.t) / 900; og.beginPath(); og.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); og.clip();
       og.strokeStyle = '#3FD49A'; og.lineWidth = 2; for (const m of F.marks.pts) { og.beginPath(); og.arc(m.x, m.y, 4.5, 0, Math.PI * 2); og.stroke(); }
@@ -3377,30 +3304,12 @@
     }
     const bad = now - F.flashBad < 350;
     const col = bad ? '#F2786A' : F.state === 'ok' ? '#3FD49A' : F.state === 'warn' ? '#F1B84B' : '#F2786A';   // semáforo: rojo no se ve, amarillo casi, verde bien
-    // contorno exterior = avance (confianza): crece desde la punta del dedo hacia los dos lados
-    og.lineWidth = 6; og.lineCap = 'round'; og.strokeStyle = fade((a) => `rgba(255,255,255,${0.16 * a})`); og.beginPath(); finger(og, 8); og.stroke();
-    const half = (c.r + 8) * Math.PI / 2 + (bot - c.cy), done = Math.max(0, Math.min(1, F.cov)) * half;
-    if (done > 1) { og.strokeStyle = '#3FD49A'; og.setLineDash([done, half * 2]); og.beginPath(); finger(og, 8, -1); finger(og, 8, 1); og.stroke(); og.setLineDash([]); }
-    const rgb = col === '#3FD49A' ? '63,212,154' : col === '#F1B84B' ? '241,184,75' : '242,120,106';
-    og.lineWidth = 5; og.strokeStyle = fade((a) => `rgba(${rgb},${a})`); og.beginPath(); finger(og, 0); og.stroke(); og.lineCap = 'butt';
-    if (S.mode === 'finger') { drawDistance(c, F, now, bot); drawLoupe(G, c, F, now); }
+    // anillo = cobertura de la huella
+    og.lineWidth = 6; og.strokeStyle = 'rgba(255,255,255,.16)'; og.beginPath(); og.arc(c.cx, c.cy, c.r + 8, 0, Math.PI * 2); og.stroke();
+    og.strokeStyle = '#3FD49A'; og.beginPath(); og.arc(c.cx, c.cy, c.r + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * F.cov); og.stroke();
+    og.lineWidth = 5; og.strokeStyle = col; og.beginPath(); og.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); og.stroke();
+    if (S.mode === 'finger') drawLoupe(G, c, F, now);
     duoDraw(now);
-  }
-  // medidor de distancia bajo la punta: ancho del dedo respecto de la silueta (escala logarítmica).
-  // Izquierda = muy lejos (dedo chico), derecha = muy cerca (dedo más ancho que la silueta); verde = se acepta.
-  function drawDistance(c, F, now, bot) {
-    if (!F.size || now - (F.sizeAt || 0) > 800) return;
-    const lo = Math.log(0.45), hi = Math.log(1.8), at = (v) => Math.max(0, Math.min(1, (Math.log(v) - lo) / (hi - lo)));
-    const w = c.r * 1.3, x = c.cx - w / 2, y = bot + 14, h = 8;
-    og.fillStyle = 'rgba(0,0,0,.55)'; og.beginPath(); roundRect(og, x - 8, y - 8, w + 16, h + 36, 10); og.fill();
-    og.fillStyle = 'rgba(255,255,255,.18)'; og.beginPath(); roundRect(og, x, y, w, h, 4); og.fill();
-    og.fillStyle = 'rgba(63,212,154,.45)'; og.fillRect(x + at(FSIZE.lo) * w, y, (at(FSIZE.hi) - at(FSIZE.lo)) * w, h);
-    og.fillStyle = 'rgba(63,212,154,.9)'; og.fillRect(x + at(FSIZE.ok0) * w, y, (at(FSIZE.ok1) - at(FSIZE.ok0)) * w, h);
-    const mx = x + at(F.size) * w, good = F.size >= FSIZE.lo && F.size <= FSIZE.hi;
-    og.fillStyle = good ? '#3FD49A' : '#F1B84B'; og.strokeStyle = '#191A1C'; og.lineWidth = 2;
-    og.beginPath(); og.arc(mx, y + h / 2, 8, 0, Math.PI * 2); og.fill(); og.stroke();
-    og.fillStyle = 'rgba(232,238,241,.85)'; og.font = '500 12px sans-serif'; og.textBaseline = 'alphabetic';
-    og.textAlign = 'left'; og.fillText('muy lejos', x, y + h + 20); og.textAlign = 'right'; og.fillText('muy cerca', x + w, y + h + 20); og.textAlign = 'start';
   }
   async function captureFragment(vr) {
     const F = S.fp; F.busy = true; F.lastCap = performance.now();
@@ -3487,7 +3396,7 @@
   const ZC = { key: '' };
   function zoomSync() {
     const z = $('#zoom'), box = $('#zoomChips'); if (!box) return;
-    const on = !z.hidden && S.facing !== 'user' && !/^finger/.test(S.mode || ''), min = +z.min, max = +z.max, v = +z.value;
+    const on = !z.hidden && S.facing !== 'user', min = +z.min, max = +z.max, v = +z.value;
     const niveles = [...new Set([min, 2, 3, 5].filter((x) => x >= min && x <= max).map((x) => +x.toFixed(1)))];
     const act = niveles.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a), niveles[0]);
     const key = `${on}|${niveles.join(',')}|${act}`; if (key === ZC.key) return; ZC.key = key;   // solo se redibuja si cambió algo
@@ -3508,7 +3417,7 @@
     if (S.mode === 'card' || S.mode === 'card-busy') { if (!S.perf.drawEvery || now - S.perf.lastDraw >= S.perf.drawEvery) { S.perf.lastDraw = now; drawCardOverlay(G); } if (S.mode === 'card') tickCard(G, now); }
     else if (S.mode === 'card-done') { og.clearRect(0, 0, G.sw, G.sh); }
     else if (S.mode === 'finger') tickFinger(G, now);
-    else if (S.mode === 'finger-done') drawFingerOverlay(G, fingerGuide(G));
+    else if (S.mode === 'finger-done') drawFingerOverlay(G, circleGuide(G));
     else if (S.mode === 'face') tickFace(G, now);
     else if (S.mode === 'face-done') drawFaceOverlay(G);
     else og.clearRect(0, 0, G.sw, G.sh);
@@ -4600,7 +4509,6 @@
       cierreAnticipadoHuella: !!(S.fp && S.fp.earlyEnd),
       huellaRechazosPorMotivo: (S.fp && S.fp.gateStats) || null,
       huellaZoomAutomatico: (S.fp && S.fp.zoomLog) || null,
-      huellaCaptura: S.fp ? { zoomCamara: S.fp.zoom || null, vistaAmpliada: S.fp.dz || null, ciclosEnfoque: (S.fp.fc && S.fp.fc.cycles) || 0, ultimoTamano: S.fp.size || null } : null,
       funcionesExperimentales: S.flags || null,
       diagnostico: S.diagAt ? { momento: S.diagAt, modo: S.mode, fase: S.cp && S.cp.phase, mensaje: $('#msg').textContent, indicadores: $('#chips').textContent } : null,
       perfilDispositivo: { id: PROFILE.id, nombre: PROFILE.name, modelo: PROFILE.model, pruebaRendimientoMs: PROFILE.benchMs, motivos: PROFILE.reasons, forzado: PROFILE.forced, camaraMaxHuella: PROFILE.fingerMax || null, zoom2: PROFILE.zoom2 },
@@ -4668,14 +4576,12 @@
     default: { id: 'default', name: 'Estándar', zoom2: false, fingerMax: 0, pauseBg: false },
   };
   // ── funciones experimentales de captura: apagadas por defecto (versión estable) ──
-  //   ?zoomauto=1      zoom automático en el pulgar (apagado: el pulgar usa zoom fijo 2× y la vista ampliada;
-  //                    cambiar el zoom en vivo obliga a reenfocar y sobre 2× puede pasar al teleobjetivo)
-  //   ?zoomcedula=1    zoom automático en la huella de la cédula
-  //   ?distancia=0     NO pedir alejar el dedo con menos de 16 surcos a la vista (activo por defecto)
-  //   ?enfoque=1       reenfoque forzado cada 3 s durante el escaneo del dedo
+  //   ?zoomauto=1  zoom automático en la huella (dedo y cédula)
+  //   ?distancia=0 NO pedir alejar el dedo con menos de 16 surcos a la vista (activo por defecto)
+  //   ?enfoque=1   reenfoque forzado cada 3 s durante el escaneo del dedo
   const QS = new URLSearchParams(location.search), flag = (k) => QS.get(k) === '1' || !!(CFG.experimental && CFG.experimental[k]);
   // distancia: activa por defecto (respaldada por evidencia de iPhone y Pixel); se apaga con ?distancia=0
-  const FLAGS = { zoomauto: flag('zoomauto'), zoomCedula: flag('zoomcedula'), distancia: QS.get('distancia') !== '0', enfoque: flag('enfoque') };
+  const FLAGS = { zoomauto: flag('zoomauto'), distancia: QS.get('distancia') !== '0', enfoque: flag('enfoque') };
   const PROFILE = { ...PROFILES.default, model: null, benchMs: null, reasons: [], forced: false };
   S.profile = PROFILE;
   function setProfile(id, why) { Object.assign(PROFILE, PROFILES[id] || PROFILES.default); if (why) PROFILE.reasons.push(why); showProfile(); }
@@ -4730,7 +4636,7 @@
     if (PROFILE.slowTick) { S.perf.slow = true; S.perf.filterEvery = Math.max(S.perf.filterEvery, 150); S.perf.assessEvery = Math.max(S.perf.assessEvery, 230); S.perf.drawEvery = 50; }
     S.perf.filterEvery = S.perf.assessEvery;   // sin filtro de surcos en vivo: una sola lectura de cámara por evaluación
   }
-  function fingerProfileOff() { S.camMax = 0; bgPause(false); uxFingerOff(); setDisplayZoom(1); }
+  function fingerProfileOff() { S.camMax = 0; bgPause(false); uxFingerOff(); }
 
   // ═════════════ huella impresa en la cédula: muestra contundente ═════════════
   // Una huella muy entintada se ve como mancha oscura: se prueban versiones de la imagen (sombras aclaradas,
@@ -4800,7 +4706,7 @@
     Z.el.value = nv.toFixed(2);
     S.track.applyConstraints({ advanced: [{ zoom: +Z.el.value }] }).then(keepFocus).catch(() => {});
     setTimeout(() => focusAt(0.5, 0.45), 250);
-    if (S.fp) { S.fp.zoomLog = (S.fp.zoomLog || []).concat([{ t: Math.round(performance.now() - S.fp.t0), z: +Z.el.value }]).slice(-40); S.fp.peak = 0; }   // otro zoom, otra escala de nitidez
+    if (S.fp) S.fp.zoomLog = (S.fp.zoomLog || []).concat([{ t: Math.round(performance.now() - S.fp.t0), z: +Z.el.value }]).slice(-40);
     return true;
   }
   // si la persona mueve el control de zoom a mano, el automático se pausa unos segundos
@@ -4824,7 +4730,7 @@
   }
   // huella de la cédula de cerca: si se ve chica o fina, se acerca con zoom en vez de pedir moverse
   function cardAutoZoom(C, now) {
-    if (!FLAGS.zoomCedula) return false;
+    if (!FLAGS.zoomauto) return false;
     const Z = zoomInfo(); if (!Z || Z.v >= Z.max - 0.05 || now < AZ.pauseUntil) return false;
     if (now < (C.azUntil || 0)) return true;
     C.azN = (C.azN || 0) + 1; if (C.azN > 8) return false;
@@ -4949,7 +4855,7 @@
         <circle cx="236" cy="42" r="7" fill="#191A1C" stroke="#A9B6BF" stroke-width="1.5"/><circle cx="256" cy="42" r="3.5" fill="#F1B84B" class="iflash"/></g>
       <g class="irays" stroke="#F1B84B" stroke-width="2" stroke-linecap="round" opacity=".8"><path d="M205 38 176 30"/><path d="M205 46 172 50"/><path d="M205 54 178 68"/></g>
       <g stroke="#E8EEF1" stroke-width="2" fill="none" stroke-linecap="round"><path d="M118 150h86"/><path d="M118 150l8-5M118 150l8 5M204 150l-8-5M204 150l-8 5"/></g>
-      <text x="161" y="166" fill="#E8EEF1" font-size="12" text-anchor="middle" font-family="sans-serif">10–15 cm</text>
+      <text x="161" y="166" fill="#E8EEF1" font-size="12" text-anchor="middle" font-family="sans-serif">un palmo · 15 cm</text>
       <g class="icheck"><circle cx="160" cy="80" r="16" fill="#3FD49A"/><path d="m152 80 6 6 11-12" stroke="#08161D" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
     </svg>`;
   function fingerIntro(force) {
@@ -4958,12 +4864,12 @@
       const prev = S.mode; S.mode = 'finger-intro';
       const sh = $('#sheet'); sh.hidden = false; $('#camBottom').hidden = true;
       sh.innerHTML = `<b style="font-size:18px">Así se escanea tu pulgar</b>${INTRO_SVG}
-        <ol class="introsteps"><li>Pon la <b>yema del pulgar</b> frente a la cámara de atrás, a unos <b>10–15 cm</b>.</li>
-        <li>La <b>luz</b> se enciende sola. Mantén el dedo <b>quieto</b> dentro de la silueta. Arriba ves la huella de tu cédula: usa ese mismo dedo.</li>
-        <li>Mira «Tu dedo» arriba: cuando se vean líneas nítidas, vas bien. Si la marca de la barra de distancia se va a un lado, acerca o aleja el dedo. Cuando la silueta se ponga <b style="color:var(--ok)">verde</b> y suene un tono, vas bien.</li></ol>
+        <ol class="introsteps"><li>Pon la <b>yema del pulgar</b> frente a la cámara de atrás, a <b>un palmo</b>.</li>
+        <li>La <b>luz</b> se enciende sola. Mantén el dedo <b>quieto</b> dentro del círculo.</li>
+        <li>Cuando el círculo se ponga <b style="color:var(--ok)">verde</b> y suene un tono, vas bien.</li></ol>
         <p class="muted" style="font-size:14px">Tranquilo: esto toma menos de un minuto.</p>
-        <div class="sheetfoot"><button class="btn primary" id="introOk" style="width:100%">Entendido, empezar</button></div>`;
-      voice('Así se escanea tu pulgar. Pon la yema frente a la cámara de atrás, a unos 10 a 15 centímetros. Mantén el dedo quieto dentro de la silueta. Cuando se ponga verde y suene un tono, vas bien.');
+        <button class="btn primary" id="introOk" style="width:100%">Entendido, empezar</button>`;
+      voice('Así se escanea tu pulgar. Pon la yema frente a la cámara de atrás, a un palmo. Mantén el dedo quieto dentro del círculo. Cuando se ponga verde y suene un tono, vas bien.');
       $('#introOk').onclick = () => { uxUnlock(); UX.introSeen = true; sh.hidden = true; $('#camBottom').hidden = false; voiceStop();
         S.mode = prev === 'finger-intro' ? 'finger' : prev; if (S.fp) { S.fp.t0 = performance.now(); S.fp.lastCap = performance.now(); } resolve(); };
     });
@@ -5056,7 +4962,7 @@
       <button class="btn primary" id="skipRetry" style="width:100%">Intentar de nuevo</button>
       <button class="btn" id="skipGo" style="width:100%">Continuar sin huella</button>`;
     voice(porTiempo ? 'No logramos leer tu huella. Puedes intentarlo otra vez o continuar sin huella.' : 'Puedes intentarlo otra vez o continuar sin huella.');
-    $('#skipRetry').onclick = () => { sh.hidden = true; $('#camBottom').hidden = false; voiceStop(); if (S.fp) { S.fp.t0 = performance.now(); } S.mode = 'finger'; say('Pon la yema dentro de la silueta, quieta, a unos 10–15 cm de la cámara', ''); };
+    $('#skipRetry').onclick = () => { sh.hidden = true; $('#camBottom').hidden = false; voiceStop(); if (S.fp) { S.fp.t0 = performance.now(); } S.mode = 'finger'; say('Pon la yema dentro del círculo, quieta, a un palmo de la cámara', ''); };
     $('#skipGo').onclick = () => { sh.hidden = true; $('#camBottom').hidden = false; voiceStop(); skipFinger(porTiempo ? 'sin_fotos_nitidas' : 'omitida_por_usuario'); };
   }
   function skipFinger(motivo) {
@@ -5072,7 +4978,7 @@
 
   // 5) mensajes que dan calma cuando tarda (reemplazan los consejos técnicos)
   FTIPS.splice(0, FTIPS.length,
-    'Tranquilo, lo estás haciendo bien. Mantén el dedo quieto dentro de la silueta',
+    'Tranquilo, lo estás haciendo bien. Mantén el dedo quieto dentro del círculo',
     'Acércate a una luz o busca un lugar más iluminado',
     'Limpia suavemente el lente de la cámara con tu ropa',
     'Si tu dedo está muy seco, frótalo un poco con la otra mano',
@@ -5364,14 +5270,15 @@
   const LAB_REF_NOMBRE = { front: 'Frente', close: 'Huella de cerca' };
   // ajustes del pulgar para comparar (A/B); fuera del laboratorio rigen los valores por defecto
   const LAB_AJ = [
-    { k: 'vista', n: 'Ampliación de la vista', ops: [[1, '1×'], [1.5, '1,5×'], [2, '2× (actual)'], [2.5, '2,5×']] },
-    { k: 'zoom', n: 'Zoom de la cámara', ops: [[1, '1×'], [1.5, '1,5×'], [2, '2× (actual)']] },
+    { k: 'zoom', n: 'Zoom de la cámara', ops: [[null, 'Según el teléfono (actual)'], [1, '1×'], [1.5, '1,5×'], [2, '2×']] },
     { k: 'linterna', n: 'Linterna', ops: [[true, 'Encendida (actual)'], [false, 'Apagada']] },
-    { k: 'enfoque', n: 'Enfoque', ops: [[true, 'Enfocar y disparar (actual)'], [false, 'Continuo']] },
   ];
   const lsGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
-  const LAB = { refs: {}, aj: lsGet('v3p.lab.aj', {}), hist: lsGet('v3p.lab.hist', {}) };
+  const LAB = { refs: {}, aj: lsGet('v3p.lab.aj', {}), hist: lsGet('v3p.lab.hist', {}),
+    rec: { on: false, ...lsGet('v3p.lab.rec', { persona: '', dedo: 'pulgar_der', titular: true }) } };   // la autorización de recolección se pide en cada visita
+  const LAB_DEDOS = [['pulgar_der', 'Pulgar derecho'], ['pulgar_izq', 'Pulgar izquierdo'], ['indice_der', 'Índice derecho'], ['medio_der', 'Medio derecho'],
+    ['anular_der', 'Anular derecho'], ['indice_izq', 'Índice izquierdo'], ['otro', 'Otro']];
   function labAj(k, def) { return S.prueba && LAB.aj[k] != null ? LAB.aj[k] : def; }
   const labAjTexto = (aj) => LAB_AJ.map((a) => {
     const v = aj[a.k] != null ? aj[a.k] : a.ops.find((o) => /actual/.test(o[1]))[0], op = a.ops.find((o) => o[0] === v);
@@ -5381,7 +5288,9 @@
   // referencias en IndexedDB (las fotos no caben en localStorage)
   let labDbP = null;
   function labDb() {
-    if (!labDbP) labDbP = new Promise((res, rej) => { const r = indexedDB.open('v3p-lab', 1); r.onupgradeneeded = () => r.result.createObjectStore('ref'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    if (!labDbP) labDbP = new Promise((res, rej) => { const r = indexedDB.open('v3p-lab', 2);
+      r.onupgradeneeded = () => { const db = r.result; if (!db.objectStoreNames.contains('ref')) db.createObjectStore('ref'); if (!db.objectStoreNames.contains('cuadros')) db.createObjectStore('cuadros', { autoIncrement: true }); };
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
     return labDbP;
   }
   async function refGet(k) {
@@ -5428,7 +5337,7 @@
         // la plantilla se calcula como en la fase de la cédula: mismas variantes de imagen y se queda la mejor
         const best = await bestCardTemplate(await jpegGray(R.close.jpeg), R.close.box);
         await call('setCard', { tpl: best.tpl }); S.card = best.tpl;
-        S.prueba.arrancado = true; S.prueba.t0 = performance.now();
+        S.prueba.arrancado = true; S.prueba.t0 = performance.now(); S.prueba.recSesion = Date.now().toString(36); S.prueba.rec = { ...LAB.rec };
         await startFinger();
       });
     }
@@ -5450,7 +5359,7 @@
     let r;
     try { r = await labResultado(P.punto, t); } catch (e) { r = { nivel: 'bad', titulo: 'Error', facts: [['Detalle', e.message]], imgs: [], hist: { nivel: 'bad' } }; }
     await labGuardarRef(P.punto);
-    const h = LAB.hist[P.punto] = (LAB.hist[P.punto] || []).concat([{ at: new Date().toISOString(), t: +t.toFixed(1), ...r.hist, ...(P.punto === 'finger' ? { aj: labAjTexto(P.aj) } : {}) }]).slice(-40);
+    const h = LAB.hist[P.punto] = (LAB.hist[P.punto] || []).concat([{ at: new Date().toISOString(), t: +t.toFixed(1), ...r.hist, ...(P.punto === 'finger' ? { aj: labAjTexto(P.aj), persona: P.rec.persona || null, dedo: P.rec.dedo, titular: !!P.rec.titular, sesion: P.recSesion, cuadros: P.recN || 0 } : {}) }]).slice(-80);
     lsSet('v3p.lab.hist', LAB.hist);
     labMostrar(P, r, h.length); labRender();
   }
@@ -5496,8 +5405,7 @@
       const rech = Object.entries(F.gateStats || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([m, n]) => `${m} (${n})`).join(' · ') || '—';
       return { nivel: V.level, titulo: V.text, imgs: [yoPulgarImg(), S.doc.close && S.doc.close.jpeg],
         facts: [['Probabilidad', B.skipped ? '—' : pct(J.P) + ' %'], ['Escaneo', seg(scan)], ['Primera toma nítida', seg(primera)],
-          ['Tomas nítidas · coinciden', `${J.fragments} · ${J.agree}`], ['Ciclos de enfoque', (F.fc && F.fc.cycles) || 0], ['Tamaño del dedo (último)', F.size ? Math.round(F.size * 100) + ' %' : '—'],
-          ['Más rechazos', rech], ['Ajustes', labAjTexto(S.prueba.aj)]],
+          ['Tomas nítidas · coinciden', `${J.fragments} · ${J.agree}`], ['Más rechazos', rech], ['Ajustes', labAjTexto(S.prueba.aj)]],
         hist: { nivel: V.level, P: B.skipped ? null : J.P, scan: scan == null ? null : +scan.toFixed(1), primera: primera == null ? null : +primera.toFixed(1), tomas: J.fragments } };
     }
     if (k === 'face') {
@@ -5558,7 +5466,97 @@
       }).join('');
     }
     if (!S.consent) $('#labCedula').insertAdjacentHTML('afterbegin', '<p class="muted small2" style="margin:4px 0 0;color:var(--warn)">Marca la autorización de arriba para habilitar las pruebas.</p>');
+    labRecRender();
     const pa = labPorAjuste(); $('#labAjRes').innerHTML = pa ? `<ul class="muted small3">${pa}</ul>` : '<p class="muted small2">Todavía no hay intentos del pulgar.</p>';
+  }
+  // ── recolección de cuadros (entrenamiento del detector de la yema) ──
+  // Se guarda el cuadro COMPLETO del video (lado mayor 720 px) con la guía de la yema en sus coordenadas y lo que
+  // calculó la lógica actual (tamaño, nitidez, mensaje…): sirve como etiqueta inicial para corregir a mano.
+  const recC = document.createElement('canvas');
+  function labRecolectar(G, c, F, now, info) {
+    const P = S.prueba, R = P && P.rec;
+    if (!P || P.punto !== 'finger' || P.fin || !R || !R.on || !R.persona || !video.videoWidth) return;
+    if (now - (P.recAt || 0) < 330 || (P.recN || 0) >= 200) return;
+    P.recAt = now; const i = P.recN = (P.recN || 0) + 1;
+    const vw = video.videoWidth, vh = video.videoHeight, k = Math.min(1, 720 / Math.max(vw, vh)), W = Math.round(vw * k), H = Math.round(vh * k);
+    recC.width = W; recC.height = H; recC.getContext('2d').drawImage(video, 0, 0, W, H);
+    const img = (sx, sy) => [((sx - G.ox) / G.k) * k, ((sy - G.oy) / G.k) * k], [gx, gy] = img(c.cx, c.cy), [vx0, vy0] = img(0, 0), [vx1, vy1] = img(G.sw, G.sh);
+    const r3 = (v) => (v == null ? null : +(+v).toFixed(3));
+    const meta = { sesion: P.recSesion, i, at: new Date().toISOString(), persona: R.persona, dedo: R.dedo, titular: !!R.titular, w: W, h: H,
+      guia: { cx: +gx.toFixed(1), cy: +gy.toFixed(1), r: +(c.r / G.k * k).toFixed(1) },   // yema de la silueta (lo que se analiza)
+      visible: { x: +vx0.toFixed(1), y: +vy0.toFixed(1), w: +(vx1 - vx0).toFixed(1), h: +(vy1 - vy0).toFixed(1) },   // lo que veía la persona en pantalla
+      camara: { zoom: F.zoom || null, vista: F.dz || null, linterna: !!S.torchOn, etiqueta: S.camLabel || null, modelo: PROFILE.model || null },
+      logica: { tamano: r3(info.size), nitido: !!F.sharpNow, sirve: !!info.ok, mensaje: info.text || '', fase: info.fase, movimiento: r3(info.a.motion),
+        reflejo: r3(info.glare), cobertura: r3(info.a.coverage), coherencia: r3(info.a.cohMean), brillo: r3(info.a.brightness), periodo: r3(info.a.period) } };
+    recC.toBlob((b) => { if (b) recGuardar({ ...meta, jpeg: b }); }, 'image/jpeg', 0.88);
+  }
+  async function recGuardar(v) {
+    try { const db = await labDb(); await new Promise((res) => { const t = db.transaction('cuadros', 'readwrite'); t.objectStore('cuadros').add(v); t.oncomplete = res; t.onerror = res; }); } catch (e) {}
+    LAB.recN = (LAB.recN || 0) + 1;
+  }
+  async function recTodos() {
+    const db = await labDb();
+    return new Promise((res) => { const out = [], q = db.transaction('cuadros').objectStore('cuadros').openCursor(); q.onsuccess = () => { const c = q.result; if (c) { out.push(c.value); c.continue(); } else res(out); }; q.onerror = () => res(out); });
+  }
+  async function recContar() { try { const db = await labDb(); return await new Promise((res) => { const q = db.transaction('cuadros').objectStore('cuadros').count(); q.onsuccess = () => res(q.result); q.onerror = () => res(0); }); } catch (e) { return 0; } }
+  async function recExportar() {
+    const b = $('#labRecExportar'); b.disabled = true; b.textContent = 'Preparando…';
+    try {
+      if (!window.JSZip) await loadScript(CFG.jszip || 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+      const todos = await recTodos(); if (!todos.length) { b.textContent = 'No hay cuadros'; return; }
+      const zip = new window.JSZip(), lineas = [];
+      for (const v of todos) {
+        const { jpeg, ...m } = v, archivo = `cuadros/${m.persona}/${m.dedo}/${m.sesion}/${String(m.i).padStart(3, '0')}.jpg`;
+        zip.file(archivo, jpeg); lineas.push(JSON.stringify({ archivo, ...m }));
+      }
+      zip.file('etiquetas.jsonl', lineas.join('\n') + '\n');
+      zip.file('intentos.json', JSON.stringify((LAB.hist.finger || []).filter((x) => x.dedo), null, 1));
+      zip.file('LEEME.txt', ['Cuadros del laboratorio de MatchOnCard (/demo?prueba=1) para entrenar el detector de la yema.',
+        'cuadros/<persona>/<dedo>/<sesión>/<n>.jpg: cuadro completo del video (lado mayor 720 px).',
+        'etiquetas.jsonl: una línea por cuadro. guia = yema de la silueta (cx, cy, r en px de la imagen); visible = zona que veía la persona;',
+        'logica = lo que calculó la lógica actual en ese cuadro (etiqueta inicial, hay que corregirla: la yema real se dibuja a mano).',
+        'intentos.json: resultado de cada intento del pulgar (probabilidad, veredicto, dedo, si era el titular) para medir la comparación.',
+        'Datos biométricos: solo de personas que lo autorizaron. No subir a repositorios; borrar al terminar.'].join('\n'));
+      const blob = await zip.generateAsync({ type: 'blob' }), a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = `matchoncard-cuadros-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.zip`;
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+      b.textContent = `Exportados ${todos.length} cuadros`;
+    } catch (e) { b.textContent = 'No se pudo: ' + e.message; }
+    finally { b.disabled = false; setTimeout(() => { b.textContent = 'Exportar (ZIP)'; }, 4000); }
+  }
+  // comparación según lo que se escaneó: el pulgar derecho del titular debería coincidir; todo lo demás, no
+  function labPorDedo() {
+    const h = (LAB.hist.finger || []).filter((x) => x.dedo), g = { si: [], no: [] };
+    for (const x of h) (x.titular && x.dedo === 'pulgar_der' ? g.si : g.no).push(x);
+    const fila = (xs, titulo, bueno) => {
+      if (!xs.length) return '';
+      const P = xs.map((x) => x.P).filter((v) => v != null), co = xs.filter((x) => x.P != null && x.P >= 0.99).length;
+      const prom = P.length ? (P.reduce((a, v) => a + v, 0) / P.length * 100).toFixed(1).replace('.', ',') + ' %' : '—';
+      return `<li><b>${titulo}</b>: ${xs.length} intento${xs.length === 1 ? '' : 's'} · «Coincide» en ${co} (${bueno}) · probabilidad promedio ${prom}</li>`;
+    };
+    return fila(g.si, 'Pulgar derecho del titular', 'debería ser en todos') + fila(g.no, 'Otro dedo u otra persona', 'debería ser en ninguno');
+  }
+  async function labRecRender() {
+    const el = $('#labRecCuenta'); if (!el) return;
+    const n = await recContar(), R = LAB.rec;
+    el.textContent = `${n} cuadro${n === 1 ? '' : 's'} guardado${n === 1 ? '' : 's'} en este teléfono.` + (R.on && !R.persona ? ' Falta el código de la persona: sin él no se guarda nada.' : !R.on ? ' La recolección está apagada.' : '');
+    el.style.color = R.on && !R.persona ? 'var(--warn)' : '';
+    const pd = labPorDedo(); $('#labRecRes').innerHTML = pd ? `<ul class="muted small3">${pd}</ul>` : '';
+  }
+  function labRecInit() {
+    $('#labRecDedo').innerHTML = LAB_DEDOS.map(([v, t]) => `<option value="${v}"${LAB.rec.dedo === v ? ' selected' : ''}>${t}</option>`).join('');
+    $('#labRecPersona').value = LAB.rec.persona || ''; $('#labRecTitular').value = LAB.rec.titular ? '1' : '0';
+    const guardar = () => { const { on, ...r } = LAB.rec; lsSet('v3p.lab.rec', r); labRecRender(); };
+    $('#labRecOn').addEventListener('change', () => { LAB.rec.on = $('#labRecOn').checked; labRecRender(); });
+    $('#labRecPersona').addEventListener('input', (e) => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 12); if (v !== e.target.value) e.target.value = v; LAB.rec.persona = v; guardar(); });
+    $('#labRecDedo').addEventListener('change', (e) => { LAB.rec.dedo = e.target.value; guardar(); });
+    $('#labRecTitular').addEventListener('change', (e) => { LAB.rec.titular = e.target.value === '1'; guardar(); });
+    $('#labRecExportar').onclick = recExportar;
+    $('#labRecBorrar').onclick = async () => {
+      if (!confirm('¿Borrar todos los cuadros guardados en este teléfono?')) return;
+      try { const db = await labDb(); await new Promise((res) => { const t = db.transaction('cuadros', 'readwrite'); t.objectStore('cuadros').clear(); t.oncomplete = res; t.onerror = res; }); } catch (e) {}
+      labRecRender();
+    };
   }
   async function labInit() {
     document.documentElement.classList.remove('pc');   // en un computador también (cámara web)
@@ -5573,6 +5571,7 @@
     document.addEventListener('click', (e) => { const b = e.target.closest('[data-lab]'); if (b && !b.disabled) { LAB.sigue = null; labStart(b.dataset.lab).catch(camError); } });
     $('#labBorrarRef').onclick = async () => { for (const k of ['front', 'sigClose', 'back', 'close']) await refSet(k, null); labRender(); };
     $('#labBorrarHist').onclick = () => { LAB.hist = {}; lsSet('v3p.lab.hist', {}); labRender(); };
+    labRecInit();
     labRender();
   }
   if (LAB_ON) labInit();
