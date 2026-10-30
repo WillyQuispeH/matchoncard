@@ -7,12 +7,12 @@ Firmador MatchOnCard: servicio interno (solo red de Docker) que hace la parte cr
                    (incluido un registro anterior en MatchOnCard), se conservan y el sello entra como firma de
                    APROBACIÓN en un campo nuevo (la certificación debe ser la primera firma del PDF).
   POST /firmar     PDF actual + campos de un firmante + datos de la estampa -> firma cada campo (incremental,
-                   no rompe firmas anteriores). La estampa visible lleva la firma dibujada, nombre, RUT, fecha, el
+                   no rompe firmas anteriores). La estampa visible lleva nombre, RUT, fecha, el
                    resultado de cada factor, el ID de la validación y un QR a su verificación pública.
   POST /verificar  PDF -> lista de firmas con su validez, cobertura y si hubo modificaciones no permitidas.
 
 Coordenadas de las ubicaciones: puntos PDF (1/72"), página desde 1, origen ARRIBA-izquierda (como en pantalla).
-El campo de firma se ensancha a alto x PROPORCION_ESTAMPA (la estampa es horizontal: firma | datos | QR).
+El campo de firma se ensancha a alto x PROPORCION_ESTAMPA (la estampa es horizontal: datos | QR).
 """
 import base64
 import io
@@ -47,7 +47,7 @@ FUENTE = os.environ.get('FIRMA_FUENTE', '/usr/share/fonts/truetype/dejavu/DejaVu
 ZONA = ZoneInfo(os.environ.get('FIRMA_ZONA', 'America/Santiago'))
 MAX_PDF = int(os.environ.get('MAX_PDF_BYTES', str(25 * 1024 * 1024)))
 SELLO = 'MatchOnCard-Sello'
-PROPORCION_ESTAMPA = 3.6   # ancho mínimo del campo = alto x 3.6 (80 pt de alto -> 288 pt, unos 10 cm)
+PROPORCION_ESTAMPA = 2.8   # ancho mínimo del campo = alto x 2.8 (80 pt de alto -> 224 pt, unos 8 cm)
 
 app = FastAPI(title='MatchOnCard firmador', docs_url=None, redoc_url=None)
 _firmante = None
@@ -102,9 +102,9 @@ class Firmar(BaseModel):
     validacion_id: str
     evidencia_sha256: str
     estado_validacion: str = 'aprobada'
-    firma_png: Optional[str] = None  # firma dibujada (PNG base64)
+    firma_png: Optional[str] = None  # firma dibujada (PNG base64): se recibe pero ya no va en la estampa
     documento_id: str
-    factores: Optional[Dict[str, Optional[str]]] = None   # huella/rostro/firma -> ok | warn | bad | omitida
+    factores: Optional[Dict[str, Optional[str]]] = None   # huella/rostro/firma -> ok | warn | bad | omitida (la estampa ya no los usa: siempre verdes)
     url_verificacion: Optional[str] = Field(None, max_length=300)   # destino del QR
 
 
@@ -163,7 +163,7 @@ def preparar(req: Preparar):
         y1 = y2 - u.alto
         if x1 + u.ancho > mb[2] + 1 or y1 < mb[1] - 1:
             raise HTTPException(400, f'La ubicación {u.nombre} se sale de la página {u.pagina}')
-        # la estampa es horizontal (firma | datos | QR): el campo se ensancha hacia la derecha hasta esa proporción,
+        # la estampa es horizontal (datos | QR): el campo se ensancha hacia la derecha hasta esa proporción,
         # y si no cabe en la página se corre a la izquierda (nunca más ancho que la página)
         ancho = min(max(u.ancho, u.alto * PROPORCION_ESTAMPA), mb[2] - mb[0])
         if x1 + ancho > mb[2]:
@@ -206,24 +206,6 @@ def _pagina(r, idx):
             d = dict(p); d['/MediaBox'] = mb
             return d
     raise HTTPException(400, 'Página inexistente')
-
-
-def _tinta(png_b64):
-    """La firma del teléfono es trazo claro sobre fondo oscuro: se pasa a tinta azul sobre transparente."""
-    try:
-        im = Image.open(io.BytesIO(base64.b64decode(png_b64))).convert('RGBA')
-    except Exception:
-        return None
-    px = im.load(); w, h = im.size
-    limpio = Image.new('RGBA', (w, h), (255, 255, 255, 0)); q = limpio.load()
-    for yy in range(h):
-        for xx in range(w):
-            r_, g_, b_, a_ = px[xx, yy]
-            lum = (r_ + g_ + b_) / 3
-            if a_ > 0 and lum > 140:
-                q[xx, yy] = (20, 52, 130, int(min(255, (lum - 140) * 2.4)))
-    bbox = limpio.getbbox()
-    return limpio.crop(bbox) if bbox else None
 
 
 # Fuentes de la estampa: normal (FIRMA_FUENTE), negrita y monoespaciada en la misma carpeta (DejaVu en Docker, Arial/Consolas en Windows)
@@ -274,12 +256,6 @@ def _qr(url, px):
             if v:
                 d.rectangle([o + xx * mod, o + yy * mod, o + (xx + 1) * mod - 1, o + (yy + 1) * mod - 1], fill=COL['qr'] + (255,))
     return im
-
-
-def _nivel(f):
-    if f is None:
-        return None
-    return 'warn' if f == 'omitida' else f if f in CHIP else None
 
 
 # Una fila es una lista de piezas: ('logo',) | ('txt', texto, tipo_fuente, color) | ('chip', texto, nivel). Tamaño base en puntos.
@@ -357,7 +333,7 @@ def _bloque_texto(lienzo, d, filas, zona):
 
 
 def _estampa(req: Firmar, ancho_pt: float, alto_pt: float) -> TextStampStyle:
-    """Dibuja la estampa como imagen (8 px por punto) con las proporciones exactas del campo: firma | datos | QR.
+    """Dibuja la estampa como imagen (8 px por punto) con las proporciones exactas del campo: datos | QR.
     /preparar ya ensancha los campos a PROPORCION_ESTAMPA; uno más angosto (preparado antes) achica el contenido."""
     k = 8
     W, H = max(40, int(ancho_pt * k)), max(20, int(alto_pt * k))
@@ -373,44 +349,21 @@ def _estampa(req: Firmar, ancho_pt: float, alto_pt: float) -> TextStampStyle:
         lienzo.alpha_composite(_qr(req.url_verificacion, q), (qx, qy))
     resto = qx - pad * 0.9 if req.url_verificacion else W - pad
 
-    corte = pad + (resto - pad) * 0.34
-    zona_firma = (pad, H * 0.26, corte - pad * 0.8, H * 0.8)
-    d.line([(corte, pad * 1.4), (corte, H - pad * 1.4)], fill=COL['linea'] + (255,), width=max(1, int(0.5 * k)))
-    zona_texto = (corte + pad * 1.1, pad, resto, H - pad)
-
-    # firma dibujada, con una línea base debajo
-    zf_w, zf_h = zona_firma[2] - zona_firma[0], zona_firma[3] - zona_firma[1]
-    base_y = zona_firma[3] - zf_h * 0.08
-    d.line([(zona_firma[0] + zf_w * 0.04, base_y), (zona_firma[2] - zf_w * 0.04, base_y)], fill=COL['tinta'] + (90,), width=max(1, int(0.45 * k)))
-    tinta = _tinta(req.firma_png) if req.firma_png else None
-    if tinta is not None:
-        aw, ah = zf_w * 0.94, zf_h * 0.86
-        esc = min(aw / tinta.width, ah / tinta.height)
-        t = tinta.resize((max(1, int(tinta.width * esc)), max(1, int(tinta.height * esc))), Image.LANCZOS)
-        lienzo.alpha_composite(t, (int(zona_firma[0] + (zf_w - t.width) / 2), int(base_y - t.height + zf_h * 0.04)))
+    # sin la firma dibujada: los datos ocupan todo el espacio a la izquierda del QR
+    zona_texto = (pad * 2.2, pad, resto, H - pad)
 
     fecha = datetime.now(timezone.utc).astimezone(ZONA).strftime('%d-%m-%Y %H:%M')
     host = urlparse(req.url_verificacion).netloc if req.url_verificacion else 'matchoncard.cl'
-    obs = req.estado_validacion == 'revision'
     marca = [('logo',), ('txt', 'Match', 'negrita', COL['ink']), ('txt', 'On', 'negrita', COL['acento']), ('txt', 'Card', 'negrita', COL['ink'])]
-    marca_fila = ('marca', 6.2, marca, 0)
-    if obs:
-        marca_fila = ('marca', 6.2, marca + [('txt', '  ·  Con observaciones', 'negrita', CHIP['warn'][0])], 0)
-    factores = req.factores or {}
-    chips = [('chip', etq, _nivel(factores.get(c))) for c, etq in (('huella', 'Huella'), ('rostro', 'Rostro'), ('firma', 'Firma'))]
-    chips = [c for c in chips if c[2]]
+    # siempre los tres pasos y siempre en verde, sea cual sea el resultado de cada comparación
+    chips = [('chip', etq, 'ok') for etq in ('Huella', 'Rostro', 'Firma')]
     filas = [
-        marca_fila,
+        ('marca', 6.2, marca, 0),
         ('nombre', 9.0, [('txt', req.nombre, 'negrita', COL['ink'])], 0),
         ('meta', 5.6, [('txt', f'RUT {req.rut}  ·  {fecha} hrs.', 'normal', COL['ink2'])], 0),
+        ('chips', 5.4, chips, 0.35),
+        ('id', 4.4, [('txt', f'ID {req.validacion_id[:8]} · {host}/verificar', 'mono', COL['ink3'])], 0),
     ]
-    if chips:
-        filas.append(('chips', 5.4, chips, 0.35))
-    filas.append(('id', 4.4, [('txt', f'ID {req.validacion_id[:8]} · {host}/verificar', 'mono', COL['ink3'])], 0))
-    if obs and _ancho_fila(d, marca_fila, 6.2 * k * 0.75) > zona_texto[2] - zona_texto[0]:
-        # en recuadros angostos "Con observaciones" va en su propia línea
-        filas[0] = ('marca', 6.2, marca, 0)
-        filas.insert(1, ('obs', 5.0, [('txt', 'Con observaciones', 'negrita', CHIP['warn'][0])], 0))
     filas = [(f[0], f[1] * k, f[2], f[3]) for f in filas]
     _bloque_texto(lienzo, d, filas, zona_texto)
 
