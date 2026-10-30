@@ -1,0 +1,2302 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B1116">
+<title>Foto de Huella</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+
+  :root {
+    color-scheme: dark;
+    --bg: #0B1116; --surface: #141D24; --sunken: #1C2730; --line: #2A3843;
+    --ink: #E8EEF1; --ink-2: #A9B6BF; --ink-3: #74838D;
+    --accent: #5DB1D1; --accent-ink: #08161D;
+    --ok: #3FD49A; --warn: #F1B84B; --bad: #F2786A;
+    --ending: #F07560; --bifur: #6F9CF2; --core: #3CC98E; --delta: #E8B04A;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --cond: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  h1, h2 { font-family: var(--cond); font-weight: 600; margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .muted { color: var(--ink-2); }
+  .btn { appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 15px var(--sans);
+    padding: 12px 18px; border-radius: 12px; cursor: pointer; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  .btn.round { width: 48px; padding: 0; border-radius: 50%; background: rgba(20,29,36,.72); backdrop-filter: blur(6px); }
+  .btn.round[aria-pressed="true"] { background: var(--warn); color: #1d1300; border-color: var(--warn); }
+  .btn:disabled { opacity: .45; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  label.file { position: relative; overflow: hidden; }
+  label.file input { position: absolute; inset: 0; opacity: 0; }
+
+  /* páginas con desplazamiento */
+  .page { min-height: 100%; padding: calc(env(safe-area-inset-top, 0px) + 20px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px); max-width: 560px; margin: 0 auto; display: grid; gap: 18px; align-content: start; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand small { display: block; font: 12px var(--mono); color: var(--ink-3); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; }
+  ol.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: s; }
+  ol.steps li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; counter-increment: s; }
+  ol.steps li::before { content: counter(s); width: 28px; height: 28px; border-radius: 50%; background: var(--sunken); display: grid; place-items: center; font: 500 13px var(--mono); color: var(--accent); }
+  .notice { border-radius: 10px; padding: 10px 12px; font-size: 14px; background: #3A2A12; color: #F7E3BD; }
+  .notice.bad { background: #3A1E1A; color: #F9D5CF; }
+
+  /* cámara */
+  .cam { position: fixed; inset: 0; background: #000; overflow: hidden; touch-action: none; }
+  .cam video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cam canvas.ov { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .cam video.mirror { transform: scaleX(-1); }
+  .cam.screenlight { background: #fff; }
+  .cam.screenlight .top { background: rgba(11,17,22,.92); }
+  .cam.screenlight .bottom { background: linear-gradient(transparent, rgba(0,0,0,.82) 30%); }
+  .cam .top { position: absolute; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px;
+    display: flex; align-items: center; gap: 12px; background: linear-gradient(rgba(0,0,0,.6), transparent); }
+  .cam .top .t { flex: 1; min-width: 0; }
+  .cam .top h2 { font-size: 20px; }
+  .cam .top .sub { font: 12px var(--mono); color: var(--ink-2); }
+  .cam .bottom { position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+    background: linear-gradient(transparent, rgba(0,0,0,.75) 35%); display: grid; gap: 12px; }
+  .msg { font: 600 19px/1.3 var(--cond); text-align: center; min-height: 50px; display: grid; place-items: center; text-wrap: balance; transition: color .2s; }
+  .msg.ok { color: var(--ok); } .msg.warn { color: var(--warn); } .msg.bad { color: var(--bad); }
+  .bar { height: 6px; border-radius: 99px; background: rgba(255,255,255,.14); overflow: hidden; }
+  .bar b { display: block; height: 100%; width: 0; background: var(--ok); border-radius: 99px; transition: width .15s linear; }
+  .tools { display: flex; gap: 10px; align-items: center; justify-content: center; }
+  .tools input[type=range] { flex: 1; max-width: 220px; accent-color: var(--accent); }
+  .chips { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .chip { font: 12px var(--mono); padding: 3px 8px; border-radius: 99px; background: rgba(20,29,36,.72); color: var(--ink-2); }
+  .chip.ok { color: var(--ok); } .chip.bad { color: var(--bad); }
+  .phases { display: flex; gap: 10px; justify-content: center; }
+  .ph { display: grid; justify-items: center; gap: 4px; font-size: 12px; color: var(--ink-3); }
+  .ph .th { width: 64px; height: 42px; border-radius: 7px; border: 1.5px dashed var(--line); background: #141d24 center/cover no-repeat; }
+  .ph[data-state="now"] { color: var(--ink); } .ph[data-state="now"] .th { border: 2px solid var(--accent); }
+  .ph[data-state="done"] { color: var(--ok); } .ph[data-state="done"] .th { border: 2px solid var(--ok); }
+  .consent .check { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 1.45; cursor: pointer; }
+  .consent input[type=checkbox] { width: 22px; height: 22px; margin-top: 1px; flex: none; accent-color: var(--accent); }
+  .consent summary { cursor: pointer; font-size: 13px; color: var(--ink-2); margin-top: 4px; }
+  .small3 { font-size: 13px; margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; }
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .shots img { width: 100%; border-radius: 8px; display: block; }
+  .scanrow { display: flex; gap: 14px; align-items: center; justify-content: center; }
+  .scanrow canvas { width: 72px; height: 90px; border-radius: 10px; border: 1px solid var(--line); background: #1b252d; }
+  .big2 { font: 600 34px/1 var(--cond); color: var(--ok); }
+  .small2 { font-size: 12px; }
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .35s; }
+  .flash.on { opacity: .75; transition: none; }
+  .sheet { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 16px; padding: 14px; display: grid; gap: 12px; max-height: 70%; overflow: auto; }
+  .sheet canvas { width: 100%; height: auto; border-radius: 10px; background: #1b252d; display: block; }
+  dl.facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 14px; }
+  dl.facts dt { color: var(--ink-2); } dl.facts dd { margin: 0; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; } .row .btn { flex: 1; }
+
+  /* resultado */
+  .big { font: 600 72px/1 var(--cond); font-variant-numeric: tabular-nums; }
+  .big small { font-size: 30px; color: var(--ink-2); }
+  .pill { display: inline-flex; font: 600 14px var(--sans); padding: 5px 12px; border-radius: 99px; width: fit-content; }
+  .pill.ok { background: #143328; color: var(--ok); } .pill.warn { background: #362A12; color: var(--warn); } .pill.bad { background: #3A1E1A; color: var(--bad); }
+  .scale { position: relative; height: 32px; }
+  .scale .track { position: absolute; left: 0; right: 0; top: 6px; height: 10px; border-radius: 99px; background: linear-gradient(90deg, #3A1E1A 0 20%, #362A12 20% 90%, #1d3b30 90% 99%, #143328 99% 100%); }
+  .scale .mk { position: absolute; top: 0; width: 3px; height: 22px; background: var(--ink); border-radius: 2px; transform: translateX(-50%); }
+  .scale .tk { position: absolute; top: 18px; font: 11px var(--mono); color: var(--ink-3); transform: translateX(-50%); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+  .legend i { width: 10px; height: 10px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
+  canvas.res { width: 100%; height: auto; border-radius: 10px; background: #1b252d; display: block; }
+  @media (prefers-reduced-motion: reduce) { .bar b, .msg { transition: none; } }
+
+  /* propios de esta herramienta */
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; background: var(--sunken); border-radius: 12px; padding: 4px; }
+  .seg button { appearance: none; border: 0; background: transparent; color: var(--ink-2); font: 500 14px var(--sans); padding: 10px 8px; border-radius: 9px; min-height: 44px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+  .lbl { font: 12px var(--mono); color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+  .btn.small { min-height: 40px; padding: 8px 12px; font-size: 14px; }
+  .btn[aria-pressed="true"]:not(.round) { border-color: var(--accent); color: var(--accent); }
+  .shoot { width: 72px; height: 72px; border-radius: 50%; border: 4px solid #fff; background: rgba(255,255,255,.18); padding: 0; cursor: pointer; flex: none; }
+  .shoot:active { background: rgba(255,255,255,.45); }
+  .shoot:disabled { opacity: .4; }
+  .camrow { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+  .camrow > :first-child { justify-self: end; } .camrow > :last-child { justify-self: start; }
+  .cam.lit .top, .cam.lit .bottom { background: rgba(11,17,22,.88); }
+  .stagechips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .stagechips button { appearance: none; flex: none; border: 1px solid var(--line); background: var(--sunken); color: var(--ink-2); font: 500 13px var(--sans); padding: 7px 11px; border-radius: 99px; cursor: pointer; }
+  .stagechips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .stagebox { position: relative; }
+  .stagebox canvas { width: 100%; height: auto; border-radius: 10px; background: #1b252d; display: block; }
+  .chans { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .chans button { appearance: none; border: 1px solid var(--line); background: var(--sunken); border-radius: 10px; padding: 6px; display: grid; gap: 4px; color: var(--ink-2); font: 12px var(--mono); cursor: pointer; text-align: center; }
+  .chans button[aria-pressed="true"] { border-color: var(--accent); color: var(--ink); }
+  .chans canvas { width: 100%; aspect-ratio: 1; border-radius: 6px; display: block; background: #1b252d; object-fit: cover; }
+  .spin { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: sp 0.9s linear infinite; justify-self: center; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  .meter { height: 8px; border-radius: 99px; background: var(--sunken); overflow: hidden; }
+  .meter b { display: block; height: 100%; border-radius: 99px; }
+  .tiny { font-size: 12px; }
+  @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } }
+</style>
+</head>
+<body>
+
+<!-- ───────── inicio ───────── -->
+<section id="home" class="page">
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1C2730"/><path d="M10 21c0-4 3-8 7-8s7 4 7 8M13 23c0-3 2-6 4-6s4 3 4 6M17 25v-4" stroke="#5DB1D1" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+    <div><h1 style="font-size:22px">Foto de huella</h1><small>Análisis de surcos · FPEngine <span id="ver"></span></small></div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:19px">Una sola foto, todo el análisis</h2>
+    <p class="muted">Toma una foto nítida de la yema del pulgar. Luego se aplican los filtros que resaltan los surcos y se buscan los puntos clave, mostrando cada etapa.</p>
+    <ol class="steps">
+      <li><span>Acerca la yema del pulgar al óvalo, con la luz encendida.</span></li>
+      <li><span>Quédate quieto: la foto se toma sola cuando los surcos se ven nítidos. También puedes tocar el disparador.</span></li>
+      <li><span>Revisa cada filtro, los puntos clave y la calidad obtenida.</span></li>
+      <li><span>Si agregas la huella de tu cédula, verás además la probabilidad de que sea el mismo dedo.</span></li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <span class="lbl">Cámara</span>
+    <div class="seg" id="camSeg">
+      <button type="button" data-v="environment" aria-pressed="true">Trasera + linterna</button>
+      <button type="button" data-v="user" aria-pressed="false">Frontal + pantalla</button>
+    </div>
+    <div id="lightBox" hidden style="display:grid;gap:8px">
+      <span class="lbl">Color de la luz de pantalla</span>
+      <div class="seg" id="lightSeg">
+        <button type="button" data-v="#ffffff" aria-pressed="false"><span class="swatch" style="background:#fff"></span>Blanca</button>
+        <button type="button" data-v="#2f5bff" aria-pressed="true"><span class="swatch" style="background:#2f5bff"></span>Azul</button>
+        <button type="button" data-v="#22ff66" aria-pressed="false"><span class="swatch" style="background:#22ff66"></span>Verde</button>
+      </div>
+      <p class="muted tiny">Sube el brillo de la pantalla al máximo. La pantalla alrededor del óvalo actúa como luz.</p>
+    </div>
+  </div>
+
+  <div class="card" id="cardBox">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h2 style="font-size:19px">Huella de la cédula</h2><span class="pill warn" id="cardPill">Opcional</span></div>
+    <p class="muted" id="cardTxt">Para comparar, fotografía de cerca la huella impresa en el reverso de tu cédula, o sube una foto del reverso. Puedes hacerlo antes o después de la foto del pulgar.</p>
+    <canvas id="cardPrev" class="res" hidden style="max-height:260px;width:auto;max-width:100%;justify-self:center"></canvas>
+    <div class="row"><button class="btn small" id="cardCam" disabled>Fotografiar reverso</button><label class="btn small file" id="cardUpLbl" aria-disabled="true">Subir foto del reverso<input type="file" id="cardUp" accept="image/*" disabled></label></div>
+  </div>
+
+  <div class="card consent">
+    <label class="check" for="consent"><input type="checkbox" id="consent"><span>Autorizo el tratamiento de la imagen de mi huella dactilar y de la huella impresa en mi cédula, datos biométricos, con el único objeto de <b>probar y mejorar el análisis de huellas para la validación de identidad en firma electrónica simple</b>.</span></label>
+    <details><summary>Qué datos se usan y cómo</summary>
+      <ul class="small3">
+        <li>Se usa una foto de la yema del pulgar y, si la agregas, una foto de la huella impresa en tu cédula.</li>
+        <li>Se procesa solo en este teléfono; no se envía a ningún servidor.</li>
+        <li>No se guarda nada, salvo lo que tú decidas descargar.</li>
+        <li>Puedes retirar tu autorización en cualquier momento cerrando esta página.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="row">
+    <button class="btn primary" id="start" disabled>Tomar foto del pulgar</button>
+    <label class="btn file" id="upLbl" aria-disabled="true">Subir una foto<input type="file" id="up" accept="image/*" disabled></label>
+  </div>
+  <p id="homeWarn" class="notice" hidden></p>
+</section>
+
+<!-- ───────── cámara ───────── -->
+<section id="cam" class="cam" hidden>
+  <video id="video" playsinline muted autoplay></video>
+  <canvas id="ov" class="ov"></canvas>
+  <div class="flash" id="flash"></div>
+  <div class="top">
+    <button class="btn round" id="back" aria-label="Volver"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="t"><h2 id="camTitle">Pulgar derecho</h2><div class="sub" id="camSub">—</div></div>
+    <button class="btn round" id="torch" aria-label="Luz" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 2h6l-1 5h-4zM8 7h4v9a2 2 0 0 1-4 0z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/></svg></button>
+    <button class="btn round" id="flip" aria-label="Cambiar cámara"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8a7 7 0 0 1 12.5-3M17 12a7 7 0 0 1-12.5 3M15.5 2v3h-3M4.5 18v-3h3" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <div class="bottom">
+    <div class="msg" id="msg">Iniciando cámara…</div>
+    <div class="bar"><b id="prog"></b></div>
+    <div class="chips" id="chips"></div>
+    <div class="tools"><span class="mono tiny" id="zoomLbl" hidden>zoom</span><input type="range" id="zoom" hidden aria-label="Zoom"></div>
+    <div class="camrow">
+      <span></span>
+      <button class="shoot" id="shoot" aria-label="Tomar foto"></button>
+      <button class="btn small" id="auto" aria-pressed="true">Auto</button>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── procesando ───────── -->
+<section id="work" class="page" hidden>
+  <div class="card" style="justify-items:center;text-align:center">
+    <div class="spin" aria-hidden="true"></div>
+    <h2 style="font-size:19px" id="workMsg">Analizando la foto…</h2>
+    <canvas id="workPrev" style="width:60%;border-radius:12px"></canvas>
+  </div>
+</section>
+
+<!-- ───────── resultado ───────── -->
+<section id="result" class="page" hidden>
+  <div class="brand">
+    <div><h1 style="font-size:22px">Análisis de la huella</h1><small id="resSub">—</small></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:end;justify-content:space-between;gap:12px">
+      <div><span class="lbl">Calidad</span><div class="big" id="qBig">—<small>/100</small></div></div>
+      <span class="pill" id="qPill">—</span>
+    </div>
+    <div class="meter"><b id="qBar"></b></div>
+    <p class="muted" id="qTxt"></p>
+    <dl class="facts" id="facts"></dl>
+  </div>
+
+  <div class="card" id="cmpBox">
+    <h2 style="font-size:19px">Comparación con la cédula</h2>
+    <div id="cmpEmpty" style="display:grid;gap:12px">
+      <p class="muted" id="cmpEmptyTxt">Agrega la huella de tu cédula para compararla con esta foto.</p>
+      <button class="btn" id="cmpAdd">Agregar huella de la cédula</button>
+    </div>
+    <div id="cmpRes" hidden style="display:grid;gap:12px">
+      <div style="display:flex;align-items:end;justify-content:space-between;gap:12px">
+        <div><span class="lbl">Probabilidad de que sea el mismo dedo</span><div class="big" id="cmpBig" style="font-size:56px;white-space:nowrap">—</div></div>
+        <span class="pill" id="cmpPill">—</span>
+      </div>
+      <div class="scale"><div class="track"></div><div class="mk" id="cmpMk"></div><span class="tk" style="left:20%">20</span><span class="tk" style="left:90%">90</span><span class="tk" style="left:99%">99</span></div>
+      <p class="muted" id="cmpTxt"></p>
+      <canvas id="cmpMap" class="res"></canvas>
+      <div class="legend"><span><i style="background:rgba(63,212,154,.6)"></i>Zona del pulgar que coincide</span><span><i style="border:1.5px solid rgba(150,165,175,.8)"></i>Zona que no aporta</span></div>
+      <dl class="facts" id="cmpFacts"></dl>
+      <p class="muted tiny">Resultado de una sola foto, orientativo. La app de cotejo exige al menos 3 tomas concordantes antes de dar un veredicto.</p>
+      <div class="row"><button class="btn small" id="cmpNewCard">Cambiar cédula</button></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:19px">Etapas del filtrado</h2>
+    <div class="stagechips" id="stageChips"></div>
+    <div class="stagebox"><canvas id="stage"></canvas></div>
+    <p class="muted" id="stageTxt"></p>
+    <div class="legend" id="legend" hidden>
+      <span><i style="border:2px solid var(--ending);border-radius:50%"></i>Terminación</span>
+      <span><i style="border:2px solid var(--bifur)"></i>Bifurcación</span>
+      <span><i style="border:2px solid var(--core);border-radius:50%"></i>Núcleo</span>
+      <span><i style="border:2px solid var(--delta);border-radius:50%"></i>Delta</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:19px">Canal de color</h2>
+    <p class="muted">Cada canal muestra los surcos con distinto contraste. Se elige el que da crestas más ordenadas; toca otro para comparar.</p>
+    <div class="chans" id="chans"></div>
+    <div class="row"><button class="btn small" id="invBtn">Invertir polaridad</button></div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <button class="btn small" id="dlPhoto">Descargar foto</button>
+      <button class="btn small" id="dlSheet">Descargar lámina</button>
+      <button class="btn small" id="dlJson">Descargar plantilla</button>
+    </div>
+    <button class="btn primary" id="again">Tomar otra foto</button>
+  </div>
+  <p class="muted tiny">Procesado en este teléfono. La calidad es orientativa: combina el orden de las crestas, el área útil y el número de puntos clave.</p>
+</section>
+
+<script id="fpengine">
+/*
+ * FPEngine — motor de validación biométrica de huella dactilar (JS puro, sin dependencias).
+ *
+ * Etapas:
+ *   1. locateFingerprint(): busca la huella impresa en la foto de una cédula por textura
+ *      (coherencia del tensor de estructura + energía + curvatura del campo de orientación).
+ *   2. analyze(): normaliza la escala de crestas a un período fijo (≈9 px, equivalente a 500 dpi),
+ *      estima campo de orientación y frecuencia, segmenta, aplica banco de filtros Gabor,
+ *      binariza, adelgaza, poda espolones, extrae minucias (terminaciones y bifurcaciones)
+ *      y puntos singulares (núcleo / delta, índice de Poincaré).
+ *   3. match(): alineación invariante a rotación, traslación y escala moderada, usando
+ *      descriptores locales de vecindad + consolidación global + refinamiento Procrustes,
+ *      con línea base de azar para medir cuán significativo es el resultado.
+ *
+ * Todas las imágenes internas son { w, h, data: Float32Array } con valores ~[0,1].
+ */
+(function (root) {
+  'use strict';
+
+  const PI = Math.PI, TAU = 2 * Math.PI;
+  const TARGET_PERIOD = 9;
+
+  // ───────────────────────── utilidades básicas ─────────────────────────
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const Img = (w, h, data) => ({ w, h, data: data || new Float32Array(w * h) });
+  const modPi = (a) => { a %= PI; return a < 0 ? a + PI : a; };
+  const angDiffPi = (a, b) => { let d = Math.abs(a - b) % PI; return d > PI / 2 ? PI - d : d; };
+
+  function fromRGBA(rgba, w, h, channel) {
+    const out = new Float32Array(w * h);
+    for (let i = 0, j = 0; i < w * h; i++, j += 4) {
+      if (channel === 'g') out[i] = rgba[j + 1] / 255;
+      else if (channel === 'gb') out[i] = (0.6 * rgba[j + 1] + 0.4 * rgba[j + 2]) / 255;
+      else out[i] = (0.299 * rgba[j] + 0.587 * rgba[j + 1] + 0.114 * rgba[j + 2]) / 255;
+    }
+    return Img(w, h, out);
+  }
+
+  function boxBlurArr(src, w, h, r) {
+    if (r < 1) return Float32Array.from(src);
+    const tmp = new Float32Array(w * h), out = new Float32Array(w * h), n = 2 * r + 1;
+    for (let y = 0; y < h; y++) {
+      const row = y * w; let acc = 0;
+      for (let x = -r; x <= r; x++) acc += src[row + clamp(x, 0, w - 1)];
+      for (let x = 0; x < w; x++) {
+        tmp[row + x] = acc / n;
+        acc += src[row + Math.min(x + r + 1, w - 1)] - src[row + Math.max(x - r, 0)];
+      }
+    }
+    for (let x = 0; x < w; x++) {
+      let acc = 0;
+      for (let y = -r; y <= r; y++) acc += tmp[clamp(y, 0, h - 1) * w + x];
+      for (let y = 0; y < h; y++) {
+        out[y * w + x] = acc / n;
+        acc += tmp[Math.min(y + r + 1, h - 1) * w + x] - tmp[Math.max(y - r, 0) * w + x];
+      }
+    }
+    return out;
+  }
+
+  // Aproximación gaussiana con 3 pasadas de caja.
+  function gaussArr(src, w, h, sigma) {
+    if (sigma < 0.5) return Float32Array.from(src);
+    const r = Math.max(1, Math.round((Math.sqrt(4 * sigma * sigma + 1) - 1) / 2));
+    return boxBlurArr(boxBlurArr(boxBlurArr(src, w, h, r), w, h, r), w, h, r);
+  }
+  const gauss = (img, s) => Img(img.w, img.h, gaussArr(img.data, img.w, img.h, s));
+
+  function resize(img, nw, nh) {
+    nw = Math.max(1, Math.round(nw)); nh = Math.max(1, Math.round(nh));
+    const sx = img.w / nw, sy = img.h / nh, s = Math.max(sx, sy);
+    const src = s > 1.3 ? gauss(img, 0.45 * s) : img;
+    const out = new Float32Array(nw * nh), d = src.data, W = src.w, H = src.h;
+    for (let y = 0; y < nh; y++) {
+      const fy = clamp((y + 0.5) * sy - 0.5, 0, H - 1), y0 = Math.floor(fy), y1 = Math.min(y0 + 1, H - 1), wy = fy - y0;
+      for (let x = 0; x < nw; x++) {
+        const fx = clamp((x + 0.5) * sx - 0.5, 0, W - 1), x0 = Math.floor(fx), x1 = Math.min(x0 + 1, W - 1), wx = fx - x0;
+        out[y * nw + x] = (d[y0 * W + x0] * (1 - wx) + d[y0 * W + x1] * wx) * (1 - wy) +
+                          (d[y1 * W + x0] * (1 - wx) + d[y1 * W + x1] * wx) * wy;
+      }
+    }
+    return Img(nw, nh, out);
+  }
+
+  function crop(img, x, y, w, h) {
+    x = Math.round(clamp(x, 0, img.w - 1)); y = Math.round(clamp(y, 0, img.h - 1));
+    w = Math.round(clamp(w, 1, img.w - x)); h = Math.round(clamp(h, 1, img.h - y));
+    const out = new Float32Array(w * h);
+    for (let j = 0; j < h; j++) out.set(img.data.subarray((y + j) * img.w + x, (y + j) * img.w + x + w), j * w);
+    return Img(w, h, out);
+  }
+
+  function flipH(img) {
+    const out = new Float32Array(img.w * img.h);
+    for (let y = 0; y < img.h; y++) for (let x = 0; x < img.w; x++) out[y * img.w + x] = img.data[y * img.w + img.w - 1 - x];
+    return Img(img.w, img.h, out);
+  }
+
+  function invert(img) { const o = new Float32Array(img.data.length); for (let i = 0; i < o.length; i++) o[i] = 1 - img.data[i]; return Img(img.w, img.h, o); }
+
+  // (x - media local) / desviación local  →  elimina iluminación y normaliza contraste.
+  function localNormalize(img, rMean, rStd) {
+    const { w, h, data } = img;
+    const mean = gaussArr(data, w, h, rMean);
+    const hp = new Float32Array(w * h), sq = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) { hp[i] = data[i] - mean[i]; sq[i] = hp[i] * hp[i]; }
+    const v = gaussArr(sq, w, h, rStd || rMean);
+    let gstd = 0; for (let i = 0; i < w * h; i++) gstd += Math.max(0, v[i]); gstd = Math.sqrt(gstd / (w * h)) + 1e-6;
+    const out = new Float32Array(w * h), std = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) { std[i] = Math.sqrt(Math.max(0, v[i])); out[i] = hp[i] / (std[i] + 0.15 * gstd); }
+    return { img: Img(w, h, out), std, gstd };
+  }
+
+  // Imagen para mostrar (0..1) a partir de una normalizada.
+  function toDisplay(img, gain) {
+    const o = new Float32Array(img.data.length), g = gain || 0.25;
+    for (let i = 0; i < o.length; i++) o[i] = clamp(0.5 + g * img.data[i], 0, 1);
+    return Img(img.w, img.h, o);
+  }
+
+  // ───────────────────────── campo de orientación ─────────────────────────
+  function gradients(img) {
+    const { w, h, data: d } = img, gx = new Float32Array(w * h), gy = new Float32Array(w * h);
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      gx[i] = (d[i - w + 1] + 2 * d[i + 1] + d[i + w + 1] - d[i - w - 1] - 2 * d[i - 1] - d[i + w - 1]) / 8;
+      gy[i] = (d[i + w - 1] + 2 * d[i + w] + d[i + w + 1] - d[i - w - 1] - 2 * d[i - w] - d[i - w + 1]) / 8;
+    }
+    return { gx, gy };
+  }
+
+  // Devuelve θ (dirección de cresta, [0,π)), coherencia [0,1] y energía de gradiente.
+  function orientationField(img, sigma) {
+    const { w, h } = img, n = w * h, { gx, gy } = gradients(img);
+    let a = new Float32Array(n), b = new Float32Array(n), c = new Float32Array(n);
+    for (let i = 0; i < n; i++) { a[i] = gx[i] * gx[i] - gy[i] * gy[i]; b[i] = 2 * gx[i] * gy[i]; c[i] = gx[i] * gx[i] + gy[i] * gy[i]; }
+    a = gaussArr(a, w, h, sigma); b = gaussArr(b, w, h, sigma); c = gaussArr(c, w, h, sigma);
+    const theta = new Float32Array(n), coh = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      theta[i] = modPi(0.5 * Math.atan2(b[i], a[i]) + PI / 2);
+      coh[i] = c[i] > 1e-9 ? Math.sqrt(a[i] * a[i] + b[i] * b[i]) / c[i] : 0;
+    }
+    return { theta, coh, energy: c };
+  }
+
+  function smoothOrientation(theta, weight, w, h, sigma) {
+    const n = w * h; let cs = new Float32Array(n), sn = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const wt = weight ? weight[i] : 1; cs[i] = Math.cos(2 * theta[i]) * wt; sn[i] = Math.sin(2 * theta[i]) * wt; }
+    cs = gaussArr(cs, w, h, sigma); sn = gaussArr(sn, w, h, sigma);
+    const out = new Float32Array(n), mag = new Float32Array(n);
+    for (let i = 0; i < n; i++) { out[i] = modPi(0.5 * Math.atan2(sn[i], cs[i])); mag[i] = Math.hypot(cs[i], sn[i]); }
+    return { theta: out, mag };
+  }
+
+  // ───────────────────────── frecuencia de crestas ─────────────────────────
+  function sampleBilinear(d, w, h, x, y) {
+    if (x < 0 || y < 0 || x > w - 1 || y > h - 1) return NaN;
+    const x0 = Math.floor(x), y0 = Math.floor(y), x1 = Math.min(x0 + 1, w - 1), y1 = Math.min(y0 + 1, h - 1), fx = x - x0, fy = y - y0;
+    return (d[y0 * w + x0] * (1 - fx) + d[y0 * w + x1] * fx) * (1 - fy) + (d[y1 * w + x0] * (1 - fx) + d[y1 * w + x1] * fx) * fy;
+  }
+
+  // Firma perpendicular a las crestas + autocorrelación → período en píxeles (o 0 si no es fiable).
+  function periodAt(img, cx, cy, theta, L, T, pmin, pmax) {
+    const { w, h, data } = img, tx = Math.cos(theta), ty = Math.sin(theta), nx = -ty, ny = tx;
+    const sig = new Float32Array(2 * L); let valid = 0;
+    for (let k = -L; k < L; k++) {
+      let acc = 0, cnt = 0;
+      for (let m = -T; m <= T; m += 2) {
+        const v = sampleBilinear(data, w, h, cx + k * nx + m * tx, cy + k * ny + m * ty);
+        if (!Number.isNaN(v)) { acc += v; cnt++; }
+      }
+      if (cnt) { sig[k + L] = acc / cnt; valid++; }
+    }
+    if (valid < 2 * L * 0.9) return 0;
+    let mean = 0; for (let i = 0; i < 2 * L; i++) mean += sig[i]; mean /= 2 * L;
+    for (let i = 0; i < 2 * L; i++) sig[i] -= mean;
+    const maxLag = Math.min(Math.floor(pmax) + 2, 2 * L - 4), ac = new Float32Array(maxLag + 2);
+    for (let lag = 0; lag <= maxLag + 1; lag++) { let s = 0; for (let i = 0; i + lag < 2 * L; i++) s += sig[i] * sig[i + lag]; ac[lag] = s / (2 * L - lag); }
+    if (ac[0] <= 1e-9) return 0;
+    for (let lag = Math.max(2, Math.floor(pmin)); lag <= maxLag; lag++) {
+      if (ac[lag] > ac[lag - 1] && ac[lag] >= ac[lag + 1] && ac[lag] > 0.15 * ac[0]) {
+        // debe haber un mínimo negativo antes (oscilación real)
+        let mn = Infinity; for (let q = 1; q < lag; q++) mn = Math.min(mn, ac[q]);
+        if (mn > -0.1 * ac[0]) return 0;
+        const y0 = ac[lag - 1], y1 = ac[lag], y2 = ac[lag + 1], den = y0 - 2 * y1 + y2;
+        const p = lag + (Math.abs(den) > 1e-12 ? 0.5 * (y0 - y2) / den : 0);
+        return p >= pmin && p <= pmax ? p : 0;
+      }
+    }
+    return 0;
+  }
+
+  function median(arr) { if (!arr.length) return 0; const a = Array.from(arr).sort((x, y) => x - y); return a[a.length >> 1]; }
+
+  function estimateGlobalPeriod(norm, theta, coh, mask) {
+    const { w, h } = norm, minDim = Math.min(w, h);
+    const L = Math.round(clamp(minDim / 7, 14, 40)), step = Math.max(6, Math.round(L / 2)), vals = [];
+    for (let y = L; y < h - L; y += step) for (let x = L; x < w - L; x += step) {
+      const i = y * w + x;
+      if (coh[i] < 0.35 || (mask && !mask[i])) continue;
+      const p = periodAt(norm, x, y, theta[i], L, Math.round(L / 3), 2.5, L / 1.4);
+      if (p) vals.push(p);
+    }
+    return { period: median(vals), samples: vals.length };
+  }
+
+  // ───────────────────────── morfología / componentes ─────────────────────────
+  function labelComponents(bin, w, h) {
+    const lab = new Int32Array(w * h), sizes = [0], stack = new Int32Array(w * h);
+    let next = 1;
+    for (let i = 0; i < w * h; i++) {
+      if (!bin[i] || lab[i]) continue;
+      let sp = 0, size = 0; stack[sp++] = i; lab[i] = next;
+      while (sp) {
+        const p = stack[--sp]; size++;
+        const x = p % w, y = (p / w) | 0;
+        if (x > 0 && bin[p - 1] && !lab[p - 1]) { lab[p - 1] = next; stack[sp++] = p - 1; }
+        if (x < w - 1 && bin[p + 1] && !lab[p + 1]) { lab[p + 1] = next; stack[sp++] = p + 1; }
+        if (y > 0 && bin[p - w] && !lab[p - w]) { lab[p - w] = next; stack[sp++] = p - w; }
+        if (y < h - 1 && bin[p + w] && !lab[p + w]) { lab[p + w] = next; stack[sp++] = p + w; }
+      }
+      sizes.push(size); next++;
+    }
+    return { lab, sizes };
+  }
+
+  function removeSmall(bin, w, h, minSize) {
+    const { lab, sizes } = labelComponents(bin, w, h);
+    for (let i = 0; i < w * h; i++) if (bin[i] && sizes[lab[i]] < minSize) bin[i] = 0;
+  }
+
+  function largestComponentFilled(bin, w, h) {
+    const { lab, sizes } = labelComponents(bin, w, h);
+    let best = 0; for (let k = 1; k < sizes.length; k++) if (sizes[k] > sizes[best] || best === 0) best = k;
+    const out = new Uint8Array(w * h);
+    if (!best) return out;
+    for (let i = 0; i < w * h; i++) out[i] = lab[i] === best ? 1 : 0;
+    // rellenar agujeros: fondo que no toca el borde
+    const inv = new Uint8Array(w * h); for (let i = 0; i < w * h; i++) inv[i] = out[i] ? 0 : 1;
+    const bl = labelComponents(inv, w, h), touches = new Uint8Array(bl.sizes.length);
+    for (let x = 0; x < w; x++) { touches[bl.lab[x]] = 1; touches[bl.lab[(h - 1) * w + x]] = 1; }
+    for (let y = 0; y < h; y++) { touches[bl.lab[y * w]] = 1; touches[bl.lab[y * w + w - 1]] = 1; }
+    for (let i = 0; i < w * h; i++) if (inv[i] && !touches[bl.lab[i]]) out[i] = 1;
+    return out;
+  }
+
+  function erodeByBlur(mask, w, h, sigma, thr) {
+    const f = new Float32Array(w * h); for (let i = 0; i < w * h; i++) f[i] = mask[i];
+    const b = gaussArr(f, w, h, sigma), out = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) out[i] = b[i] >= thr ? 1 : 0;
+    return out;
+  }
+
+  // Adelgazamiento Zhang–Suen.
+  function thin(bin, w, h) {
+    const img = Uint8Array.from(bin);
+    for (let x = 0; x < w; x++) { img[x] = 0; img[(h - 1) * w + x] = 0; }
+    for (let y = 0; y < h; y++) { img[y * w] = 0; img[y * w + w - 1] = 0; }
+    const del = [];
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let pass = 0; pass < 2; pass++) {
+        del.length = 0;
+        for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+          const i = y * w + x; if (!img[i]) continue;
+          const p2 = img[i - w], p3 = img[i - w + 1], p4 = img[i + 1], p5 = img[i + w + 1],
+                p6 = img[i + w], p7 = img[i + w - 1], p8 = img[i - 1], p9 = img[i - w - 1];
+          const B = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+          if (B < 2 || B > 6) continue;
+          const A = (!p2 && p3) + (!p3 && p4) + (!p4 && p5) + (!p5 && p6) + (!p6 && p7) + (!p7 && p8) + (!p8 && p9) + (!p9 && p2);
+          if (A !== 1) continue;
+          if (pass === 0 ? (p2 * p4 * p6 || p4 * p6 * p8) : (p2 * p4 * p8 || p2 * p6 * p8)) continue;
+          del.push(i);
+        }
+        if (del.length) { changed = true; for (const i of del) img[i] = 0; }
+      }
+    }
+    return img;
+  }
+
+  const NB = (w) => [-w, -w + 1, 1, w + 1, w, w - 1, -1, -w - 1]; // orden circular
+  function neighborCount(sk, i, nb) { let c = 0; for (let k = 0; k < 8; k++) c += sk[i + nb[k]] ? 1 : 0; return c; }
+  function crossingNumber(sk, i, nb) { let s = 0; for (let k = 0; k < 8; k++) s += Math.abs((sk[i + nb[k]] ? 1 : 0) - (sk[i + nb[(k + 1) & 7]] ? 1 : 0)); return s / 2; }
+
+  // Poda de espolones cortos y segmentos aislados.
+  function prune(sk, w, h, maxLen) {
+    const nb = NB(w);
+    for (let iter = 0; iter < 2; iter++) {
+      const ends = [];
+      for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) { const i = y * w + x; if (sk[i] && neighborCount(sk, i, nb) === 1) ends.push(i); }
+      for (const e of ends) {
+        if (!sk[e]) continue;
+        const path = [e], seen = new Set([e]); let cur = e, reason = 'long';
+        while (path.length <= maxLen) {
+          let nxt = -1, cnt = 0;
+          for (let k = 0; k < 8; k++) { const q = cur + nb[k]; if (sk[q] && !seen.has(q)) { cnt++; nxt = q; } }
+          if (cnt === 0) { reason = 'isolated'; break; }
+          if (cnt > 1 || neighborCount(sk, nxt, nb) >= 3) { reason = 'junction'; break; }
+          path.push(nxt); seen.add(nxt); cur = nxt;
+        }
+        if (reason === 'junction' || reason === 'isolated') for (const p of path) sk[p] = 0;
+      }
+    }
+    return sk;
+  }
+
+  // ───────────────────────── banco de filtros Gabor ─────────────────────────
+  const NORI = 16, PERIODS = [6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5];
+  let gaborBank = null;
+  function getGaborBank() {
+    if (gaborBank) return gaborBank;
+    gaborBank = PERIODS.map((p) => {
+      const sigma = 0.46 * p, R = Math.ceil(2.6 * sigma), size = 2 * R + 1;
+      return Array.from({ length: NORI }, (_, o) => {
+        const th = (o * PI) / NORI, nx = -Math.sin(th), ny = Math.cos(th), k = new Float32Array(size * size);
+        let sum = 0, cnt = 0;
+        for (let y = -R; y <= R; y++) for (let x = -R; x <= R; x++) {
+          const u = x * nx + y * ny, v = x * Math.cos(th) + y * Math.sin(th);
+          const g = Math.exp(-(u * u) / (2 * sigma * sigma) - (v * v) / (2 * (1.15 * sigma) ** 2)) * Math.cos((TAU * u) / p);
+          k[(y + R) * size + (x + R)] = g; sum += g; cnt++;
+        }
+        const m = sum / cnt; let norm = 0;
+        for (let i = 0; i < k.length; i++) { k[i] -= m; norm += Math.abs(k[i]); }
+        for (let i = 0; i < k.length; i++) k[i] /= norm / 2;
+        return { R, size, k };
+      });
+    });
+    return gaborBank;
+  }
+
+  function gaborEnhance(norm, theta, periodMap, mask) {
+    const { w, h, data } = norm, bank = getGaborBank(), out = new Float32Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x; if (!mask[i]) continue;
+      const pv = periodMap[i], tv = theta[i];
+      const pi = pv > 0 ? clamp(Math.round(pv - 6.5), 0, PERIODS.length - 1) : 3;
+      const kk = bank[pi][(tv >= 0 ? Math.round((tv / PI) * NORI) : 0) % NORI], R = kk.R, size = kk.size, k = kk.k;
+      let s = 0;
+      if (x >= R && y >= R && x < w - R && y < h - R) {
+        for (let dy = -R, ki = 0; dy <= R; dy++) { const row = (y + dy) * w + x - R; for (let dx = 0; dx < size; dx++, ki++) s += k[ki] * data[row + dx]; }
+      } else {
+        for (let dy = -R, ki = 0; dy <= R; dy++) for (let dx = -R; dx <= R; dx++, ki++) s += k[ki] * data[clamp(y + dy, 0, h - 1) * w + clamp(x + dx, 0, w - 1)];
+      }
+      out[i] = s;
+    }
+    return Img(w, h, out);
+  }
+
+  // ───────────────────────── puntos singulares ─────────────────────────
+  function singularPoints(theta, mask, w, h) {
+    const sm = smoothOrientation(theta, null, w, h, 10).theta;
+    const step = 6, rad = 3, ring = [];
+    const npts = 16; for (let k = 0; k < npts; k++) { const a = (k / npts) * TAU; ring.push([Math.round(rad * step * Math.cos(a)), Math.round(rad * step * Math.sin(a))]); }
+    const cands = [];
+    for (let y = rad * step + 2; y < h - rad * step - 2; y += step / 2) for (let x = rad * step + 2; x < w - rad * step - 2; x += step / 2) {
+      let ok = true;
+      for (const [dx, dy] of ring) if (!mask[(y + dy) * w + x + dx]) { ok = false; break; }
+      if (!ok) continue;
+      let sum = 0;
+      for (let k = 0; k < npts; k++) {
+        const a = sm[(y + ring[k][1]) * w + x + ring[k][0]], b = sm[(y + ring[(k + 1) % npts][1]) * w + x + ring[(k + 1) % npts][0]];
+        let d = b - a; if (d > PI / 2) d -= PI; else if (d < -PI / 2) d += PI; sum += d;
+      }
+      const idx = sum / TAU;
+      if (Math.abs(idx - 0.5) < 0.15) cands.push({ x, y, type: 'core' });
+      else if (Math.abs(idx + 0.5) < 0.15) cands.push({ x, y, type: 'delta' });
+    }
+    const clusters = [];
+    for (const c of cands) {
+      const cl = clusters.find((q) => q.type === c.type && Math.hypot(q.sx / q.n - c.x, q.sy / q.n - c.y) < 28);
+      if (cl) { cl.sx += c.x; cl.sy += c.y; cl.n++; } else clusters.push({ type: c.type, sx: c.x, sy: c.y, n: 1 });
+    }
+    return clusters.filter((c) => c.n >= 2).map((c) => ({ type: c.type, x: c.sx / c.n, y: c.sy / c.n, support: c.n }));
+  }
+
+  function patternClass(sp) {
+    const cores = sp.filter((s) => s.type === 'core').length, deltas = sp.filter((s) => s.type === 'delta').length;
+    if (cores >= 2 || deltas >= 2) return 'Verticilo (whorl)';
+    if (cores === 1) return 'Presilla (loop)';
+    if (cores === 0 && deltas === 0) return 'Arco / sin determinar';
+    return 'Indeterminado';
+  }
+
+  // ───────────────────────── análisis completo ─────────────────────────
+  /**
+   * @param {Img} gray  recorte en escala de grises (0..1), crestas oscuras idealmente
+   * @param {object} opts { invert:boolean, mirror:boolean, onProgress(fn) }
+   */
+  function analyze(gray, opts) {
+    opts = opts || {};
+    const t0 = Date.now();
+    let src = gray;
+    if (opts.mirror) src = flipH(src);
+    if (opts.invert) src = invert(src);
+
+    // 1) escala de trabajo inicial y período global
+    let pre = src; const maxPre = 520;
+    const s0 = Math.min(1, maxPre / Math.max(src.w, src.h));
+    if (s0 < 1) pre = resize(src, src.w * s0, src.h * s0);
+    const r0 = clamp(Math.min(pre.w, pre.h) / 25, 4, 14);
+    const n0 = localNormalize(pre, r0, r0).img;
+    const of0 = orientationField(n0, clamp(r0 * 0.6, 2, 6));
+    let est = estimateGlobalPeriod(n0, of0.theta, of0.coh, null);
+    if (!est.period) {
+      // reintento a mayor resolución cuando las crestas son muy finas
+      const alt = Math.min(1, 900 / Math.max(src.w, src.h));
+      if (alt > s0 + 0.05) {
+        pre = resize(src, src.w * alt, src.h * alt);
+        const n1 = localNormalize(pre, 5, 5).img, of1 = orientationField(n1, 2.5);
+        est = estimateGlobalPeriod(n1, of1.theta, of1.coh, null);
+        if (est.period) est.period *= s0 / alt; // expresado en la escala s0
+      }
+    }
+    if (!est.period) throw new Error('No se detectan crestas regulares en la imagen. Acerca más la cámara, mejora el foco o la iluminación.');
+    const periodSrc = est.period / s0;                      // período en píxeles de la imagen original
+    let scale = TARGET_PERIOD / periodSrc;                   // original → plantilla
+    const maxDim = 640;
+    if (Math.max(src.w, src.h) * scale > maxDim) scale = maxDim / Math.max(src.w, src.h);
+    const W = Math.round(src.w * scale), H = Math.round(src.h * scale);
+    const img = resize(src, W, H);
+
+    // 2) normalización, orientación, máscara
+    const nrm = localNormalize(img, 10, 12), norm = nrm.img;
+    const of = orientationField(norm, 5);
+    const sm = smoothOrientation(of.theta, of.coh, W, H, 7);
+    let cohS = gaussArr(of.coh, W, H, 6);
+    const stdS = gaussArr(nrm.std, W, H, 6);
+    const stdSorted = Array.from(stdS).sort((a, b) => a - b), p90 = stdSorted[Math.floor(stdSorted.length * 0.9)] || 1;
+    let m0 = new Uint8Array(W * H);
+    const mCoh = opts.maskCoh ?? 0.32, mStd = opts.maskStd ?? 0.28;
+    for (let i = 0; i < W * H; i++) m0[i] = cohS[i] > mCoh && stdS[i] > mStd * p90 ? 1 : 0;
+    m0 = erodeByBlur(m0, W, H, 6, 0.5);
+    if (opts.roi) {
+      // región de interés (p. ej. la silueta de tinta de la huella impresa), en coords del recorte original
+      const R0 = opts.roi, sx = R0.w / W, sy = R0.h / H;
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const rx = Math.min(R0.w - 1, (opts.mirror ? W - 1 - x : x) * sx | 0), ry = Math.min(R0.h - 1, y * sy | 0);
+        if (!R0.data[ry * R0.w + rx]) m0[y * W + x] = 0;
+      }
+    }
+    const mask0 = largestComponentFilled(m0, W, H);
+
+    // 3) mapa de período local
+    const step = 12, gw = Math.ceil(W / step), gh = Math.ceil(H / step), grid = new Float32Array(gw * gh), gwt = new Float32Array(gw * gh);
+    for (let gy = 0; gy < gh; gy++) for (let gx = 0; gx < gw; gx++) {
+      const x = Math.min(W - 1, gx * step + step / 2), y = Math.min(H - 1, gy * step + step / 2), i = y * W + x;
+      if (!mask0[i]) continue;
+      const p = periodAt(norm, x, y, sm.theta[i], 20, 7, 5, 14.5);
+      if (p) { grid[gy * gw + gx] = p; gwt[gy * gw + gx] = 1; }
+    }
+    const gS = gaussArr(grid, gw, gh, 1.5), wS = gaussArr(gwt, gw, gh, 1.5);
+    const periodMap = new Float32Array(W * H);
+    let m1 = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const g = Math.min(gh - 1, (y / step) | 0) * gw + Math.min(gw - 1, (x / step) | 0);
+      periodMap[y * W + x] = wS[g] > 0.05 ? gS[g] / wS[g] : TARGET_PERIOD;
+      m1[y * W + x] = mask0[y * W + x] && wS[g] > (opts.maskPer ?? 0.45) ? 1 : 0;   // sólo zonas con crestas periódicas
+    }
+    m1 = erodeByBlur(m1, W, H, 5, 0.5);
+    const mask = largestComponentFilled(m1, W, H);
+    const inner = erodeByBlur(mask, W, H, 8, 0.97);
+
+    // 4) Gabor + binarización
+    const enh = gaborEnhance(norm, sm.theta, periodMap, mask);
+    const bin = new Uint8Array(W * H);
+    for (let i = 0; i < W * H; i++) bin[i] = mask[i] && enh.data[i] < 0 ? 1 : 0; // cresta = respuesta negativa (oscura)
+    removeSmall(bin, W, H, 24);
+    const valley = new Uint8Array(W * H); for (let i = 0; i < W * H; i++) valley[i] = mask[i] && !bin[i] ? 1 : 0;
+    removeSmall(valley, W, H, 24);
+    for (let i = 0; i < W * H; i++) if (mask[i] && !valley[i]) bin[i] = 1;
+
+    // 5) esqueleto y minucias
+    const sk = prune(thin(bin, W, H), W, H, 10);
+    const nb = NB(W), raw = [];
+    for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
+      const i = y * W + x; if (!sk[i] || !inner[i]) continue;
+      const cn = crossingNumber(sk, i, nb);
+      if (cn === 1) raw.push({ x, y, type: 'ending' });
+      else if (cn >= 3) raw.push({ x, y, type: 'bifurcation' });
+    }
+    // fusionar bifurcaciones contiguas
+    const merged = [];
+    for (const m of raw) {
+      const q = m.type === 'bifurcation' && merged.find((z) => z.type === 'bifurcation' && Math.hypot(z.x - m.x, z.y - m.y) < 3.5);
+      if (q) { q.x = (q.x + m.x) / 2; q.y = (q.y + m.y) / 2; } else merged.push({ ...m });
+    }
+    // eliminar falsas minucias (crestas rotas, puentes, espolones)
+    const kill = new Uint8Array(merged.length);
+    for (let a = 0; a < merged.length; a++) for (let b = a + 1; b < merged.length; b++) {
+      const A = merged[a], B = merged[b], d = Math.hypot(A.x - B.x, A.y - B.y);
+      const lim = A.type === 'ending' && B.type === 'ending' ? 10 : 7.5;
+      if (d < lim) { kill[a] = 1; kill[b] = 1; }
+    }
+    const minutiae = [];
+    merged.forEach((m, k) => {
+      if (kill[k]) return;
+      const i = Math.round(m.y) * W + Math.round(m.x);
+      const c = cohS[i];
+      minutiae.push({ x: m.x, y: m.y, t: sm.theta[i], type: m.type, q: +c.toFixed(3) });
+    });
+
+    // 6) puntos singulares y calidad
+    const singular = singularPoints(of.theta, inner, W, H);
+    let area = 0, cohSum = 0; for (let i = 0; i < W * H; i++) if (mask[i]) { area++; cohSum += cohS[i]; }
+    const cohMean = area ? cohSum / area : 0;
+    const areaRidges = area / (TARGET_PERIOD * TARGET_PERIOD);          // área en "celdas de cresta"
+    const qCoh = clamp((cohMean - 0.3) / 0.4, 0, 1), qArea = clamp(areaRidges / 420, 0, 1), qMin = clamp(minutiae.length / 30, 0, 1);
+    const quality = Math.round(100 * Math.pow(qCoh, 0.5) * Math.pow(qArea, 0.35) * Math.pow(qMin, 0.35));
+
+    // máscara reducida para pruebas de solapamiento
+    const ms = 4, mw = Math.ceil(W / ms), mh = Math.ceil(H / ms), maskSmall = new Uint8Array(mw * mh);
+    for (let y = 0; y < H; y += ms) for (let x = 0; x < W; x += ms) maskSmall[(y / ms) * mw + x / ms] = mask[y * W + x];
+
+    const os = 8, ow = Math.ceil(W / os), oh = Math.ceil(H / os), orient = new Float32Array(ow * oh);
+    for (let y = 0; y < oh; y++) for (let x = 0; x < ow; x++) orient[y * ow + x] = sm.theta[Math.min(H - 1, y * os + 4) * W + Math.min(W - 1, x * os + 4)];
+
+    return {
+      version: 1, orient: { w: ow, h: oh, s: os, data: orient },
+      w: W, h: H, scale, periodSrc: +periodSrc.toFixed(2), mirror: !!opts.mirror, invert: !!opts.invert,
+      minutiae, singular, pattern: patternClass(singular),
+      quality, cohMean: +cohMean.toFixed(3), areaPx: area,
+      maskSmall: { w: mw, h: mh, s: ms, data: maskSmall },
+      ms: Date.now() - t0,
+      images: { norm: toDisplay(norm, 0.22), enh: toDisplay(enh, 0.9), bin, skel: sk, mask, gray: img },
+    };
+  }
+
+  // ───────────────────────── localizar huella en la cédula ─────────────────────────
+  /**
+   * Busca la región con textura de crestas en la foto de una cédula.
+   * Devuelve { box:{x,y,w,h} en coords de la imagen original, score, candidates[] , heat }.
+   */
+  /**
+   * Silueta de la huella IMPRESA: zona de tinta oscura y densa sobre la cédula clara. Las líneas de
+   * seguridad del fondo son finas y dejan el promedio local claro, así que no forman silueta.
+   */
+  function locatePrintBlob(gray) {
+    const s = Math.min(1, 700 / Math.max(gray.w, gray.h)), img = s < 1 ? resize(gray, gray.w * s, gray.h * s) : gray, { w, h } = img;
+    const m = gaussArr(img.data, w, h, Math.max(3, Math.min(w, h) / 45));
+    // umbral de Otsu sobre el promedio local
+    const hist = new Float64Array(256); for (const v of m) hist[Math.max(0, Math.min(255, (v * 255) | 0))]++;
+    let tot = w * h, sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
+    let sB = 0, wB = 0, best = 0, thr = 128;
+    for (let i = 0; i < 256; i++) { wB += hist[i]; if (!wB) continue; const wF = tot - wB; if (!wF) break; sB += i * hist[i]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) ** 2; if (v > best) { best = v; thr = i; } }
+    const bin = new Uint8Array(w * h); for (let i = 0; i < w * h; i++) bin[i] = m[i] * 255 < thr ? 1 : 0;
+    const { lab, sizes } = labelComponents(bin, w, h);
+    // la mancha oscura más grande que no toque demasiado el borde
+    let bk = 0, bs = 0;
+    for (let k = 1; k < sizes.length; k++) if (sizes[k] > bs) { bs = sizes[k]; bk = k; }
+    if (!bk || bs < w * h * 0.01) return null;
+    let x0 = w, y0 = h, x1 = 0, y1 = 0; const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) if (lab[i] === bk) { mask[i] = 1; const x = i % w, y = (i / w) | 0; if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; }
+    const filled = largestComponentFilled(mask, w, h), dil = erodeByBlur(filled, w, h, Math.max(2, Math.min(w, h) / 80), 0.05);
+    const box = { x: x0 / s, y: y0 / s, w: (x1 - x0 + 1) / s, h: (y1 - y0 + 1) / s };
+    return { box, fill: bs / ((x1 - x0 + 1) * (y1 - y0 + 1)), area: bs / (w * h), mask: { w, h, s, data: dil } };
+  }
+  /** Recorta la silueta de la huella impresa y devuelve { gray, roi } listos para analyze(). */
+  function cropPrint(gray, pad) {
+    const B = locatePrintBlob(gray); if (!B) return null;
+    const p = pad == null ? 0.06 : pad, b = B.box, x = Math.max(0, b.x - b.w * p), y = Math.max(0, b.y - b.h * p);
+    const w = Math.min(gray.w - x, b.w * (1 + 2 * p)), h = Math.min(gray.h - y, b.h * (1 + 2 * p));
+    const g = crop(gray, x, y, w, h), M = B.mask, rw = g.w, rh = g.h, roi = new Uint8Array(rw * rh);
+    for (let yy = 0; yy < rh; yy++) for (let xx = 0; xx < rw; xx++) { const mx = Math.min(M.w - 1, ((x + xx) * M.s) | 0), my = Math.min(M.h - 1, ((y + yy) * M.s) | 0); roi[yy * rw + xx] = M.data[my * M.w + mx]; }
+    return { gray: g, roi: { w: rw, h: rh, data: roi }, box: { x, y, w: g.w, h: g.h }, fill: B.fill };
+  }
+  function locateFingerprint(gray) {
+    const maxDim = 1100, s = Math.min(1, maxDim / Math.max(gray.w, gray.h));
+    const img = s < 1 ? resize(gray, gray.w * s, gray.h * s) : gray, { w, h } = img;
+    // contraste absoluto local (no normalizado) para descartar zonas planas
+    const mean = gaussArr(img.data, w, h, 3), hp = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) hp[i] = img.data[i] - mean[i];
+    const hi = Img(w, h, gaussArr(hp, w, h, 0.7));
+    const sq = new Float32Array(w * h); for (let i = 0; i < w * h; i++) sq[i] = hi.data[i] * hi.data[i];
+    const loc = gaussArr(sq, w, h, 6);
+    const sortedE = Array.from(loc).sort((a, b) => a - b), eRef = sortedE[Math.floor(sortedE.length * 0.9)] + 1e-9;
+    const of = orientationField(hi, 3.5);
+    const B = 12, bw = Math.floor(w / B), bh = Math.floor(h / B);
+    const score = new Float32Array(bw * bh), cth = new Float32Array(bw * bh), sth = new Float32Array(bw * bh), per = new Float32Array(bw * bh);
+    for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) {
+      let c = 0, e = 0, cs = 0, sn = 0, n = 0;
+      for (let y = by * B; y < by * B + B; y += 2) for (let x = bx * B; x < bx * B + B; x += 2) {
+        const i = y * w + x; c += of.coh[i]; e += loc[i]; cs += Math.cos(2 * of.theta[i]); sn += Math.sin(2 * of.theta[i]); n++;
+      }
+      c /= n; e /= n;
+      const k = by * bw + bx;
+      score[k] = clamp((c - 0.25) / 0.5, 0, 1) * clamp(Math.sqrt(Math.max(0, e) / eRef) / 0.6, 0, 1);
+      cth[k] = cs / n; sth[k] = sn / n;
+      if (score[k] > 0.12) {
+        // periodicidad: una huella muestra crestas paralelas con período regular
+        const cx = bx * B + B / 2, cy = by * B + B / 2, th = modPi(0.5 * Math.atan2(sth[k], cth[k]));
+        const p = periodAt(hi, cx, cy, th, 11, 4, 2.2, 9.5);
+        per[k] = p;
+        if (!p) score[k] *= 0.2;
+      }
+    }
+    const sS = gaussArr(score, bw, bh, 1.2);
+    let mx = 0; for (const v of sS) mx = Math.max(mx, v);
+    if (mx < 0.05) return { box: null, score: 0, candidates: [] };
+    // varios umbrales: una zona muy contrastada (texto grueso, MRZ) no debe ocultar la huella
+    const cands = [];
+    for (const thr of [0.45, 0.3, 0.2]) {
+    const bin = new Uint8Array(bw * bh); for (let i = 0; i < bw * bh; i++) bin[i] = sS[i] > thr * mx ? 1 : 0;
+    const { lab, sizes } = labelComponents(bin, bw, bh);
+    for (let k = 1; k < sizes.length; k++) {
+      if (sizes[k] < 6) continue;
+      let x0 = bw, y0 = bh, x1 = 0, y1 = 0, ss = 0, cs = 0, sn = 0, n = 0; const pv = [];
+      for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) {
+        const i = by * bw + bx; if (lab[i] !== k) continue;
+        x0 = Math.min(x0, bx); y0 = Math.min(y0, by); x1 = Math.max(x1, bx); y1 = Math.max(y1, by);
+        ss += sS[i]; cs += cth[i]; sn += sth[i]; n++;
+        if (per[i]) pv.push(per[i]);
+      }
+      const pm = pv.reduce((a, b) => a + b, 0) / (pv.length || 1);
+      const pcv = pv.length > 2 ? Math.sqrt(pv.reduce((a, b) => a + (b - pm) ** 2, 0) / pv.length) / pm : 1;
+      const periodic = clamp(pv.length / n / 0.6, 0, 1) * clamp((0.4 - pcv) / 0.25, 0.05, 1);
+      const bwid = x1 - x0 + 1, bhei = y1 - y0 + 1, fill = n / (bwid * bhei), aspect = Math.min(bwid, bhei) / Math.max(bwid, bhei);
+      const uniform = Math.hypot(cs, sn) / n;       // ≈1: orientación constante (código de barras, líneas)
+      const curvature = clamp((0.92 - uniform) / 0.5, 0.1, 1);
+      const shape = clamp(aspect / 0.55, 0.2, 1) * clamp(fill / 0.5, 0.3, 1);
+      const sizeF = clamp(n / 40, 0.2, 1);
+      cands.push({
+        score: (ss / n) * curvature * shape * sizeF * periodic,
+        period: +(pm / s).toFixed(2), periodCv: +pcv.toFixed(2),
+        box: { x: (x0 * B) / s, y: (y0 * B) / s, w: (bwid * B) / s, h: (bhei * B) / s },
+        uniform: +uniform.toFixed(2), aspect: +aspect.toFixed(2),
+      });
+    }
+    }
+    cands.sort((a, b) => b.score - a.score);
+    const pad = (b) => {
+      const px = b.w * 0.08, py = b.h * 0.08;
+      const x = clamp(b.x - px, 0, gray.w), y = clamp(b.y - py, 0, gray.h);
+      return { x, y, w: Math.min(gray.w - x, b.w + 2 * px), h: Math.min(gray.h - y, b.h + 2 * py) };
+    };
+    cands.forEach((c) => (c.box = pad(c.box)));
+    return { box: cands[0] ? cands[0].box : null, score: cands[0] ? +cands[0].score.toFixed(3) : 0, candidates: cands.slice(0, 5) };
+  }
+
+  // ───────────────────────── evaluación de encuadre en vivo ─────────────────────────
+  /**
+   * Evalúa un cuadro pequeño (≈200 px) del círculo guía para decidir si la yema está bien
+   * posicionada: cobertura de crestas, coherencia, período (distancia), nitidez y brillo.
+   * Devuelve también una miniatura 24×24 para medir movimiento entre cuadros.
+   */
+  function assessFrame(gray) {
+    const { w, h, data } = gray, n = w * h;
+    const cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 * 0.9;
+    const circ = new Uint8Array(n); let inC = 0, mean = 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x; if ((x - cx) ** 2 + (y - cy) ** 2 <= R * R) { circ[i] = 1; inC++; mean += data[i]; }
+    }
+    mean /= inC || 1;
+    const r = Math.max(3, w / 45);
+    const nrm = localNormalize(gray, r, r * 1.3), of = orientationField(nrm.img, Math.max(2, w / 70));
+    const coh = gaussArr(of.coh, w, h, Math.max(2, w / 35));
+    // contraste local del original: descarta zonas planas donde el ruido parece textura
+    const stdS = gaussArr(nrm.std, w, h, Math.max(2, w / 35)), sv = [];
+    for (let i = 0; i < n; i++) if (circ[i]) sv.push(stdS[i]);
+    sv.sort((a, b) => a - b);
+    const p90 = sv[Math.floor(sv.length * 0.9)] || 0, stdMin = Math.max(0.35 * p90, 0.006);
+    let good = 0, cohSum = 0;
+    for (let i = 0; i < n; i++) if (circ[i]) { const ok = stdS[i] > stdMin; cohSum += ok ? coh[i] : 0; if (ok && coh[i] > 0.45) good++; }
+    const coverage = good / (inC || 1), cohMean = cohSum / (inC || 1);
+    const period = estimateGlobalPeriod(nrm.img, of.theta, of.coh, circ).period;
+    // nitidez: energía de gradiente del original relativa al brillo
+    const { gx, gy } = gradients(gray); let ge = 0;
+    for (let i = 0; i < n; i++) if (circ[i]) ge += gx[i] * gx[i] + gy[i] * gy[i];
+    const sharpness = Math.sqrt(ge / (inC || 1)) / (mean + 0.05);
+    const thumb = resize(gray, 24, 24).data;
+    return { coverage: +coverage.toFixed(3), cohMean: +cohMean.toFixed(3), period: +period.toFixed(2), sharpness: +sharpness.toFixed(4), brightness: +mean.toFixed(3), thumb };
+  }
+  /**
+   * Evalúa un cuadro del marco de la cédula: nitidez (laplaciano), densidad de bordes (texto,
+   * foto, huella), brillo y fracción de píxeles saturados (reflejo del flash o de la lámina).
+   */
+  function assessDocument(gray) {
+    const { w, h, data } = gray; let mean = 0, sat = 0, lap = 0, edges = 0, n = 0;
+    for (let i = 0; i < w * h; i++) { mean += data[i]; if (data[i] > 0.99) sat++; }
+    mean /= w * h;
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x, l = 4 * data[i] - data[i - 1] - data[i + 1] - data[i - w] - data[i + w];
+      lap += Math.abs(l); const gx = data[i + 1] - data[i - 1], gy = data[i + w] - data[i - w];
+      if (gx * gx + gy * gy > 0.01) edges++; n++;
+    }
+    return { brightness: +mean.toFixed(3), glare: +(sat / (w * h)).toFixed(4), sharpness: +(lap / n / (mean + 0.05)).toFixed(4),
+      edges: +(edges / n).toFixed(4), thumb: resize(gray, 24, 24).data };
+  }
+  /**
+   * Reflejo dentro de un rectángulo: píxeles saturados cuyo entorno es claramente más oscuro
+   * (un brillo especular sobre la lámina). Un fondo blanco parejo no cuenta como reflejo.
+   */
+  function glareIn(gray, box) {
+    // escala fina (~1 cresta): toda la zona quemada; escala gruesa: el entorno es más oscuro
+    const m = Math.min(gray.w, gray.h), fine = gaussArr(gray.data, gray.w, gray.h, Math.max(2.5, m / 70)), wide = gaussArr(gray.data, gray.w, gray.h, Math.max(8, m / 10));
+    let s = 0, n = 0; const x0 = Math.max(0, box.x | 0), y0 = Math.max(0, box.y | 0), x1 = Math.min(gray.w, (box.x + box.w) | 0), y1 = Math.min(gray.h, (box.y + box.h) | 0);
+    // solo el interior de la huella (elipse al 70 %): los márgenes blancos del recuadro no cuentan
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, rx = (x1 - x0) * 0.35, ry = (y1 - y0) * 0.35;
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+      if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 > 1) continue;
+      const i = y * gray.w + x; n++; if (fine[i] > 0.965 && wide[i] < 0.88) s++;
+    }
+    return n ? s / n : 0;
+  }
+  function motionBetween(a, b) { if (!a || !b) return 1; let s = 0; for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]); return s / a.length; }
+
+  // Filtro de surcos para vista previa (pantalla 2): normalización local + realce.
+  function ridgeFilter(gray, strength) {
+    const r = clamp(Math.min(gray.w, gray.h) / 60, 2, 12);
+    const n = localNormalize(gray, r, r * 1.3).img;
+    return toDisplay(n, 0.18 * (strength || 1));
+  }
+
+  // ───────────────────────── comparación (match) ─────────────────────────
+  const DESC_R = 75, DESC_K = 8;
+  function descriptors(ms) {
+    return ms.map((m, i) => {
+      const nb = [];
+      for (let j = 0; j < ms.length; j++) {
+        if (j === i) continue;
+        const dx = ms[j].x - m.x, dy = ms[j].y - m.y, d = Math.hypot(dx, dy);
+        if (d > 5 && d < DESC_R) nb.push({ d, a: modPi(Math.atan2(dy, dx) - m.t), b: modPi(ms[j].t - m.t) });
+      }
+      nb.sort((p, q) => p.d - q.d);
+      return nb.slice(0, DESC_K);
+    });
+  }
+
+  function descSim(A, B, s) {
+    if (!A.length || !B.length) return 0;
+    const used = new Uint8Array(B.length); let cnt = 0;
+    for (const a of A) {
+      let best = -1, bc = Infinity;
+      for (let j = 0; j < B.length; j++) {
+        if (used[j]) continue;
+        const b = B[j], dd = Math.abs(a.d * s - b.d);
+        if (dd > 5 + 0.12 * b.d) continue;
+        const da = angDiffPi(a.a, b.a), db = angDiffPi(a.b, b.b);
+        if (da > 0.32 || db > 0.38) continue;
+        const cost = dd / 8 + da + db;
+        if (cost < bc) { bc = cost; best = j; }
+      }
+      if (best >= 0) { used[best] = 1; cnt++; }
+    }
+    return (cnt * cnt) / (A.length * B.length);
+  }
+
+  function makeT(s, rot, tx, ty) { return { s, rot, c: s * Math.cos(rot), sn: s * Math.sin(rot), tx, ty }; }
+  const applyT = (T, x, y) => [T.c * x - T.sn * y + T.tx, T.sn * x + T.c * y + T.ty];
+
+  function pairUp(A, B, T, tolD, tolA) {
+    const cand = [];
+    const ta = A.map((m) => { const [x, y] = applyT(T, m.x, m.y); return { x, y, t: modPi(m.t + T.rot) }; });
+    for (let i = 0; i < ta.length; i++) for (let j = 0; j < B.length; j++) {
+      const dx = ta[i].x - B[j].x, dy = ta[i].y - B[j].y; if (Math.abs(dx) > tolD || Math.abs(dy) > tolD) continue;
+      const d = Math.hypot(dx, dy); if (d > tolD) continue;
+      if (angDiffPi(ta[i].t, B[j].t) > tolA) continue;
+      cand.push([d, i, j]);
+    }
+    cand.sort((p, q) => p[0] - q[0]);
+    const ua = new Uint8Array(A.length), ub = new Uint8Array(B.length), pairs = [];
+    for (const [d, i, j] of cand) if (!ua[i] && !ub[j]) { ua[i] = 1; ub[j] = 1; pairs.push({ i, j, d }); }
+    return pairs;
+  }
+
+  function procrustes(A, B, pairs) {
+    let pxm = 0, pym = 0, qxm = 0, qym = 0; const n = pairs.length;
+    for (const p of pairs) { pxm += A[p.i].x; pym += A[p.i].y; qxm += B[p.j].x; qym += B[p.j].y; }
+    pxm /= n; pym /= n; qxm /= n; qym /= n;
+    let a = 0, b = 0, nn = 0;
+    for (const p of pairs) {
+      const px = A[p.i].x - pxm, py = A[p.i].y - pym, qx = B[p.j].x - qxm, qy = B[p.j].y - qym;
+      a += px * qx + py * qy; b += px * qy - py * qx; nn += px * px + py * py;
+    }
+    const rot = Math.atan2(b, a), s = clamp(Math.hypot(a, b) / (nn || 1), 0.8, 1.25);
+    const c = s * Math.cos(rot), sn = s * Math.sin(rot);
+    return makeT(s, rot, qxm - (c * pxm - sn * pym), qym - (sn * pxm + c * pym));
+  }
+
+  function inMask(M, x, y) {
+    const mx = Math.floor(x / M.s), my = Math.floor(y / M.s);
+    return mx >= 0 && my >= 0 && mx < M.w && my < M.h && M.data[my * M.w + mx] === 1;
+  }
+
+  const TOL_D = 14, TOL_A = 0.42, VERIFY_SIM = 0.2;
+  function coreMatch(A, B, opts) {
+    opts = opts || {};
+    const mA = A.minutiae, mB = B.minutiae;
+    if (mA.length < 4 || mB.length < 4) return { n: 0, raw: 0, pairs: [], T: makeT(1, 0, 0, 0) };
+    const dA = opts.dA || descriptors(mA), dB = descriptors(mB);
+    const cand = [], nBm = mB.length, simM = new Float32Array(mA.length * nBm);
+    for (let i = 0; i < mA.length; i++) for (let j = 0; j < nBm; j++) {
+      const sim = descSim(dA[i], dB[j], 1);
+      simM[i * nBm + j] = sim;
+      if (sim > 0.12) cand.push([sim, i, j]);
+    }
+    // un par es "verificado" si además de coincidir en posición/ángulo comparte estructura de vecindad
+    const verify = (pairs) => { let v = 0; for (const p of pairs) { p.sim = simM[p.i * nBm + p.j]; p.ok = p.sim >= VERIFY_SIM; if (p.ok) v++; } return v; };
+    cand.sort((p, q) => q[0] - p[0]);
+    const top = cand.slice(0, opts.maxCand || 70), scales = [0.88, 0.94, 1, 1.06, 1.13];
+    let best = { n: -1, raw: -1, pairs: [], T: makeT(1, 0, 0, 0) };
+    for (const [, i, j] of top) for (const extra of [0, PI]) {
+      const rot = mB[j].t - mA[i].t + extra;
+      for (const s of scales) {
+        const c = s * Math.cos(rot), sn = s * Math.sin(rot);
+        const T = makeT(s, rot, mB[j].x - (c * mA[i].x - sn * mA[i].y), mB[j].y - (sn * mA[i].x + c * mA[i].y));
+        const pairs = pairUp(mA, mB, T, TOL_D, TOL_A), v = verify(pairs);
+        if (v > best.n || (v === best.n && pairs.length > best.raw)) best = { n: v, raw: pairs.length, pairs, T };
+      }
+    }
+    // refinamiento con los pares verificados
+    for (let it = 0; it < 3 && best.n >= 3; it++) {
+      const T = procrustes(mA, mB, best.pairs.filter((p) => p.ok)), pairs = pairUp(mA, mB, T, TOL_D, TOL_A), v = verify(pairs);
+      if (v >= best.n) best = { n: v, raw: pairs.length, pairs, T }; else break;
+    }
+    return best;
+  }
+
+  function mulberry32(a) { return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+  function randomLike(B, rnd) {
+    const pts = [], M = B.maskSmall; let guard = 0;
+    while (pts.length < B.minutiae.length && guard++ < 20000) {
+      const x = rnd() * B.w, y = rnd() * B.h;
+      if (!inMask(M, x, y)) continue;
+      if (pts.some((p) => Math.hypot(p.x - x, p.y - y) < 9)) continue;
+      const O = B.orient, t = O ? O.data[Math.min(O.h - 1, (y / O.s) | 0) * O.w + Math.min(O.w - 1, (x / O.s) | 0)] + (rnd() - 0.5) * 0.3 : rnd() * PI;
+      pts.push({ x, y, t: modPi(t), type: 'ending' });
+    }
+    return { ...B, minutiae: pts };
+  }
+
+  /**
+   * Compara plantilla A (cédula) con B (dedo). Devuelve similitud %, pares y diagnóstico.
+   */
+  function match(A, B, opts) {
+    opts = opts || {};
+    const t0 = Date.now();
+    const dA = descriptors(A.minutiae);
+    const best = coreMatch(A, B, { dA });
+    const T = best.T;
+    // minucias en la zona común
+    const inv = (() => { const s = T.s, c = Math.cos(-T.rot) / s, sn = Math.sin(-T.rot) / s; return { c, sn, tx: -(c * T.tx - sn * T.ty), ty: -(sn * T.tx + c * T.ty) }; })();
+    let nAov = 0, nBov = 0;
+    for (const m of A.minutiae) { const [x, y] = applyT(T, m.x, m.y); if (inMask(B.maskSmall, x, y)) nAov++; }
+    for (const m of B.minutiae) { const x = inv.c * m.x - inv.sn * m.y + inv.tx, y = inv.sn * m.x + inv.c * m.y + inv.ty; if (inMask(A.maskSmall, x, y)) nBov++; }
+    nAov = Math.max(nAov, best.n, 1); nBov = Math.max(nBov, best.n, 1);
+    const n = Math.max(0, best.n);
+    const overlapRatio = 2 * n / (nAov + nBov);
+
+    // línea base de azar: mismas condiciones con minucias aleatorias dentro de la máscara de B
+    const rnd = mulberry32(12345), trials = opts.trials || 6, rn = [];
+    for (let k = 0; k < trials; k++) rn.push(Math.max(0, coreMatch(A, randomLike(B, rnd), { dA, maxCand: 40 }).n));
+    const mu = rn.reduce((a, b) => a + b, 0) / trials;
+    const sd = Math.sqrt(rn.reduce((a, b) => a + (b - mu) ** 2, 0) / trials) || 1;
+    const z = (n - mu) / Math.max(sd, 1);
+
+    // similitud %: fracción de minucias comunes emparejadas, descontando lo que explicaría el azar
+    const muRatio = 2 * mu / (nAov + nBov);
+    const adj = clamp((overlapRatio - muRatio) / Math.max(1e-6, 1 - muRatio), 0, 1);
+    const similarity = Math.round(100 * adj);
+
+    // núcleos
+    let coreAgree = null;
+    const cA = A.singular.find((s) => s.type === 'core'), cB = B.singular.find((s) => s.type === 'core');
+    if (cA && cB) { const [x, y] = applyT(T, cA.x, cA.y); coreAgree = Math.hypot(x - cB.x, y - cB.y) < 30; }
+
+    let verdict, level;
+    if (n >= 10 && z >= 4 && similarity >= 40) { verdict = 'Coincide'; level = 'ok'; }
+    else if (n >= 7 && z >= 2.5 && similarity >= 25) { verdict = 'Coincidencia dudosa'; level = 'warn'; }
+    else { verdict = 'No coincide'; level = 'bad'; }
+    if (Math.min(A.minutiae.length, B.minutiae.length) < 12) { verdict = 'Muestra insuficiente'; level = 'warn'; }
+
+    return {
+      similarity, verdict, level, matched: n, rawPairs: best.raw, nA: A.minutiae.length, nB: B.minutiae.length, nAov, nBov,
+      overlapRatio: +overlapRatio.toFixed(3), chance: +mu.toFixed(1), chanceSd: +sd.toFixed(1), z: +z.toFixed(2),
+      transform: { scale: +T.s.toFixed(3), rotationDeg: +((T.rot * 180) / PI).toFixed(1), tx: +T.tx.toFixed(1), ty: +T.ty.toFixed(1) },
+      T, pairs: best.pairs, coreAgree, ms: Date.now() - t0,
+    };
+  }
+
+  // ───────────────────────── escáner por barrido (mosaico de fragmentos) ─────────────────────────
+  /**
+   * Arma una huella completa a partir de fragmentos (plantillas de analyze()) tomados mientras la
+   * cámara recorre el dedo. Todas las plantillas están en la misma escala (período de cresta 9 px),
+   * así que ubicar un fragmento es buscar rotación + traslación:
+   *   1. hipótesis a partir de las minucias (fragmento vs minucias del mosaico) y de la última posición;
+   *   2. cada hipótesis se refina y se puntúa por correlación normalizada (NCC) entre la imagen
+   *      realzada del fragmento y la del mosaico en la zona común;
+   *   3. si la NCC supera el umbral, se funde el fragmento (promedio de imágenes realzadas).
+   * template() re-analiza el mosaico completo y devuelve una plantilla compatible con match().
+   */
+  function createScan(opts) {
+    opts = opts || {};
+    const N = opts.size || 1024, NCC_MIN = opts.nccMin || 0.5;
+    let st = null;
+    const reset = () => {
+      st = { sum: new Float32Array(N * N), wt: new Float32Array(N * N), mins: [], acc: [], patches: 0,
+        tried: st ? st.tried : 0, fails: st ? st.fails : 0, streak: 0, restarts: st ? st.restarts + 1 : -1, lastT: null, area: 0 };
+    };
+    reset(); st.restarts = 0;
+
+    // muestras del fragmento: valores realzados centrados, solo dentro de su máscara
+    function samples(t, step) {
+      const e = t.images.enh.data, m = t.images.mask, xs = [], ys = [], vs = [];
+      for (let y = 0; y < t.h; y += step) for (let x = 0; x < t.w; x += step) { const i = y * t.w + x; if (m[i]) { xs.push(x); ys.push(y); vs.push(e[i] - 0.5); } }
+      return { xs, ys, vs, n: xs.length };
+    }
+    function ncc(P, T) {
+      let sab = 0, saa = 0, sbb = 0, n = 0;
+      for (let k = 0; k < P.n; k++) {
+        const X = T.c * P.xs[k] - T.sn * P.ys[k] + T.tx, Y = T.sn * P.xs[k] + T.c * P.ys[k] + T.ty;
+        const xi = X | 0, yi = Y | 0; if (xi < 0 || yi < 0 || xi >= N - 1 || yi >= N - 1) continue;
+        const i = yi * N + xi, w = st.wt[i]; if (w < 0.5) continue;
+        const b = st.sum[i] / w, a = P.vs[k];
+        sab += a * b; saa += a * a; sbb += b * b; n++;
+      }
+      return { r: n > 20 ? sab / Math.sqrt(saa * sbb + 1e-9) : -1, overlap: n / (P.n || 1) };
+    }
+    // búsqueda local alrededor de una hipótesis (traslación y rotación)
+    function refine(P, T0, span, step, t) {
+      let best = { ...ncc(P, T0), T: T0 };
+      for (const ds of (span > 4 ? [0.95, 1, 1.05] : [1])) for (const dr of [-0.07, 0, 0.07]) {
+        const Ts = ds === 1 ? T0 : centerScale(T0, t, ds), Tr = dr ? centerRot(Ts, t, dr) : Ts;
+        for (let dy = -span; dy <= span; dy += step) for (let dx = -span; dx <= span; dx += step) {
+          const T = makeT(Tr.s, Tr.rot, Tr.tx + dx, Tr.ty + dy), r = ncc(P, T);
+          if (r.r > best.r) best = { ...r, T };
+        }
+      }
+      return best;
+    }
+    function centerScale(T, t, ds) {
+      const cx = t.w / 2, cy = t.h / 2, [X, Y] = applyT(T, cx, cy), sc = clamp(T.s * ds, 0.75, 1.35), c = sc * Math.cos(T.rot), sn = sc * Math.sin(T.rot);
+      return makeT(sc, T.rot, X - (c * cx - sn * cy), Y - (sn * cx + c * cy));
+    }
+    function centerRot(T, t, drot) {
+      // rota T alrededor del centro del fragmento
+      const cx = t.w / 2, cy = t.h / 2, [X, Y] = applyT(T, cx, cy), rot = T.rot + drot, c = T.s * Math.cos(rot), sn = T.s * Math.sin(rot);
+      return makeT(T.s, rot, X - (c * cx - sn * cy), Y - (sn * cx + c * cy));
+    }
+
+    function merge(t, T) {
+      const e = t.images.enh.data, m = t.images.mask;
+      // peso decreciente hacia el borde del fragmento para fundir sin costuras
+      const cx = t.w / 2, cy = t.h / 2, R = Math.min(t.w, t.h) / 2;
+      for (let y = 0; y < t.h; y++) for (let x = 0; x < t.w; x++) {
+        const i = y * t.w + x; if (!m[i]) continue;
+        const [X, Y] = applyT(T, x, y), xi = Math.round(X), yi = Math.round(Y);
+        if (xi < 0 || yi < 0 || xi >= N || yi >= N) continue;
+        const w = clamp(1.15 - Math.hypot(x - cx, y - cy) / R, 0.15, 1), k = yi * N + xi;
+        if (!st.wt[k]) st.area++;
+        st.sum[k] += w * (e[i] - 0.5); st.wt[k] += w;
+      }
+      for (const mm of t.minutiae) {
+        const [X, Y] = applyT(T, mm.x, mm.y), th = modPi(mm.t + T.rot);
+        if (!st.mins.some((c) => Math.hypot(c.x - X, c.y - Y) < 8)) st.mins.push({ x: X, y: Y, t: th, type: mm.type });
+      }
+      st.patches++; st.lastT = T; st.acc.push({ tpl: t, T });
+    }
+
+    function summary(accepted, reason, extra) {
+      return { accepted, reason, patches: st.patches, tried: st.tried, fails: st.fails, area: st.area, restarts: st.restarts, ...(extra || {}) };
+    }
+
+    function hypotheses(t) {
+      const hyps = [];
+      if (st.lastT) hyps.push({ T: st.lastT, span: 72, step: 4 });
+      const mA = t.minutiae, mB = st.mins;
+      if (mA.length >= 3 && mB.length >= 3) {
+        const dA = descriptors(mA), dB = descriptors(mB), cand = [];
+        for (let i = 0; i < mA.length; i++) for (let j = 0; j < mB.length; j++) { const s = descSim(dA[i], dB[j], 1); if (s > 0.1) cand.push([s, i, j]); }
+        cand.sort((p, q) => q[0] - p[0]);
+        const found = [];
+        for (const [, i, j] of cand.slice(0, 60)) for (const extra of [0, PI]) {
+          const rot = mB[j].t - mA[i].t + extra, c = Math.cos(rot), sn = Math.sin(rot);
+          const T = makeT(1, rot, mB[j].x - (c * mA[i].x - sn * mA[i].y), mB[j].y - (sn * mA[i].x + c * mA[i].y));
+          const n = pairUp(mA, mB, T, TOL_D, TOL_A).length;
+          if (n >= 3) found.push({ n, T });
+        }
+        found.sort((p, q) => q.n - p.n);
+        for (const f of found) {
+          if (hyps.length >= 14) break;
+          if (hyps.some((h) => Math.hypot(h.T.tx - f.T.tx, h.T.ty - f.T.ty) < 10 && angDiffPi(h.T.rot, f.T.rot) < 0.1)) continue;
+          hyps.push({ T: f.T, span: 8, step: 2 });
+        }
+      }
+      return hyps;
+    }
+
+    function add(t) {
+      st.tried++;
+      if (!t || !t.images || t.minutiae.length < 3 || t.areaPx < 6000) { st.fails++; st.streak++; return summary(false, 'fragmento pobre'); }
+      if (!st.patches) { merge(t, makeT(1, 0, N / 2 - t.w / 2, N / 2 - t.h / 2)); st.streak = 0; return summary(true, 'inicio', { r: 1 }); }
+      const P = samples(t, 3);
+      let best = { r: -1 };
+      for (const h of hypotheses(t)) {
+        let b = refine(P, h.T, h.span, h.step, t);
+        b = refine(P, b.T, h.step > 2 ? 3 : 1, 1, t);
+        // pequeñas rotaciones alrededor del centro
+        for (const dr of [-0.12, 0.12]) { const r2 = ncc(P, centerRot(b.T, t, dr)); if (r2.r > b.r) b = { ...r2, T: centerRot(b.T, t, dr) }; }
+        if (b.r > best.r) best = b;
+      }
+      const ok = best.r >= NCC_MIN && best.overlap >= 0.3;
+      if (ok) {
+        const Pf = samples(t, 2), fin = refine(Pf, best.T, 1, 1, t);
+        merge(t, fin.T); st.streak = 0; return summary(true, 'ubicado', { r: +fin.r.toFixed(3), overlap: +fin.overlap.toFixed(2) });
+      }
+      st.fails++; st.streak++;
+      if (st.patches <= 2 && st.streak >= 5) { reset(); merge(t, makeT(1, 0, N / 2 - t.w / 2, N / 2 - t.h / 2)); return summary(true, 'reinicio', { r: best.r }); }
+      return summary(false, best.overlap < 0.2 && best.r > NCC_MIN ? 'sin zona común' : 'sin ubicar', { r: +(best.r || 0).toFixed(3), overlap: +(best.overlap || 0).toFixed(2) });
+    }
+
+    // Imagen del mosaico (0..1, crestas oscuras) recortada al área escaneada.
+    function image(maxDim) {
+      let x0 = N, y0 = N, x1 = -1, y1 = -1;
+      for (let y = 0; y < N; y += 2) for (let x = 0; x < N; x += 2) if (st.wt[y * N + x] > 0) { if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; }
+      if (x1 < 0) return null;
+      x0 = Math.max(0, x0 - 12); y0 = Math.max(0, y0 - 12); x1 = Math.min(N - 1, x1 + 12); y1 = Math.min(N - 1, y1 + 12);
+      const W = x1 - x0 + 1, H = y1 - y0 + 1, out = new Float32Array(W * H), cov = new Uint8Array(W * H);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const k = (y + y0) * N + x + x0, w = st.wt[k];
+        out[y * W + x] = w > 0 ? clamp(0.5 + 1.1 * st.sum[k] / w, 0, 1) : 0.5; cov[y * W + x] = w > 0 ? 1 : 0;
+      }
+      let img = Img(W, H, out);
+      if (maxDim && Math.max(W, H) > maxDim) img = resize(img, W * maxDim / Math.max(W, H), H * maxDim / Math.max(W, H));
+      return { img, cov: maxDim ? null : cov, x0, y0 };
+    }
+
+    function template() {
+      const im = image(); if (!im) return null;
+      const t = analyze(im.img, {});
+      t.composite = true; t.patches = st.patches; t.scanArea = st.area;
+      return t;
+    }
+
+    return { add, template, image, fragments: () => st.acc, summary: () => summary(true, 'estado') };
+  }
+
+  // ───────────────────────── cotejo por fragmentos con evidencia acumulada ─────────────────────────
+  /**
+   * Cada fragmento nítido del pulgar se ubica directamente sobre la huella de la cédula (sin mosaico).
+   *  1. Búsqueda gruesa por campo de orientación: rotación (12°), traslación (8 px), con y sin espejo.
+   *     La dirección de los surcos es lo que mejor sobrevive a la impresión de baja resolución.
+   *  2. Refinamiento fino por correlación de surcos (NCC) entre imágenes realzadas, en ambas polaridades.
+   *  3. Rasgos del mejor calce: acuerdo de orientación, NCC, minucias coincidentes, núcleo.
+   *     Un modelo logístico los convierte en razón de verosimilitud (LLR: mismo dedo vs. otro).
+   *  4. La sesión suma la evidencia de los fragmentos que concuerdan en espejo, polaridad y rotación.
+   *     Un dedo ajeno produce calces casuales dispersos que no suman.
+   */
+  const VERIFY_MODEL = { b: -4.2, ori: 3.0, ncc: 6.0, nmin: 0.35, core: 0.8, cap: 3.0, floor: -0.25, rotTol: 0.44 };
+
+  function cardIndex(card) {
+    if (card._vidx) return card._vidx;
+    const O = card.orient, n = O.w * O.h, c2 = new Float32Array(n), s2 = new Float32Array(n), ok = new Uint8Array(n);
+    for (let y = 0; y < O.h; y++) for (let x = 0; x < O.w; x++) {
+      const k = y * O.w + x, px = x * O.s + O.s / 2, py = y * O.s + O.s / 2;
+      ok[k] = inMask(card.maskSmall, px, py) ? 1 : 0; c2[k] = Math.cos(2 * O.data[k]); s2[k] = Math.sin(2 * O.data[k]);
+    }
+    const e = card.images.enh.data, m = card.images.mask, ev = new Float32Array(e.length);
+    for (let i = 0; i < e.length; i++) ev[i] = m[i] ? e[i] - 0.5 : NaN;
+    let cells = 0; for (let k = 0; k < n; k++) cells += ok[k];
+    card._vidx = { O, c2, s2, ok, ev, cells, desc: descriptors(card.minutiae), core: (card.singular || []).find((s) => s.type === 'core') };
+    return card._vidx;
+  }
+
+  function fragIndex(f) {
+    const O = f.orient, cx = f.w / 2, cy = f.h / 2, cells = [];
+    for (let y = 0; y < O.h; y++) for (let x = 0; x < O.w; x++) {
+      const px = x * O.s + O.s / 2, py = y * O.s + O.s / 2;
+      if (inMask(f.maskSmall, px, py)) cells.push([px - cx, py - cy, O.data[y * O.w + x]]);
+    }
+    // submuestreo para la búsqueda gruesa
+    const stepC = Math.max(1, Math.floor(cells.length / 140)), coarse = cells.filter((_, i) => i % stepC === 0);
+    const e = f.images.enh.data, m = f.images.mask, xs = [], ys = [], vs = [];
+    for (let y = 1; y < f.h; y += 3) for (let x = 1; x < f.w; x += 3) { const i = y * f.w + x; if (m[i]) { xs.push(x - cx); ys.push(y - cy); vs.push(e[i] - 0.5); } }
+    return { cells, coarse, xs, ys, vs, cx, cy };
+  }
+
+  // acuerdo de orientación de un conjunto de celdas bajo (rot, tx, ty); devuelve [acuerdo medio, fracción dentro]
+  function oriScore(C, cells, rot, tx, ty) {
+    const cr = Math.cos(rot), sr = Math.sin(rot), O = C.O; let a = 0, n = 0;
+    for (const [x, y, th] of cells) {
+      const X = cr * x - sr * y + tx, Y = sr * x + cr * y + ty, gx = (X / O.s) | 0, gy = (Y / O.s) | 0;
+      if (X < 0 || Y < 0 || gx >= O.w || gy >= O.h) continue;
+      const k = gy * O.w + gx; if (!C.ok[k]) continue;
+      const t2 = 2 * (th + rot); a += Math.cos(t2) * C.c2[k] + Math.sin(t2) * C.s2[k]; n++;
+    }
+    return [n ? a / n : -1, n / cells.length];
+  }
+
+  function nccAt(card, C, F, rot, tx, ty) {
+    const cr = Math.cos(rot), sr = Math.sin(rot), W = card.w, H = card.h, ev = C.ev;
+    let sab = 0, saa = 0, sbb = 0, n = 0;
+    for (let k = 0; k < F.xs.length; k++) {
+      const X = (cr * F.xs[k] - sr * F.ys[k] + tx) | 0, Y = (sr * F.xs[k] + cr * F.ys[k] + ty) | 0;
+      if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
+      const b = ev[Y * W + X]; if (b !== b) continue;
+      const a = F.vs[k]; sab += a * b; saa += a * a; sbb += b * b; n++;
+    }
+    return { r: n > 40 ? sab / Math.sqrt(saa * sbb + 1e-9) : 0, n };
+  }
+
+  /** Ubica un fragmento sobre la cédula. Devuelve hasta `keep` calces con sus rasgos y LLR. */
+  function placeFragment(card, frag, opts) {
+    opts = opts || {};
+    const C = cardIndex(card), out = [];
+    for (const mir of [false, true]) {
+      const f = mir ? mirrorTemplate(frag) : frag, F = fragIndex(f);
+      if (F.cells.length < 12) continue;
+      // 1) búsqueda gruesa
+      const peaks = [], O = C.O;
+      for (let ri = 0; ri < 30; ri++) {
+        const rot = (ri / 30) * TAU;
+        for (let gy = 0; gy < O.h; gy++) for (let gx = 0; gx < O.w; gx++) {
+          if (!C.ok[gy * O.w + gx]) continue;
+          const tx = gx * O.s + O.s / 2, ty = gy * O.s + O.s / 2, [a, fr] = oriScore(C, F.coarse, rot, tx, ty);
+          if (fr < 0.6) continue;
+          const sc = a * Math.sqrt(fr);
+          if (peaks.length < 10 || sc > peaks[peaks.length - 1].sc) {
+            const dup = peaks.findIndex((p) => Math.hypot(p.tx - tx, p.ty - ty) < 20 && Math.abs(Math.atan2(Math.sin(p.rot - rot), Math.cos(p.rot - rot))) < 0.4);
+            if (dup >= 0) { if (sc > peaks[dup].sc) peaks[dup] = { sc, rot, tx, ty }; }
+            else peaks.push({ sc, rot, tx, ty });
+            peaks.sort((p, q) => q.sc - p.sc); if (peaks.length > 10) peaks.pop();
+          }
+        }
+      }
+      // 2) refinamiento por correlación de surcos (ambas polaridades)
+      for (const pk of peaks.slice(0, opts.peaks || 6)) {
+        let best = { r: 0, rot: pk.rot, tx: pk.tx, ty: pk.ty };
+        for (let dr = -0.16; dr <= 0.161; dr += 0.08) for (let dy = -8; dy <= 8; dy += 2) for (let dx = -8; dx <= 8; dx += 2) {
+          const q = nccAt(card, C, F, pk.rot + dr, pk.tx + dx, pk.ty + dy);
+          if (Math.abs(q.r) > Math.abs(best.r)) best = { r: q.r, rot: pk.rot + dr, tx: pk.tx + dx, ty: pk.ty + dy };
+        }
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const q = nccAt(card, C, F, best.rot, best.tx + dx, best.ty + dy);
+          if (Math.abs(q.r) > Math.abs(best.r)) best = { r: q.r, rot: best.rot, tx: best.tx + dx, ty: best.ty + dy };
+        }
+        const [ori, frac] = oriScore(C, F.cells, best.rot, best.tx, best.ty);
+        // 3) minucias bajo la transformación (fragmento → cédula)
+        const cr = Math.cos(best.rot), sr = Math.sin(best.rot);
+        const T = makeT(1, best.rot, best.tx - (cr * F.cx - sr * F.cy), best.ty - (sr * F.cx + cr * F.cy));
+        const pairs = pairUp(f.minutiae, card.minutiae, T, 12, 0.45);
+        let core = 0;
+        const fc = (f.singular || []).find((s) => s.type === 'core');
+        if (fc && C.core) { const [X, Y] = applyT(T, fc.x, fc.y); core = Math.hypot(X - C.core.x, Y - C.core.y) < 28 ? 1 : -0.5; }
+        const feat = { ori: +ori.toFixed(3), ncc: +Math.abs(best.r).toFixed(3), pol: best.r >= 0 ? 1 : -1, nmin: pairs.length, frac: +frac.toFixed(2), core };
+        const M = VERIFY_MODEL;
+        const z = M.b + M.ori * Math.max(0, feat.ori) + M.ncc * feat.ncc + M.nmin * Math.min(8, feat.nmin) + M.core * core;
+        out.push({ mirror: mir, pol: feat.pol, rot: modTau(best.rot), cx: best.tx, cy: best.ty, T, feat, llr: +Math.max(-M.cap, Math.min(M.cap, z)).toFixed(3),
+          radius: Math.sqrt(F.cells.length) * O.s / 2 });
+      }
+    }
+    out.sort((p, q) => q.llr - p.llr);
+    return out.slice(0, opts.keep || 8);
+  }
+  const modTau = (a) => { a %= TAU; return a < 0 ? a + TAU : a; };
+  const angDist = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+
+  /**
+   * Sesión de verificación: acumula fragmentos y entrega la probabilidad de que el dedo sea
+   * el de la cédula, la hipótesis ganadora (espejo, polaridad, rotación) y la cobertura sobre la cédula.
+   */
+  function createVerifier(card, opts) {
+    opts = opts || {};
+    const M = VERIFY_MODEL, frags = [];
+    function evaluate() {
+      const keys = [];
+      for (const f of frags) for (const p of f.places) if (p.llr > 0) keys.push({ mirror: p.mirror, pol: p.pol, rot: p.rot });
+      let best = { total: frags.length * M.floor, key: null, used: [] };
+      for (const k of keys) {
+        let total = 0; const used = [];
+        frags.forEach((f, i) => {
+          let bl = M.floor, bp = null;
+          for (const p of f.places) if (p.mirror === k.mirror && p.pol === k.pol && angDist(p.rot, k.rot) < M.rotTol && p.llr > bl) { bl = p.llr; bp = p; }
+          total += bl; if (bp) used.push({ i, p: bp });
+        });
+        if (total > best.total) best = { total, key: k, used };
+      }
+      // corrección por probar varias hipótesis (espejo × polaridad × rotación ≈ 2·2·(2π/rotTol))
+      const nh = Math.max(1, Math.min(keys.length, 4 * Math.round(TAU / M.rotTol)));
+      const logit = best.total - Math.log(nh);
+      const P = 1 / (1 + Math.exp(-logit));
+      // cobertura: celdas de la cédula cubiertas por fragmentos ubicados con evidencia positiva
+      const C = cardIndex(card), O = C.O, cov = new Uint8Array(O.w * O.h);
+      for (const u of best.used) if (u.p.llr > 0) {
+        const r = u.p.radius;
+        for (let gy = 0; gy < O.h; gy++) for (let gx = 0; gx < O.w; gx++) {
+          const px = gx * O.s + O.s / 2, py = gy * O.s + O.s / 2;
+          if (C.ok[gy * O.w + gx] && Math.hypot(px - u.p.cx, py - u.p.cy) < r) cov[gy * O.w + gx] = 1;
+        }
+      }
+      let cc = 0; for (let k = 0; k < cov.length; k++) cc += cov[k];
+      const placed = best.used.filter((u) => u.p.llr > 0).length;
+      return { P: +P.toFixed(4), logit: +logit.toFixed(2), evidence: +best.total.toFixed(2), hypothesis: best.key, fragments: frags.length, placed,
+        coverage: C.cells ? +(cc / C.cells).toFixed(3) : 0, covGrid: { w: O.w, h: O.h, s: O.s, data: cov },
+        placements: best.used.map((u) => ({ i: u.i, cx: u.p.cx, cy: u.p.cy, rot: u.p.rot, r: u.p.radius, llr: u.p.llr, feat: u.p.feat })) };
+    }
+    return {
+      add(frag) {
+        if (!frag || !frag.orient || frag.minutiae.length < 2) { frags.push({ places: [] }); return { ...evaluate(), last: null }; }
+        const places = placeFragment(card, frag, opts);
+        frags.push({ places });
+        return { ...evaluate(), last: places[0] || null };
+      },
+      evaluate,
+      get count() { return frags.length; },
+    };
+  }
+
+  // ───────────────────────── cotejo conjunto: fragmentos nítidos ubicados en bloque ─────────────────────────
+  /**
+   * Los fragmentos se registran entre sí (misma cámara, muy confiable) para conocer su posición relativa,
+   * pero NO se funden en una imagen. Luego se busca una única transformación G (espejo, rotación,
+   * traslación) que lleve la constelación de fragmentos sobre la huella de la cédula:
+   *   - candidatos de G por el campo de orientación de toda la zona escaneada;
+   *   - cada fragmento se evalúa en su pose predicha G∘Tj con un pequeño ajuste local (absorbe la
+   *     deformación del dedo sin presionar) usando SUS propios puntos clave y surcos, sin mezclarlos;
+   *   - cada fragmento aporta una razón de verosimilitud (LLR); la evidencia total es la suma.
+   */
+  // pesos calibrados (regresión logística) con cédulas de distinta calidad de impresión y dedos propios/ajenos
+  const JOINT_MODEL = { b: -4.771, ori: 3.745, ncc: 1.413, nccHi: 7.109, nmin: 0.133, cap: 2.5, minFrac: 0.4 };
+
+  function composeT(A, B) { // A∘B : primero B, luego A
+    const c = A.c * B.c - A.sn * B.sn, sn = A.sn * B.c + A.c * B.sn;
+    return { s: A.s * B.s, rot: A.rot + B.rot, c, sn, tx: A.c * B.tx - A.sn * B.ty + A.tx, ty: A.sn * B.tx + A.c * B.ty + A.ty };
+  }
+
+  function fragCells(t) {
+    const O = t.orient, cells = [];
+    for (let y = 0; y < O.h; y++) for (let x = 0; x < O.w; x++) {
+      const px = x * O.s + O.s / 2, py = y * O.s + O.s / 2;
+      if (inMask(t.maskSmall, px, py)) cells.push([px, py, O.data[y * O.w + x]]);
+    }
+    return cells;
+  }
+  // acuerdo de orientación de celdas (en coords del fragmento) bajo una transformación completa T
+  function oriScoreT(C, cells, T) {
+    const O = C.O; let a = 0, n = 0;
+    for (const [x, y, th] of cells) {
+      const X = T.c * x - T.sn * y + T.tx, Y = T.sn * x + T.c * y + T.ty, gx = (X / O.s) | 0, gy = (Y / O.s) | 0;
+      if (X < 0 || Y < 0 || gx >= O.w || gy >= O.h) continue;
+      const k = gy * O.w + gx; if (!C.ok[k]) continue;
+      const t2 = 2 * (th + T.rot); a += Math.cos(t2) * C.c2[k] + Math.sin(t2) * C.s2[k]; n++;
+    }
+    return [n ? a / n : -1, cells.length ? n / cells.length : 0];
+  }
+  function nccT(card, C, t, T, step) {
+    const e = t.images.enh.data, m = t.images.mask, W = card.w, H = card.h; let sab = 0, saa = 0, sbb = 0, n = 0;
+    for (let y = 1; y < t.h; y += step) for (let x = 1; x < t.w; x += step) {
+      const i = y * t.w + x; if (!m[i]) continue;
+      const X = (T.c * x - T.sn * y + T.tx) | 0, Y = (T.sn * x + T.c * y + T.ty) | 0;
+      if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
+      const b = C.ev[Y * W + X]; if (b !== b) continue;
+      const a = e[i] - 0.5; sab += a * b; saa += a * a; sbb += b * b; n++;
+    }
+    return n > 40 ? sab / Math.sqrt(saa * sbb + 1e-9) : 0;
+  }
+  function aroundCenter(T, cx, cy, dr, dx, dy) {
+    const [X, Y] = applyT(T, cx, cy), rot = T.rot + dr, c = T.s * Math.cos(rot), sn = T.s * Math.sin(rot);
+    return { s: T.s, rot, c, sn, tx: X + dx - (c * cx - sn * cy), ty: Y + dy - (sn * cx + c * cy) };
+  }
+
+  // evalúa un fragmento en su pose predicha con ajuste local; devuelve rasgos y LLR
+  function scoreFragmentAt(card, C, fr, P) {
+    const t = fr.tpl, cx = t.w / 2, cy = t.h / 2;
+    let best = { a: -2, T: P, frac: 0 };
+    for (const dr of [-0.1, 0, 0.1]) for (let dy = -12; dy <= 12; dy += 4) for (let dx = -12; dx <= 12; dx += 4) {
+      const T = aroundCenter(P, cx, cy, dr, dx, dy), [a, frac] = oriScoreT(C, fr.cells, T);
+      if (frac >= JOINT_MODEL.minFrac && a > best.a) best = { a, T, frac };
+    }
+    if (best.a < -1) return { llr: 0, outside: true };
+    // ajuste fino de fase de surcos por correlación
+    // fase de surcos: búsqueda local (±6 px, ±4,6°) guardando el mejor calce positivo y el mejor negativo
+    const bestPos = { q: -2, T: best.T }, bestNeg = { q: 2, T: best.T };
+    for (const dr of [-0.08, -0.04, 0, 0.04, 0.08]) for (let dy = -6; dy <= 6; dy += 2) for (let dx = -6; dx <= 6; dx += 2) {
+      const T = aroundCenter(best.T, cx, cy, dr, dx, dy), q = nccT(card, C, t, T, 4);
+      if (q > bestPos.q) { bestPos.q = q; bestPos.T = T; } if (q < bestNeg.q) { bestNeg.q = q; bestNeg.T = T; }
+    }
+    for (const B of [bestPos, bestNeg]) {
+      const T0 = B.T, sg = B === bestPos ? 1 : -1; let bq = sg * nccT(card, C, t, T0, 2);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const T = aroundCenter(T0, cx, cy, 0, dx, dy), q = sg * nccT(card, C, t, T, 2); if (q > bq) { bq = q; B.T = T; } }
+      B.q = sg * bq;
+    }
+    const usePos = bestPos.q >= -bestNeg.q, bT = usePos ? bestPos.T : bestNeg.T, bn = usePos ? bestPos.q : bestNeg.q;
+    const nmin = pairUp(t.minutiae, card.minutiae, bT, 12, 0.45).length;
+    const feat = { ori: +best.a.toFixed(3), ncc: +Math.abs(bn).toFixed(3), pol: bn >= 0 ? 1 : -1, nmin, frac: +best.frac.toFixed(2) };
+    // correlación alta de fase de surcos es muy rara por azar: término extra sobre 0,35
+    const M = JOINT_MODEL, zOf = (nc) => { const z = M.b + M.ori * Math.max(0, feat.ori) + M.ncc * nc + M.nccHi * Math.max(0, nc - 0.35) + M.nmin * Math.min(8, nmin); return +Math.max(-M.cap, Math.min(M.cap, z)).toFixed(3); };
+    // la polaridad debe ser la misma en todos los fragmentos: se guarda el aporte para cada signo
+    const llrPos = zOf(Math.max(0, bestPos.q)), llrNeg = zOf(Math.max(0, -bestNeg.q));
+    return { llr: Math.max(llrPos, llrNeg), llrPos, llrNeg, feat, T: bT };
+  }
+
+  /**
+   * frags: [{ tpl, T }] con T = pose del fragmento en el marco común del escaneo (de createScan).
+   * Devuelve la mejor hipótesis con evidencia total, probabilidad y aporte de cada fragmento.
+   */
+  // Divide cada fragmento en teselas (≈ 12 crestas) con su pose exacta: cada tesela se ajusta por su
+  // cuenta en la cédula, lo que absorbe la deformación del dedo sin presionar.
+  function tileFragments(frags, size) {
+    const out = [];
+    for (const f of frags) {
+      const t = f.tpl, O = t.orient, M = t.maskSmall;
+      for (let y0 = 0; y0 < t.h; y0 += size) for (let x0 = 0; x0 < t.w; x0 += size) {
+        const w = Math.min(size, t.w - x0), h = Math.min(size, t.h - y0); if (w < size * 0.6 || h < size * 0.6) continue;
+        const mask = new Uint8Array(w * h), enh = new Float32Array(w * h); let n = 0;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y0 + y) * t.w + x0 + x; mask[y * w + x] = t.images.mask[i]; enh[y * w + x] = t.images.enh.data[i]; n += t.images.mask[i]; }
+        if (n < w * h * 0.45) continue;
+        const ox = x0 / O.s | 0, oy = y0 / O.s | 0, ow = Math.ceil(w / O.s), oh = Math.ceil(h / O.s), od = new Float32Array(ow * oh);
+        for (let y = 0; y < oh; y++) for (let x = 0; x < ow; x++) od[y * ow + x] = O.data[Math.min(O.h - 1, oy + y) * O.w + Math.min(O.w - 1, ox + x)];
+        const mx0 = x0 / M.s | 0, my0 = y0 / M.s | 0, mw = Math.ceil(w / M.s), mh = Math.ceil(h / M.s), md = new Uint8Array(mw * mh);
+        for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) md[y * mw + x] = M.data[Math.min(M.h - 1, my0 + y) * M.w + Math.min(M.w - 1, mx0 + x)];
+        const tile = { w, h, images: { enh: Img(w, h, enh), mask }, orient: { w: ow, h: oh, s: O.s, data: od }, maskSmall: { w: mw, h: mh, s: M.s, data: md },
+          minutiae: t.minutiae.filter((m) => m.x >= x0 && m.y >= y0 && m.x < x0 + w && m.y < y0 + h).map((m) => ({ ...m, x: m.x - x0, y: m.y - y0 })) };
+        out.push({ tpl: tile, T: composeT(f.T, makeT(1, 0, x0, y0)), parent: f });
+      }
+    }
+    return out;
+  }
+
+  function jointVerify(card, frags, opts) {
+    opts = opts || {};
+    if (!frags.length) return null;
+    if (opts.tile) frags = tileFragments(frags, opts.tile);
+    if (!frags.length) return null;
+    frags.forEach((f) => { if (!f.cells) f.cells = fragCells(f.tpl); });
+    const variants = [{ mirror: false, card }, { mirror: true, card: card._mirror || (card._mirror = mirrorTemplate(card)) }];
+    // constelación: celdas de orientación de todos los fragmentos en el marco común (sin fundir imágenes)
+    const cons = [];
+    for (const f of frags) for (const [x, y, th] of f.cells) { const [X, Y] = applyT(f.T, x, y); cons.push([X, Y, th + f.T.rot]); }
+    let mx = 0, my = 0; for (const c of cons) { mx += c[0]; my += c[1]; } mx /= cons.length; my /= cons.length;
+    const stepC = Math.max(1, Math.floor(cons.length / 260)), coarse = cons.filter((_, i) => i % stepC === 0).map(([x, y, th]) => [x - mx, y - my, th]);
+    const results = [];
+    for (const V of variants) {
+      const C = cardIndex(V.card), O = C.O, peaks = [];
+      // escala: el dedo presionado (cédula) y sin presionar (foto) no tienen exactamente el mismo espaciado
+      for (const sc0 of opts.scales || [1]) {
+        const cs = coarse.map(([x, y, th]) => [x * sc0, y * sc0, th]);
+        // rango de rotación: completo por defecto, o ±rotRange (la persona suele tener el dedo y la cédula en posición similar)
+        const rotList = opts.rotRange ? Array.from({ length: Math.round((2 * opts.rotRange) / 0.1745) + 1 }, (_, i) => -opts.rotRange + i * 0.1745) : Array.from({ length: 36 }, (_, i) => (i / 36) * TAU);
+        for (const rot of rotList) {
+          for (let gy = 0; gy < O.h; gy++) for (let gx = 0; gx < O.w; gx++) {
+            if (!C.ok[gy * O.w + gx]) continue;
+            const tx = gx * O.s + O.s / 2, ty = gy * O.s + O.s / 2, [a, fr] = oriScore(C, cs, rot, tx, ty);
+            if (fr < 0.35) continue;
+            const sc = a * Math.pow(fr, 0.35);
+            if (peaks.length < 8 || sc > peaks[peaks.length - 1].sc) {
+              const dup = peaks.findIndex((p) => Math.hypot(p.tx - tx, p.ty - ty) < 24 && angDist(p.rot, rot) < 0.35 && Math.abs(p.s - sc0) < 0.05);
+              if (dup >= 0) { if (sc > peaks[dup].sc) peaks[dup] = { sc, rot, tx, ty, s: sc0 }; } else peaks.push({ sc, rot, tx, ty, s: sc0 });
+              peaks.sort((p, q) => q.sc - p.sc); if (peaks.length > 8) peaks.pop();
+            }
+          }
+        }
+      }
+      for (const pk of peaks.slice(0, opts.peaks || 5)) {
+        const cr = pk.s * Math.cos(pk.rot), sr = pk.s * Math.sin(pk.rot);
+        const G = makeT(pk.s, pk.rot, pk.tx - (cr * mx - sr * my), pk.ty - (sr * mx + cr * my));
+        const per = frags.map((f) => scoreFragmentAt(V.card, C, f, composeT(G, f.T)));
+        const inside = per.filter((p) => !p.outside);
+        for (const pol of [1, -1]) {
+          const k = pol > 0 ? 'llrPos' : 'llrNeg', evidence = inside.reduce((s, p) => s + p[k], 0);
+          const perPol = per.map((p) => (p.outside ? p : { ...p, llr: p[k] }));
+          results.push({ mirror: V.mirror, pol, G, coarse: +pk.sc.toFixed(3), evidence: +evidence.toFixed(2), per: perPol, inside: inside.length,
+            positive: inside.filter((p) => p[k] > 0).length, card: V.card });
+        }
+      }
+    }
+    results.sort((a, b) => b.evidence - a.evidence);
+    if (!results.length) return { P: 0, logit: -9, evidence: 0, mirror: false, rotationDeg: 0, fragments: frags.length, inside: 0, positive: 0, coverage: 0, covGrid: null, per: [], alternatives: [] };
+    const best = results[0];
+    const logit = best.evidence - Math.log(results.length);   // corrección por hipótesis probadas
+    const P = 1 / (1 + Math.exp(-logit));
+    // cobertura sobre la huella de la cédula (celdas tocadas por fragmentos con aporte positivo)
+    const C = cardIndex(best.card), O = C.O, cov = new Uint8Array(O.w * O.h);
+    best.per.forEach((p, j) => {
+      if (p.outside || p.llr <= 0) return;
+      for (const [x, y] of frags[j].cells) { const X = p.T.c * x - p.T.sn * y + p.T.tx, Y = p.T.sn * x + p.T.c * y + p.T.ty, gx = (X / O.s) | 0, gy = (Y / O.s) | 0;
+        if (gx >= 0 && gy >= 0 && gx < O.w && gy < O.h && C.ok[gy * O.w + gx]) cov[gy * O.w + gx] = 1; }
+    });
+    let cc = 0; for (const v of cov) cc += v;
+    return { P: +P.toFixed(4), logit: +logit.toFixed(2), evidence: best.evidence, mirror: best.mirror, polarity: best.pol, rotationDeg: +((best.G.rot * 180) / PI).toFixed(1),
+      fragments: frags.length, inside: best.inside, positive: best.positive, coverage: C.cells ? +(cc / C.cells).toFixed(3) : 0,
+      covGrid: { w: O.w, h: O.h, s: O.s, data: cov },
+      per: best.per.map((p) => ({ llr: p.llr, outside: !!p.outside, feat: p.feat, T: p.T ? { c: p.T.c, sn: p.T.sn, tx: p.T.tx, ty: p.T.ty, rot: p.T.rot } : null })),
+      alternatives: results.slice(0, 6).map((r) => ({ mirror: r.mirror, evidence: r.evidence, rotationDeg: +((r.G.rot * 180) / PI).toFixed(1), positive: r.positive, inside: r.inside })) };
+  }
+
+  /** Plantilla reflejada horizontalmente (minucias, máscaras, orientación e imágenes). */
+  function mirrorTemplate(t) {
+    const W = t.w, flipArr = (a, w, h) => { const o = new a.constructor(a.length); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) o[y * w + x] = a[y * w + w - 1 - x]; return o; };
+    const ms = t.maskSmall, O = t.orient, im = t.images || {};
+    const { _vidx, _mirror, ...base } = t;
+    const out = { ...base, mirrored: !t.mirrored,
+      minutiae: t.minutiae.map((m) => ({ ...m, x: W - 1 - m.x, t: modPi(PI - m.t) })),
+      singular: (t.singular || []).map((s) => ({ ...s, x: W - 1 - s.x })),
+      maskSmall: { ...ms, data: flipArr(ms.data, ms.w, ms.h) },
+      orient: O ? { ...O, data: flipArr(O.data, O.w, O.h).map((v) => modPi(PI - v)) } : O,
+      images: {} };
+    for (const k of Object.keys(im)) { const v = im[k]; out.images[k] = v && v.data ? Img(v.w, v.h, flipArr(v.data, v.w, v.h)) : v && v.length === t.w * t.h ? flipArr(v, t.w, t.h) : v; }
+    return out;
+  }
+
+  function exportTemplate(t) {
+    return { version: t.version, w: t.w, h: t.h, periodSrc: t.periodSrc, quality: t.quality, pattern: t.pattern,
+      minutiae: t.minutiae.map((m) => ({ x: +m.x.toFixed(1), y: +m.y.toFixed(1), t: +m.t.toFixed(3), type: m.type })),
+      singular: t.singular.map((s) => ({ type: s.type, x: +s.x.toFixed(1), y: +s.y.toFixed(1) })) };
+  }
+
+  const API = { version: '1.6.0', createScan, createVerifier, tileFragments, locatePrintBlob, cropPrint, placeFragment, VERIFY_MODEL, jointVerify, JOINT_MODEL, TARGET_PERIOD, fromRGBA, resize, crop, flipH, invert, gauss, localNormalize, ridgeFilter,
+    orientationField, locateFingerprint, analyze, mirrorTemplate, assessFrame, assessDocument, glareIn, motionBetween, match, exportTemplate, _internal: { periodAt, descriptors, descSim, thin, prune } };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.FPEngine = API;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+(() => {
+  'use strict';
+  const E = window.FPEngine, $ = (s) => document.querySelector(s);
+  $('#ver').textContent = E.version;
+
+  // ───────── motor en un worker (el análisis no congela la pantalla) ─────────
+  function makeHandler(E) {
+    const CH = { luma: [0.299, 0.587, 0.114], r: [1, 0, 0], g: [0, 1, 0], b: [0, 0, 1] };
+    const toGray = (rgba, w, h, k) => { const o = new Float32Array(w * h); for (let i = 0, j = 0; i < w * h; i++, j += 4) o[i] = (k[0] * rgba[j] + k[1] * rgba[j + 1] + k[2] * rgba[j + 2]) / 255; return { w, h, data: o }; };
+    const small = (img, m) => { const s = Math.min(1, m / Math.max(img.w, img.h)); return s < 1 ? E.resize(img, img.w * s, img.h * s) : img; };
+    // mismos parámetros que el cotejo por fotogramas de la app principal (calibrados con datos reales)
+    const IDT = { s: 1, rot: 0, c: 1, sn: 0, tx: 0, ty: 0 }, FRAME_OPT = { scales: [0.9, 1, 1.1], tile: 72, peaks: 4, rotRange: 1.05 };
+    let card = null;
+    return function handle(type, p) {
+      if (type === 'card') {
+        const gray = toGray(p.rgba, p.w, p.h, CH.luma);
+        // 1) silueta de tinta de la huella impresa (evita las líneas de seguridad del fondo)
+        const P = E.cropPrint(gray); let best = null;
+        if (P && P.fill > 0.45 && P.box.w * P.box.h > gray.w * gray.h * 0.04) {
+          try { const t = E.analyze(P.gray, { roi: P.roi }); best = { t, box: P.box, method: 'silueta' }; } catch (e) {}
+        }
+        // 2) respaldo: localizador por textura, solo si la silueta no sirve (el recorte por textura arrastra líneas de seguridad)
+        if (!best || best.t.quality < 25) {
+          try {
+            const r = E.locateFingerprint(gray);
+            if (r.box) { const t = E.analyze(E.crop(gray, r.box.x, r.box.y, r.box.w, r.box.h), {}); if (!best || t.quality > best.t.quality + 10) best = { t, box: r.box, method: 'textura' }; }
+          } catch (e) {}
+        }
+        if (!best) throw new Error('No se encontró la huella en la foto de la cédula. Acércate más a la huella impresa del reverso.');
+        card = best.t; return { t: best.t, box: best.box, method: best.method };
+      }
+      if (type === 'compare') {
+        if (!card) throw new Error('Falta la huella de la cédula.');
+        // igual que un fotograma amplio de la app: canal verde-azul, hasta 720 px, fuera del óvalo = gris medio
+        let g = toGray(p.rgba, p.w, p.h, [0, 0.6, 0.4]);
+        if (p.roi) { let m = 0, n = 0; for (let i = 0; i < g.data.length; i++) if (p.roi[i]) { m += g.data[i]; n++; } m /= n || 1; for (let i = 0; i < g.data.length; i++) if (!p.roi[i]) g.data[i] = m; }
+        g = small(g, 720);
+        let t = null;
+        try { t = E.analyze(g, { mirror: true, invert: true, maskCoh: 0.22, maskStd: 0.05, maskPer: 0.2 }); } catch (e) { throw new Error('No se pudieron extraer los surcos del pulgar para comparar.'); }
+        const J = E.jointVerify(card, [{ tpl: t, T: IDT }], FRAME_OPT);
+        const tiles = E.tileFragments([{ tpl: t, T: IDT }], FRAME_OPT.tile), outlines = [];
+        J.per.forEach((q, j) => { if (!q || !q.T || !tiles[j]) return; const tl = tiles[j].tpl, c = [[0, 0], [tl.w, 0], [tl.w, tl.h], [0, tl.h]];
+          outlines.push({ llr: q.llr, outside: q.outside, pts: c.map(([x, y]) => [q.T.c * x - q.T.sn * y + q.T.tx, q.T.sn * x + q.T.c * y + q.T.ty]) }); });
+        return { J: { P: J.P, logit: J.logit, evidence: J.evidence, mirror: J.mirror, polarity: J.polarity, rotationDeg: J.rotationDeg, inside: J.inside, positive: J.positive,
+          coverage: J.coverage, fragments: J.fragments, alternatives: J.alternatives }, outlines, finger: { quality: t.quality, minutiae: t.minutiae.length } };
+      }
+      if (type === 'locate') {
+        const g = toGray(p.rgba, p.w, p.h, CH.luma), r = E.locateFingerprint(g);
+        return r && r.box ? { box: r.box, score: r.score } : null;
+      }
+      if (type === 'analyze') {
+        let scores = null;
+        if (!p.noScores) {
+          // ¿qué canal de color muestra mejor los surcos? (coherencia de crestas × área con crestas)
+          scores = Object.keys(CH).map((ch) => {
+            const g = small(toGray(p.rgba, p.w, p.h, CH[ch]), 420);
+            let a; try { a = E.assessFrame(g); } catch (e) { a = { coverage: 0, cohMean: 0, period: 0 }; }
+            const th = small(g, 150);
+            return { ch, score: +((a.coverage * a.cohMean) * (a.period ? 1 : 0.5)).toFixed(4), coverage: a.coverage, coh: a.cohMean, period: a.period, thumb: th };
+          });
+        }
+        const ch = p.channel === 'auto' ? scores.slice().sort((a, b) => b.score - a.score)[0].ch : p.channel;
+        const gray = toGray(p.rgba, p.w, p.h, CH[ch]);
+        const roi = p.roi ? { w: p.w, h: p.h, data: p.roi } : undefined;
+        // polaridad: con luz rasante las crestas suelen verse claras, pero depende de la luz; en 'auto' se prueban ambas
+        const pols = p.invert === 'auto' ? [true, false] : [p.invert];
+        let t = null, err = null;
+        for (const inv of pols) for (const o of [{}, { maskCoh: 0.24, maskStd: 0.08, maskPer: 0.25 }]) {
+          if (o.maskCoh && t && t.quality >= 35) continue;
+          try { const r = E.analyze(gray, { ...o, invert: inv, roi }); if (!t || r.quality > t.quality) t = r; } catch (e) { err = e; }
+        }
+        if (!t) throw err || new Error('No se detectan surcos en la foto.');
+        return { t, scores, channel: ch, invert: t.invert };
+      }
+      throw new Error('Operación desconocida ' + type);
+    };
+  }
+  function workerMain() {
+    const handle = makeHandler(self.FPEngine);
+    self.onmessage = (ev) => { const { id, type, p } = ev.data; try { self.postMessage({ id, ok: true, out: handle(type, p) }); } catch (e) { self.postMessage({ id, ok: false, err: e.message }); } };
+  }
+  let worker = null, rid = 0; const pending = new Map();
+  try {
+    const src = document.getElementById('fpengine').textContent + '\n;' + makeHandler.toString() + '\n;(' + workerMain.toString() + ')();';
+    worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    worker.onmessage = (ev) => { const r = pending.get(ev.data.id); if (!r) return; pending.delete(ev.data.id); ev.data.ok ? r.res(ev.data.out) : r.rej(new Error(ev.data.err)); };
+    worker.onerror = () => { worker = null; };
+  } catch (e) { worker = null; }
+  const localHandle = makeHandler(E);
+  function call(type, p) {
+    if (worker) return new Promise((res, rej) => { const id = ++rid; pending.set(id, { res, rej }); worker.postMessage({ id, type, p }); });
+    return new Promise((res, rej) => setTimeout(() => { try { res(localHandle(type, p)); } catch (e) { rej(e); } }, 0));
+  }
+
+  // ───────── estado ─────────
+  const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const S = { camMode: 'finger', card: null, cmp: null, facing: 'environment', light: '#2f5bff', auto: true, mode: 'home', stream: null, track: null, caps: {}, torchOn: false,
+    perf: { assessEvery: IS_IOS ? 150 : 220, tickMs: 0 } };
+  const PHOTO = { readyN: 4, burst: 7, burstGap: 70, maxSide: 1800, minPeriodVideo: 4.5 };
+  const video = $('#video'), ov = $('#ov'), og = ov.getContext('2d');
+  const grabC = document.createElement('canvas'), grabG = grabC.getContext('2d', { willReadFrequently: true });
+  const CH_NAME = { luma: 'Gris', r: 'Rojo', g: 'Verde', b: 'Azul' };
+
+  function show(id) { ['home', 'cam', 'work', 'result'].forEach((k) => ($('#' + k).hidden = k !== id)); window.scrollTo(0, 0); }
+  function say(text, cls) { const m = $('#msg'); if (m.textContent !== text) m.textContent = text; m.className = 'msg ' + (cls || ''); }
+  function progress(f) { $('#prog').style.width = Math.round(Math.max(0, Math.min(1, f)) * 100) + '%'; }
+  function chips(list) { $('#chips').innerHTML = list.map(([t, ok]) => `<span class="chip ${ok === true ? 'ok' : ok === false ? 'bad' : ''}">${t}</span>`).join(''); }
+  function flash() { const f = $('#flash'); f.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove('on'))); navigator.vibrate?.(40); }
+  const pressSeg = (seg, v) => seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+
+  // ───────── inicio ─────────
+  $('#camSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; S.facing = b.dataset.v; pressSeg($('#camSeg'), S.facing); $('#lightBox').hidden = S.facing !== 'user'; });
+  $('#lightSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; S.light = b.dataset.v; pressSeg($('#lightSeg'), S.light); });
+  $('#consent').addEventListener('change', () => {
+    const ok = $('#consent').checked; $('#start').disabled = !ok; $('#up').disabled = !ok; $('#upLbl').setAttribute('aria-disabled', String(!ok));
+    $('#cardCam').disabled = !ok; $('#cardUp').disabled = !ok; $('#cardUpLbl').setAttribute('aria-disabled', String(!ok));
+    S.consent = ok ? { at: new Date().toISOString(), finalidad: 'Pruebas del análisis de huella para validación de identidad (firma electrónica simple)' } : null;
+  });
+  $('#start').addEventListener('click', () => { if (S.consent) startCam('finger'); });
+  $('#cardCam').addEventListener('click', () => { if (S.consent) startCam('card'); });
+
+  // ───────── cámara ─────────
+  function pickMainBack(devs) {
+    const backs = devs.filter((d) => /back|rear|trasera|environment|posterior/i.test(d.label)); if (!backs.length) return null;
+    const bad = /wide|ultra|macro|tele|depth|infra|\bir\b|gran angular|zoom/i, good = backs.filter((d) => !bad.test(d.label));
+    const num = (d) => { const m = d.label.match(/(\d+)/); return m ? +m[1] : 99; };
+    return (good.length ? good : backs).sort((a, b) => num(a) - num(b))[0];
+  }
+  async function openCamera(facing) {
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error(location.protocol !== 'https:' ? 'La cámara solo funciona si la página se abre con HTTPS.' : 'Este navegador no permite usar la cámara.');
+    const size = IS_IOS ? { width: { ideal: 3840 }, height: { ideal: 2160 } } : { width: { ideal: 2560 }, height: { ideal: 2560 } };
+    const base = { ...size, frameRate: { ideal: 30, max: 30 } };
+    const want = facing === 'environment' && !IS_IOS && S.backDeviceId ? { deviceId: { exact: S.backDeviceId } } : { facingMode: { ideal: facing } };
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { ...want, ...base } }); }
+    catch (e) { if (want.deviceId) { S.backDeviceId = null; stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: facing }, ...base } }); } else throw e; }
+    if (facing === 'environment' && !IS_IOS && !S.backDeviceId && navigator.mediaDevices.enumerateDevices) {
+      try {
+        const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
+        const main = pickMainBack(devs), cur = stream.getVideoTracks()[0].getSettings().deviceId;
+        if (main) { S.backDeviceId = main.deviceId; if (main.deviceId !== cur) { stream.getTracks().forEach((t) => t.stop()); stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { deviceId: { exact: main.deviceId }, ...base } }); } }
+      } catch (e) {}
+    }
+    S.stream = stream; S.track = stream.getVideoTracks()[0];
+    const set = S.track.getSettings ? S.track.getSettings() : {};
+    S.realFacing = set.facingMode || facing;
+    video.classList.toggle('mirror', S.realFacing === 'user');
+    video.srcObject = stream; await video.play();
+    await new Promise((r) => (video.videoWidth ? r() : video.addEventListener('loadedmetadata', r, { once: true })));
+    S.caps = S.track.getCapabilities ? S.track.getCapabilities() : {};
+    await keepFocus();
+    S.hasTorch = !!S.caps.torch;
+    const z = $('#zoom'); z.hidden = true; $('#zoomLbl').hidden = true;
+    if (S.caps.zoom && S.caps.zoom.max > S.caps.zoom.min) {
+      z.min = S.caps.zoom.min; z.max = Math.min(S.caps.zoom.max, 8); z.step = S.caps.zoom.step || 0.1; z.value = set.zoom || S.caps.zoom.min;
+      z.hidden = false; $('#zoomLbl').hidden = false;
+    }
+    $('#camSub').textContent = `${S.realFacing === 'user' ? 'frontal' : 'trasera'} · ${video.videoWidth}×${video.videoHeight}`;
+  }
+  async function keepFocus() { const c = S.caps || {}; try { if (c.focusMode && c.focusMode.includes('continuous')) await S.track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch (e) {} }
+  async function focusAt(nx, ny) {
+    const c = S.caps || {}; if (!S.track || !c.focusMode) return;
+    try { const adv = { focusMode: c.focusMode.includes('single-shot') ? 'single-shot' : 'continuous' }; if (c.pointsOfInterest !== undefined) adv.pointsOfInterest = [{ x: nx, y: ny }]; await S.track.applyConstraints({ advanced: [adv] }); setTimeout(keepFocus, 1500); } catch (e) {}
+  }
+  function closeCamera() { S.stream?.getTracks().forEach((t) => t.stop()); S.stream = null; S.track = null; S.torchOn = false; $('#cam').classList.remove('lit'); }
+  async function setLight(on) {
+    S.torchOn = on; $('#torch').setAttribute('aria-pressed', String(on));
+    if (S.realFacing === 'user') { $('#cam').classList.toggle('lit', on); return; }
+    if (S.hasTorch) { try { await S.track.applyConstraints({ advanced: [{ torch: on }] }); } catch (e) {} await keepFocus(); }
+  }
+  $('#torch').addEventListener('click', () => setLight(!S.torchOn));
+  $('#zoom').addEventListener('input', (e) => { S.track?.applyConstraints({ advanced: [{ zoom: +e.target.value }] }).then(keepFocus).catch(() => {}); F.ready = 0; });
+  $('#flip').addEventListener('click', async () => { S.facing = S.realFacing === 'user' ? 'environment' : 'user'; pressSeg($('#camSeg'), S.facing); $('#lightBox').hidden = S.facing !== 'user'; await startCam(S.camMode); });
+  $('#auto').addEventListener('click', () => { S.auto = !S.auto; $('#auto').setAttribute('aria-pressed', String(S.auto)); F.ready = 0; });
+  $('#shoot').addEventListener('click', () => shoot(true));
+  $('#back').addEventListener('click', () => { S.mode = 'home'; closeCamera(); show('home'); });
+  ov.addEventListener('pointerdown', (e) => {
+    if (!S.stream) return; const r = ov.getBoundingClientRect(), G = geo();
+    let vx = ((e.clientX - r.left) - G.ox) / G.k; const vy = ((e.clientY - r.top) - G.oy) / G.k; if (G.mirror) vx = G.vw - vx;
+    focusAt(Math.max(0, Math.min(1, vx / G.vw)), Math.max(0, Math.min(1, vy / G.vh)));
+  });
+
+  // Geometría: el video cubre la pantalla (object-fit: cover)
+  function geo() {
+    const sw = ov.clientWidth, sh = ov.clientHeight, vw = video.videoWidth, vh = video.videoHeight, k = Math.max(sw / vw, sh / vh);
+    return { sw, sh, vw, vh, k, ox: (sw - vw * k) / 2, oy: (sh - vh * k) / 2, mirror: S.realFacing === 'user' };
+  }
+  function oval(G) { const w = Math.min(G.sw * 0.62, G.sh * 0.34); return { cx: G.sw / 2, cy: G.sh * 0.40, rx: w / 2, ry: w * 0.66 }; }
+  const toVideo = (G, r) => ({ x: ((G.mirror ? G.sw - r.x - r.w : r.x) - G.ox) / G.k, y: (r.y - G.oy) / G.k, w: r.w / G.k, h: r.h / G.k });
+  function cardRect(G) { const w = G.sw * 0.66, h = w * 1.25; return { x: (G.sw - w) / 2, y: G.sh * 0.40 - h / 2, w, h }; }
+  const ovalRect = (G, o) => toVideo(G, { x: o.cx - o.rx, y: o.cy - o.ry, w: 2 * o.rx, h: 2 * o.ry });
+  function clampRect(r) { const x = Math.max(0, r.x), y = Math.max(0, r.y); return { x, y, w: Math.min(video.videoWidth - x, r.w - (x - r.x)), h: Math.min(video.videoHeight - y, r.h - (y - r.y)) }; }
+  function grab(r, maxDim) {
+    const q = clampRect(r), s = Math.min(1, maxDim / Math.max(q.w, q.h)), dw = Math.max(8, Math.round(q.w * s)), dh = Math.max(8, Math.round(q.h * s));
+    grabC.width = dw; grabC.height = dh; grabG.drawImage(video, q.x, q.y, q.w, q.h, 0, 0, dw, dh);
+    const px = grabG.getImageData(0, 0, dw, dh).data; let r0 = 0, g0 = 0, b0 = 0, n0 = 0;
+    for (let yy = dh >> 2; yy < dh - (dh >> 2); yy += 3) for (let xx = dw >> 2; xx < dw - (dw >> 2); xx += 3) { const i = 4 * (yy * dw + xx); r0 += px[i]; g0 += px[i + 1]; b0 += px[i + 2]; n0++; }
+    return { gray: E.fromRGBA(px, dw, dh, 'g'), s, rgb: [r0 / n0, g0 / n0, b0 / n0] };
+  }
+  function sizeOverlay() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (ov.width !== Math.round(ov.clientWidth * dpr) || ov.height !== Math.round(ov.clientHeight * dpr)) { ov.width = Math.round(ov.clientWidth * dpr); ov.height = Math.round(ov.clientHeight * dpr); }
+    og.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  // ───────── encuadre y captura ─────────
+  const F = { ready: 0, state: '', thumb: null, lastAssess: 0, busy: false, drawKey: '' };
+  async function startCam(mode) {
+    S.camMode = mode || 'finger';
+    const isCard = S.camMode === 'card';
+    show('cam'); S.mode = 'starting'; say('Iniciando cámara…'); progress(0); chips([]);
+    $('#camTitle').textContent = isCard ? 'Huella de la cédula' : 'Pulgar derecho'; $('#auto').hidden = isCard; $('#flip').hidden = isCard;
+    closeCamera(); Object.assign(F, { ready: 0, state: '', thumb: null, busy: false, drawKey: '' });
+    try {
+      await openCamera(isCard ? 'environment' : S.facing);
+      $('#cam').style.setProperty('--light', S.light);
+      await setLight(true);
+      $('#torch').hidden = !(S.realFacing === 'user' || S.hasTorch);
+      S.mode = 'cam'; say(isCard ? 'Acerca la cámara a la huella impresa del reverso' : 'Acerca la yema del pulgar al óvalo, con la punta hacia arriba');
+      if (!S.looping) { S.looping = true; requestAnimationFrame(loop); }
+    } catch (e) {
+      S.mode = 'home'; closeCamera(); show('home'); const w = $('#homeWarn'); w.hidden = false; w.className = 'notice bad';
+      w.textContent = (e.name === 'NotAllowedError' ? 'No se dio permiso para usar la cámara. Actívalo en los ajustes del navegador.' : e.message) + ' También puedes subir una foto.';
+    }
+  }
+  const isSkin = ([r, g, b]) => r > 40 && r >= g && (r - b) / (r + 1) > 0.1;
+  function gate(a, periodVideo, across, skin) {
+    if (a.brightness < 0.08) return ['Necesitas más luz', 'warn', false];
+    if (skin === false) return ['Apunta a la yema del pulgar', 'warn', false];
+    if (a.coverage < 0.3) return ['Pon la yema del pulgar dentro del óvalo', '', false];
+    if (!a.period) return ['Acerca el dedo: todavía no se ven los surcos', 'warn', false];
+    if (periodVideo < PHOTO.minPeriodVideo) return ['Acerca más el dedo: los surcos se ven muy finos', 'warn', false];
+    if (across < 12) return ['Aleja un poco el dedo', 'warn', false];
+    if (a.motion > 0.05) return ['Quieto…', 'warn', false];
+    if (a.cohMean < 0.36) return ['Enfocando… mantén la distancia', 'warn', false];
+    return [S.auto ? 'Muy bien, no te muevas…' : 'Listo: toca el disparador', 'ok', true];
+  }
+  function loop(now) {
+    if (S.mode === 'cam' && video.videoWidth) { sizeOverlay(); tick(geo(), now); }
+    if (S.mode === 'cam' || S.mode === 'starting') requestAnimationFrame(loop); else S.looping = false;
+  }
+  function tick(G, now) {
+    const isCard = S.camMode === 'card', o = isCard ? null : oval(G), cr = isCard ? cardRect(G) : null, vr = isCard ? toVideo(G, cr) : ovalRect(G, o);
+    // sin filtro en vivo: el video se muestra tal cual y solo se evalúa un cuadro reducido cada ~0,2 s
+    if (now - F.lastAssess > S.perf.assessEvery && !F.busy) {
+      F.lastAssess = now; const t0 = performance.now();
+      const { gray, s, rgb } = grab(vr, 220);
+      if (isCard) {
+        // huella impresa: solo orientación; se dispara a mano
+        const a = E.assessDocument(gray), sharp = a.sharpness >= 0.03, glare = a.glare >= 0.03;
+        F.state = sharp && !glare ? 'ok' : 'warn'; progress(0);
+        chips([['nitidez ' + Math.round(Math.min(1, a.sharpness / 0.08) * 100) + '%', sharp], ['reflejo ' + Math.round(a.glare * 100) + '%', !glare]]);
+        say(glare ? 'Hay reflejo: inclina un poco la cédula o apaga la luz' : sharp ? 'Huella nítida: toca el disparador' : 'Enfocando… toca la huella en la pantalla', sharp && !glare ? 'ok' : 'warn');
+      } else {
+        const a = E.assessFrame(gray); a.motion = E.motionBetween(a.thumb, F.thumb); F.thumb = a.thumb;
+        const periodVideo = a.period ? a.period / s : 0, across = periodVideo ? vr.w / periodVideo : 0;
+        // con luz de pantalla de color la piel cambia de tono: no se aplica el control de piel
+        const skin = S.realFacing === 'user' && S.torchOn && S.light !== '#ffffff' ? null : isSkin(rgb);
+        const [text, cls, ok] = gate(a, periodVideo, across, skin);
+        F.state = ok ? 'ok' : cls; F.ready = ok ? F.ready + 1 : 0;
+        progress(S.auto ? F.ready / PHOTO.readyN : ok ? 1 : 0);
+        chips([['surcos ' + (across ? Math.round(across) : '—'), across >= 12], ['nitidez ' + Math.round(a.cohMean * 100) + '%', a.cohMean >= 0.36],
+          ['px/surco ' + (periodVideo ? periodVideo.toFixed(1) : '—'), periodVideo >= PHOTO.minPeriodVideo]]);
+        say(text, cls);
+        if (ok && S.auto && F.ready >= PHOTO.readyN) shoot(false);
+      }
+      const dt = performance.now() - t0, P = S.perf; P.tickMs = P.tickMs ? 0.85 * P.tickMs + 0.15 * dt : dt;
+      if (P.tickMs > 30 && P.assessEvery < 400) P.assessEvery += 40;
+    }
+    drawOverlay(G, o, cr);
+  }
+  function drawOverlay(G, o, cr) {
+    const key = [G.sw, G.sh, ov.width, S.camMode, F.state, S.torchOn, S.light, S.realFacing].join('|');
+    if (key === F.drawKey) return; F.drawKey = key;
+    og.clearRect(0, 0, G.sw, G.sh);
+    const lit = S.realFacing === 'user' && S.torchOn;
+    const shape = () => (cr ? og.rect(cr.x, cr.y, cr.w, cr.h) : og.ellipse(o.cx, o.cy, o.rx, o.ry, 0, 0, Math.PI * 2));
+    const box = cr || { x: o.cx - o.rx, y: o.cy - o.ry, w: 2 * o.rx, h: 2 * o.ry };
+    og.fillStyle = lit ? S.light : 'rgba(0,0,0,.55)';
+    og.beginPath(); og.rect(0, 0, G.sw, G.sh); og.moveTo(box.x, box.y); shape(); og.fill('evenodd');
+    const col = F.state === 'ok' ? '#3FD49A' : F.state === 'warn' ? '#F1B84B' : 'rgba(255,255,255,.85)';
+    og.lineWidth = 2.5; og.strokeStyle = col; og.beginPath(); shape(); og.stroke();
+  }
+
+  // Ráfaga: se toman varios cuadros y se queda el más nítido, a resolución completa
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function shoot(manual) {
+    if (F.busy || S.mode !== 'cam') return;
+    F.busy = true; F.ready = 0; say('Tomando la foto… no te muevas', 'ok');
+    const isCard = S.camMode === 'card', G = geo(), vr = clampRect(isCard ? toVideo(G, cardRect(G)) : ovalRect(G, oval(G)));
+    const s = Math.min(1, PHOTO.maxSide / Math.max(vr.w, vr.h)), W = Math.round(vr.w * s), H = Math.round(vr.h * s);
+    const bestC = document.createElement('canvas'), bestG = bestC.getContext('2d', { willReadFrequently: true }); bestC.width = W; bestC.height = H;
+    let best = -1, sharpList = [];
+    for (let k = 0; k < PHOTO.burst; k++) {
+      const { gray } = grab(vr, 360), a = E.assessDocument(gray); sharpList.push(a.sharpness);
+      if (a.sharpness > best) { best = a.sharpness; bestG.drawImage(video, vr.x, vr.y, vr.w, vr.h, 0, 0, W, H); }
+      await sleep(PHOTO.burstGap);
+    }
+    flash();
+    if (isCard) { const meta = { origen: 'cámara', luz: S.torchOn && S.hasTorch ? 'linterna' : 'sin linterna', video: `${video.videoWidth}×${video.videoHeight}`, zoom: +($('#zoom').value || 1) };
+      S.mode = 'work'; closeCamera(); await processCard(bestC, meta); return; }
+    const mirror = S.realFacing === 'user';
+    // la vista frontal se muestra espejada; la foto se guarda tal como la ve la cámara
+    S.shot = { canvas: bestC, w: W, h: H, roiOval: true, meta: { origen: 'cámara', camara: mirror ? 'frontal' : 'trasera', luz: mirror ? (S.torchOn ? 'pantalla ' + S.light : 'sin luz') : (S.torchOn && S.hasTorch ? 'linterna' : 'sin linterna'),
+      video: `${video.videoWidth}×${video.videoHeight}`, zoom: +($('#zoom').value || 1), nitidezRafaga: sharpList.map((v) => +v.toFixed(4)), manual } };
+    S.mode = 'work'; closeCamera(); S.cmp = null;
+    await process();
+  }
+
+  // ───────── subir una foto ─────────
+  $('#up').addEventListener('change', async (e) => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f || !S.consent) return;
+    show('work'); $('#workMsg').textContent = 'Buscando la huella en la foto…';
+    try {
+      const bmp = await loadImage(f), s0 = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));
+      const full = document.createElement('canvas'); full.width = Math.round(bmp.width * s0); full.height = Math.round(bmp.height * s0);
+      full.getContext('2d').drawImage(bmp, 0, 0, full.width, full.height);
+      // localizar la zona con surcos en una copia reducida
+      const s1 = Math.min(1, 1100 / Math.max(full.width, full.height)), sm = document.createElement('canvas');
+      sm.width = Math.round(full.width * s1); sm.height = Math.round(full.height * s1); sm.getContext('2d').drawImage(full, 0, 0, sm.width, sm.height);
+      const px = sm.getContext('2d').getImageData(0, 0, sm.width, sm.height).data;
+      let box = null; try { const r = await call('locate', { rgba: px, w: sm.width, h: sm.height }); if (r) box = r.box; } catch (er) {}
+      let x = 0, y = 0, w = full.width, h = full.height;
+      if (box && box.w * box.h > 0.04 * sm.width * sm.height) { const p = 0.12; x = (box.x - box.w * p) / s1; y = (box.y - box.h * p) / s1; w = box.w * (1 + 2 * p) / s1; h = box.h * (1 + 2 * p) / s1; }
+      x = Math.max(0, x); y = Math.max(0, y); w = Math.min(full.width - x, w); h = Math.min(full.height - y, h);
+      const s = Math.min(1, PHOTO.maxSide / Math.max(w, h)), bestC = document.createElement('canvas'), bestG = bestC.getContext('2d', { willReadFrequently: true }); bestC.width = Math.round(w * s); bestC.height = Math.round(h * s);
+      bestG.drawImage(full, x, y, w, h, 0, 0, bestC.width, bestC.height);
+      S.shot = { canvas: bestC, w: bestC.width, h: bestC.height, roiOval: false, meta: { origen: 'archivo', archivo: f.name, recorte: box ? 'automático' : 'imagen completa' } }; S.cmp = null;
+      await process();
+    } catch (er) { failed(er); }
+  });
+  $('#cardUp').addEventListener('change', async (e) => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f || !S.consent) return;
+    try {
+      const bmp = await loadImage(f), s0 = Math.min(1, 2600 / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas');
+      c.width = Math.round(bmp.width * s0); c.height = Math.round(bmp.height * s0); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+      await processCard(c, { origen: 'archivo', archivo: f.name });
+    } catch (er) { cardFailed(er); }
+  });
+  function cardFailed(e) {
+    show(S.res ? 'result' : 'home'); S.mode = S.res ? 'result' : 'home';
+    const w = S.res ? $('#cmpEmptyTxt') : $('#homeWarn'); w.hidden = false; if (!S.res) w.className = 'notice bad';
+    w.textContent = (e && e.message ? e.message : 'No se pudo analizar la cédula.') + ' Prueba más cerca de la huella impresa, enfocada y sin reflejos.';
+  }
+  async function processCard(canvas, meta) {
+    show('work'); $('#workMsg').textContent = 'Buscando la huella impresa en la cédula…';
+    const wp = $('#workPrev'), k = Math.min(1, 600 / canvas.width); wp.width = Math.round(canvas.width * k); wp.height = Math.round(canvas.height * k); wp.getContext('2d').drawImage(canvas, 0, 0, wp.width, wp.height);
+    try {
+      const rgba = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+      const r = await call('card', { rgba, w: canvas.width, h: canvas.height });
+      S.card = { t: r.t, box: r.box, method: r.method, meta, canvas }; S.cmp = null;
+      renderCardHome();
+      if (S.res) { await compare(); renderResult(); } else { S.mode = 'home'; show('home'); $('#homeWarn').hidden = true; }
+    } catch (e) { cardFailed(e); }
+  }
+  function cardVerdict(t) { return t.quality >= 35 && t.minutiae.length >= 12 ? ['ok', 'Lista'] : ['warn', 'Baja calidad']; }
+  function renderCardHome() {
+    const t = S.card.t, [lv, w] = cardVerdict(t), p = $('#cardPill'); p.className = 'pill ' + lv; p.textContent = w;
+    $('#cardTxt').textContent = `Huella de la cédula: calidad ${t.quality}/100, ${t.minutiae.length} puntos clave, ${t.pattern.toLowerCase()}.` + (lv === 'ok' ? ' Ahora toma la foto del pulgar.' : ' Puedes intentarlo de nuevo más cerca y sin reflejos.');
+    const c = $('#cardPrev'); c.hidden = false; drawTpl(t, c, 2);
+    $('#cardCam').textContent = 'Volver a fotografiar';
+  }
+  async function compare() {
+    if (!S.card || !S.shot) return;
+    $('#workMsg').textContent = 'Comparando con la huella de la cédula…'; show('work');
+    const sh = S.shot, rgba = sh.canvas.getContext('2d').getImageData(0, 0, sh.w, sh.h).data;
+    try { S.cmp = await call('compare', { rgba, w: sh.w, h: sh.h, roi: sh.roiOval ? ovalMask(sh.w, sh.h) : null }); }
+    catch (e) { S.cmp = { error: e.message }; }
+  }
+  function loadImage(file) {
+    if (window.createImageBitmap) return createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => createImageBitmap(file));
+    return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('No se pudo leer la imagen.')); i.src = URL.createObjectURL(file); });
+  }
+
+  // ───────── análisis ─────────
+  function ovalMask(w, h) { const m = new Uint8Array(w * h), cx = w / 2, cy = h / 2, rx = w / 2, ry = h / 2; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) m[y * w + x] = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1 ? 1 : 0; return m; }
+  async function process(channel, invert) {
+    show('work'); $('#workMsg').textContent = channel ? 'Aplicando el canal ' + CH_NAME[channel].toLowerCase() + '…' : 'Aplicando filtros y buscando puntos clave…';
+    const sh = S.shot, wp = $('#workPrev'); wp.width = sh.w; wp.height = sh.h; wp.getContext('2d').drawImage(sh.canvas, 0, 0);
+    const rgba = sh.canvas.getContext('2d').getImageData(0, 0, sh.w, sh.h).data;
+    const t0 = performance.now();
+    try {
+      const r = await call('analyze', { rgba, w: sh.w, h: sh.h, channel: channel || 'auto', invert: invert ?? 'auto', roi: sh.roiOval ? ovalMask(sh.w, sh.h) : null, noScores: !!channel });
+      if (r.scores) S.scores = r.scores;
+      S.res = { ...r, ms: Math.round(performance.now() - t0) };
+      if (S.card && !S.cmp) await compare();
+      renderResult();
+    } catch (e) { failed(e); }
+  }
+  function failed(e) {
+    show('home'); const w = $('#homeWarn'); w.hidden = false; w.className = 'notice bad';
+    w.textContent = (e && e.message ? e.message : 'No se pudo analizar la foto.') + ' Prueba acercando más el dedo, con la luz encendida y sin mover el teléfono.';
+  }
+
+  // ───────── resultado ─────────
+  function verdict(t) {
+    const n = t.minutiae.length;
+    if (t.quality >= 45 && n >= 20) return ['ok', 'Buena', 'Apta para cotejo: crestas ordenadas y suficientes puntos clave.'];
+    if (t.quality >= 25 && n >= 10) return ['warn', 'Regular', 'Sirve con reservas: hay zonas borrosas o pocos puntos clave. Otra foto más cerca o mejor enfocada puede mejorarla.'];
+    return ['bad', 'Insuficiente', 'Los surcos no se distinguen lo bastante. Acerca más el dedo, enfoca y usa la luz.'];
+  }
+  function renderResult() {
+    const { t, channel, invert } = S.res, [lv, word, txt] = verdict(t);
+    show('result'); S.mode = 'result';
+    $('#resSub').textContent = `${S.shot.meta.origen === 'archivo' ? 'Foto subida' : 'Cámara ' + S.shot.meta.camara + ' · ' + S.shot.meta.luz} · ${new Date().toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}`;
+    $('#qBig').innerHTML = `${t.quality}<small>/100</small>`;
+    const p = $('#qPill'); p.className = 'pill ' + lv; p.textContent = word;
+    const b = $('#qBar'); b.style.width = t.quality + '%'; b.style.background = lv === 'ok' ? 'var(--ok)' : lv === 'warn' ? 'var(--warn)' : 'var(--bad)';
+    $('#qTxt').textContent = txt;
+    const ends = t.minutiae.filter((m) => m.type === 'ending').length, cores = t.singular.filter((s) => s.type === 'core').length, deltas = t.singular.length - cores;
+    const ppi = Math.round((t.periodSrc / 0.47) * 25.4);           // período medio de cresta adulta ≈ 0,47 mm
+    const areaFrac = t.areaPx / (t.w * t.h * (S.shot.roiOval ? Math.PI / 4 : 1));
+    $('#facts').innerHTML = `
+      <dt>Puntos clave</dt><dd>${t.minutiae.length} (${ends} term. · ${t.minutiae.length - ends} bif.)</dd>
+      <dt>Núcleos · deltas</dt><dd>${cores} · ${deltas}</dd>
+      <dt>Patrón</dt><dd style="font-family:var(--sans)">${t.pattern}</dd>
+      <dt>Orden de crestas</dt><dd>${Math.round(t.cohMean * 100)} %</dd>
+      <dt>Área con surcos legibles</dt><dd>${Math.round(Math.min(1, areaFrac) * 100)} %</dd>
+      <dt>Separación de surcos</dt><dd>${t.periodSrc} px</dd>
+      <dt>Resolución estimada</dt><dd>≈ ${ppi} ppi</dd>
+      <dt>Canal · polaridad</dt><dd style="font-family:var(--sans)">${CH_NAME[channel]} · ${invert ? 'crestas claras' : 'crestas oscuras'}</dd>
+      <dt>Foto · análisis</dt><dd>${S.shot.w}×${S.shot.h} · ${(S.res.ms / 1000).toFixed(1)} s</dd>`;
+    renderChips(); renderStage(); renderChannels(); renderCompare();
+  }
+  function cmpVerdict(P) {
+    if (P >= 0.99) return ['ok', 'Coincide', 'La foto del pulgar coincide con la huella de la cédula.'];
+    if (P >= 0.9) return ['ok', 'Coincidencia probable', 'Hay buena evidencia de que es el mismo dedo, pero no alcanza el umbral de 99 %.'];
+    if (P >= 0.2) return ['warn', 'No concluyente', 'La evidencia no alcanza para decidir. Prueba otra foto más nítida, con la punta del dedo hacia arriba.'];
+    return ['bad', 'No coincide', 'Las crestas del pulgar no calzan con las de la cédula.'];
+  }
+  function renderCompare() {
+    const has = !!(S.card && S.cmp && !S.cmp.error);
+    $('#cmpEmpty').hidden = has; $('#cmpRes').hidden = !has;
+    if (!S.card) { $('#cmpEmptyTxt').textContent = 'Agrega la huella de tu cédula para compararla con esta foto.'; $('#cmpAdd').hidden = false; return; }
+    if (!has) { $('#cmpEmptyTxt').textContent = S.cmp && S.cmp.error ? 'No se pudo comparar: ' + S.cmp.error : 'Falta comparar.'; $('#cmpAdd').textContent = 'Cambiar huella de la cédula'; return; }
+    const J = S.cmp.J, C = S.card.t, [lv, word, txt] = cmpVerdict(J.P), pct = J.P * 100;
+    $('#cmpBig').textContent = pct >= 99.9 ? '>99,9 %' : pct < 0.1 ? '<0,1 %' : pct.toFixed(1).replace('.', ',') + ' %';
+    const p = $('#cmpPill'); p.className = 'pill ' + lv; p.textContent = word;
+    $('#cmpMk').style.left = Math.max(0.5, Math.min(99.5, pct)) + '%';
+    $('#cmpTxt').textContent = txt;
+    drawCardMap($('#cmpMap'), C, J, S.cmp.outlines);
+    $('#cmpFacts').innerHTML = `
+      <dt>Evidencia total</dt><dd>${J.evidence.toFixed(1)} (logit ${J.logit.toFixed(1)})</dd>
+      <dt>Zonas que coinciden</dt><dd>${J.positive} de ${J.inside}</dd>
+      <dt>Cobertura de la cédula</dt><dd>${Math.round(J.coverage * 100)} %</dd>
+      <dt>Rotación · espejo</dt><dd>${Math.round(J.rotationDeg)}° · ${J.mirror ? 'sí' : 'no'}</dd>
+      <dt>Cédula: calidad · puntos</dt><dd>${C.quality} · ${C.minutiae.length}</dd>
+      <dt>Pulgar: calidad · puntos</dt><dd>${S.cmp.finger.quality} · ${S.cmp.finger.minutiae}</dd>`;
+  }
+  function drawCardMap(c, t, J, outlines) {
+    // huella de la cédula con cada zona del pulgar ubicada encima (verde: coincide; gris: no aporta)
+    const SC = 2; c.width = t.w * SC; c.height = t.h * SC; const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false; g.drawImage(skelCanvas(t), 0, 0, c.width, c.height);
+    for (const o of outlines || []) {
+      if (!o || o.outside) continue; g.beginPath();
+      o.pts.forEach(([x, y], k) => { const X = (J.mirror ? t.w - 1 - x : x) * SC, Y = y * SC; k ? g.lineTo(X, Y) : g.moveTo(X, Y); });
+      g.closePath(); g.lineWidth = o.llr > 0 ? 2.5 : 1.2; g.strokeStyle = o.llr > 0 ? 'rgba(63,212,154,.9)' : 'rgba(150,165,175,.45)';
+      if (o.llr > 0) { g.fillStyle = `rgba(63,212,154,${Math.min(0.28, 0.06 + o.llr * 0.09)})`; g.fill(); }
+      g.stroke();
+    }
+  }
+  function drawTpl(t, c, SC) {
+    c.width = t.w * SC; c.height = t.h * SC; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(skelCanvas(t), 0, 0, c.width, c.height);
+    g.lineWidth = 1.6;
+    for (const m of t.minutiae) { const x = m.x * SC, y = m.y * SC; g.strokeStyle = m.type === 'ending' ? '#F07560' : '#6F9CF2'; g.beginPath();
+      if (m.type === 'ending') g.arc(x, y, 3.2 * SC, 0, Math.PI * 2); else g.rect(x - 3 * SC, y - 3 * SC, 6 * SC, 6 * SC); g.stroke(); }
+    for (const s of t.singular) { g.strokeStyle = s.type === 'core' ? '#3CC98E' : '#E8B04A'; g.lineWidth = 2.5; g.beginPath(); g.arc(s.x * SC, s.y * SC, 7 * SC, 0, Math.PI * 2); g.stroke(); }
+  }
+  $('#cmpAdd').addEventListener('click', () => startCam('card'));
+  $('#cmpNewCard').addEventListener('click', () => startCam('card'));
+
+  const STAGES = [
+    ['foto', 'Foto', 'La foto original, recortada al óvalo. Es la que se toma como evidencia.'],
+    ['canal', 'Canal', 'Un solo canal de color (el que muestra mejor los surcos), con la polaridad ajustada para que las crestas queden oscuras y la escala normalizada a 9 px por surco.'],
+    ['contraste', 'Contraste', 'Normalización local: cada zona se lleva al mismo brillo y contraste, así la luz desigual de la linterna no tapa los surcos.'],
+    ['orientacion', 'Orientación', 'Campo de orientación: la dirección de las crestas en cada zona, calculada con el tensor de estructura. Guía los filtros siguientes.'],
+    ['gabor', 'Gabor', 'Filtros de Gabor orientados según el campo y la separación de surcos: refuerzan las crestas y borran el ruido y los poros.'],
+    ['binaria', 'Binaria', 'Crestas en negro y valles en blanco, solo dentro de la zona con surcos legibles.'],
+    ['puntos', 'Puntos clave', 'Esqueleto de 1 píxel y puntos clave: terminaciones y bifurcaciones (número de cruce), más núcleo y delta (índice de Poincaré).'],
+  ];
+  S.stage = 'puntos';
+  function renderChips() {
+    $('#stageChips').innerHTML = STAGES.map(([k, n]) => `<button type="button" data-k="${k}" aria-pressed="${k === S.stage}">${n}</button>`).join('');
+  }
+  $('#stageChips').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; S.stage = b.dataset.k; renderChips(); renderStage(); });
+  function renderStage() { const c = $('#stage'); drawStage(S.stage, c, 2); $('#stageTxt').textContent = STAGES.find((s) => s[0] === S.stage)[2]; $('#legend').hidden = S.stage !== 'puntos'; }
+
+  function imgCanvas(img, mask, dim) {
+    const c = document.createElement('canvas'); c.width = img.w; c.height = img.h; const x = c.getContext('2d'), id = x.createImageData(img.w, img.h);
+    for (let i = 0, j = 0; i < img.w * img.h; i++, j += 4) { let v = Math.max(0, Math.min(1, img.data[i])) * 255; if (mask && !mask[i]) v = v * (dim ?? 0.25) + 18; id.data[j] = id.data[j + 1] = id.data[j + 2] = v; id.data[j + 3] = 255; }
+    x.putImageData(id, 0, 0); return c;
+  }
+  function binCanvas(t) {
+    const c = document.createElement('canvas'); c.width = t.w; c.height = t.h; const x = c.getContext('2d'), id = x.createImageData(t.w, t.h), B = t.images.bin, M = t.images.mask;
+    for (let i = 0, j = 0; i < t.w * t.h; i++, j += 4) { const v = !M[i] ? 30 : B[i] ? 20 : 235; id.data[j] = id.data[j + 1] = id.data[j + 2] = v; id.data[j + 3] = 255; }
+    x.putImageData(id, 0, 0); return c;
+  }
+  function skelCanvas(t) {
+    const c = document.createElement('canvas'); c.width = t.w; c.height = t.h; const x = c.getContext('2d'), id = x.createImageData(t.w, t.h);
+    for (let i = 0, j = 0; i < t.w * t.h; i++, j += 4) { const v = t.images.skel[i] ? 205 : t.images.mask[i] ? 38 : 24; id.data[j] = id.data[j + 1] = id.data[j + 2] = v; id.data[j + 3] = 255; }
+    x.putImageData(id, 0, 0); return c;
+  }
+  function drawStage(k, c, SC) {
+    const { t } = S.res; c.width = t.w * SC; c.height = t.h * SC; const g = c.getContext('2d');
+    g.imageSmoothingEnabled = true; g.fillStyle = '#1b252d'; g.fillRect(0, 0, c.width, c.height);
+    const M = t.images.mask;
+    if (k === 'foto') g.drawImage(S.shot.canvas, 0, 0, c.width, c.height);
+    else if (k === 'canal') g.drawImage(imgCanvas(t.images.gray), 0, 0, c.width, c.height);
+    else if (k === 'contraste') g.drawImage(imgCanvas(t.images.norm, M, 0.45), 0, 0, c.width, c.height);
+    else if (k === 'gabor') g.drawImage(imgCanvas(t.images.enh, M, 0.2), 0, 0, c.width, c.height);
+    else if (k === 'binaria') { g.imageSmoothingEnabled = false; g.drawImage(binCanvas(t), 0, 0, c.width, c.height); }
+    else if (k === 'orientacion') {
+      g.globalAlpha = 0.45; g.drawImage(imgCanvas(t.images.norm, M, 0.4), 0, 0, c.width, c.height); g.globalAlpha = 1;
+      const O = t.orient, L = O.s * 0.85 * SC; g.lineWidth = 1.6 * SC / 2; g.lineCap = 'round';
+      for (let y = 0; y < O.h; y++) for (let x = 0; x < O.w; x++) {
+        const px = x * O.s + O.s / 2, py = y * O.s + O.s / 2; if (!M[Math.min(t.h - 1, py | 0) * t.w + Math.min(t.w - 1, px | 0)]) continue;
+        const th = O.data[y * O.w + x], dx = Math.cos(th) * L / 2, dy = Math.sin(th) * L / 2;
+        g.strokeStyle = `hsl(${(((th % Math.PI) + Math.PI) % Math.PI) / Math.PI * 360},70%,62%)`;
+        g.beginPath(); g.moveTo(px * SC - dx, py * SC - dy); g.lineTo(px * SC + dx, py * SC + dy); g.stroke();
+      }
+    } else if (k === 'puntos') {
+      g.imageSmoothingEnabled = false; g.drawImage(skelCanvas(t), 0, 0, c.width, c.height);
+      g.lineWidth = 1.6;
+      for (const m of t.minutiae) {
+        const x = m.x * SC, y = m.y * SC; g.strokeStyle = m.type === 'ending' ? '#F07560' : '#6F9CF2'; g.beginPath();
+        if (m.type === 'ending') g.arc(x, y, 3.2 * SC, 0, Math.PI * 2); else g.rect(x - 3 * SC, y - 3 * SC, 6 * SC, 6 * SC); g.stroke();
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(m.t) * 7 * SC, y + Math.sin(m.t) * 7 * SC); g.stroke();
+      }
+      for (const s of t.singular) { g.strokeStyle = s.type === 'core' ? '#3CC98E' : '#E8B04A'; g.lineWidth = 2.5; g.beginPath(); g.arc(s.x * SC, s.y * SC, 7 * SC, 0, Math.PI * 2); g.stroke(); }
+    }
+  }
+  function renderChannels() {
+    const box = $('#chans'); box.innerHTML = '';
+    const best = S.scores.slice().sort((a, b) => b.score - a.score)[0].ch;
+    for (const sc of S.scores) {
+      const b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(sc.ch === S.res.channel));
+      const cv = imgCanvas(sc.thumb); b.appendChild(cv);
+      const l = document.createElement('span'); l.textContent = `${CH_NAME[sc.ch]} ${Math.round(sc.score * 100)}${sc.ch === best ? ' ★' : ''}`; b.appendChild(l);
+      b.addEventListener('click', () => { if (sc.ch !== S.res.channel) process(sc.ch, S.res.invert); });
+      box.appendChild(b);
+    }
+  }
+  $('#invBtn').addEventListener('click', () => process(S.res.channel, !S.res.invert));
+  $('#again').addEventListener('click', () => startCam('finger'));
+
+  // ───────── descargas ─────────
+  const stamp = () => new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+  function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+  $('#dlPhoto').addEventListener('click', () => S.shot.canvas.toBlob((b) => download(b, `huella-foto-${stamp()}.jpg`), 'image/jpeg', 0.95));
+  $('#dlJson').addEventListener('click', () => {
+    const { t, channel, invert } = S.res;
+    const out = { motor: 'FPEngine ' + E.version, fecha: new Date().toISOString(), consentimiento: S.consent, captura: S.shot.meta, canal: channel, crestasClaras: invert,
+      calidad: t.quality, coherenciaMedia: t.cohMean, escala: t.scale, canales: S.scores.map((s) => ({ canal: s.ch, puntaje: s.score, cobertura: s.coverage, coherencia: s.coh })), plantilla: E.exportTemplate(t),
+      cedula: S.card ? { captura: S.card.meta, metodo: S.card.method, plantilla: E.exportTemplate(S.card.t) } : null,
+      comparacion: S.cmp && S.cmp.J ? { ...S.cmp.J, veredicto: cmpVerdict(S.cmp.J.P)[1], pulgar: S.cmp.finger } : S.cmp };
+    download(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }), `huella-plantilla-${stamp()}.json`);
+  });
+  $('#dlSheet').addEventListener('click', () => {
+    const { t } = S.res, tw = 360, th = Math.round(tw * t.h / t.w), cols = 4, rows = 2, pad = 16, head = 34;
+    const c = document.createElement('canvas'); c.width = cols * tw + (cols + 1) * pad; c.height = rows * (th + head) + (rows + 1) * pad + 60;
+    const g = c.getContext('2d'); g.fillStyle = '#0B1116'; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = '#E8EEF1'; g.font = '600 26px system-ui, sans-serif'; g.fillText(`Análisis de huella · calidad ${t.quality}/100 · ${t.minutiae.length} puntos clave · ${t.pattern}` + (S.cmp && S.cmp.J ? ` · vs cédula: ${cmpVerdict(S.cmp.J.P)[1]} (${(S.cmp.J.P * 100).toFixed(1)} %)` : ''), pad, 40);
+    const tmp = document.createElement('canvas');
+    STAGES.forEach(([k, n], i) => {
+      const x = pad + (i % cols) * (tw + pad), y = 60 + pad + Math.floor(i / cols) * (th + head + pad);
+      g.fillStyle = '#A9B6BF'; g.font = '500 18px system-ui, sans-serif'; g.fillText(`${i + 1}. ${n}`, x, y + 22);
+      drawStage(k, tmp, 2); g.drawImage(tmp, x, y + head, tw, th);
+    });
+    const x = pad + 3 * (tw + pad), y = 60 + pad + (th + head + pad);
+    g.fillStyle = '#A9B6BF'; g.font = '15px ui-monospace, monospace';
+    [`FPEngine ${E.version}`, `Canal: ${CH_NAME[S.res.channel]}`, `Separación de surcos: ${t.periodSrc} px`, `Orden de crestas: ${Math.round(t.cohMean * 100)} %`, `${new Date().toLocaleString('es-CL')}`].forEach((s, i) => g.fillText(s, x, y + head + 24 + i * 24));
+    c.toBlob((b) => download(b, `huella-lamina-${stamp()}.png`), 'image/png');
+  });
+})();
+
+</script>
+</body>
+</html>

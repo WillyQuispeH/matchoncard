@@ -9,7 +9,7 @@ export function Hero() {
       <Wrap className="grid grid-cols-[1.25fr_.75fr] items-center gap-14 max-[980px]:grid-cols-1">
         <div>
           <Eyebrow>Validación de identidad · Chile</Eyebrow>
-          <h1 className="mb-[22px] mt-[18px] text-balance font-display text-[clamp(36px,4.6vw,58px)] font-normal leading-[1.05] tracking-[-0.01em]">
+          <h1 className="mb-[22px] mt-[18px] text-balance font-display text-[clamp(36px,4.6vw,58px)] font-semibold leading-[1.05] tracking-[-0.02em]">
             Tu cédula, tu huella, tu rostro y tu firma. <em className="not-italic text-accent">Comparados en el momento.</em>
           </h1>
           <p className="max-w-[34ch] text-xl text-ink-2">

@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
-/* Paleta y tipografías de MatchOnCard, inspiradas en creem.io (modo oscuro):
-   carbón #222324 de fondo, lila como color principal, durazno de apoyo y pasteles para estados. */
+/* Paleta y tipografías de MatchOnCard (modo oscuro): carbón #222324 de fondo, azul del logo como color
+   principal, durazno de apoyo y pasteles para estados. Tipografía IBM Plex, igual que el panel de administración. */
 @theme {
   --color-bg: #222324;
   --color-surface: #2a2b2d;
@@ -12,9 +12,10 @@
   --color-ink: #f7f5f3;
   --color-ink-2: #bcb7b3;
   --color-ink-3: #8b8e95;
-  --color-accent: #d1c3fe;
-  --color-accent-hover: #ddd2ff;
-  --color-accent-ink: #181614;
+  --color-accent: #5db1d1;
+  --color-accent-hover: #73c0dc;
+  --color-accent-ink: #08161d;
+  --color-accent-borde: #3b86a4;
   --color-ok: #7fd492;
   --color-warn: #f2c25b;
   --color-bad: #f08a97;
@@ -28,10 +29,10 @@
   --color-rosa: #ffaeb7;
   --color-mostaza: #fad779;
 
-  --font-sans: var(--font-geist), system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-cond: var(--font-geist), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace;
-  --font-display: var(--font-gasoek), var(--font-geist), sans-serif;
+  --font-sans: var(--font-plex-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-cond: var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  --font-display: var(--font-plex-sans), system-ui, sans-serif;
 }
 
 @layer base {

@@ -8,7 +8,7 @@ type Tamano = 'sm' | 'md' | 'lg';
 const BASE = 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border font-semibold no-underline transition disabled:opacity-50';
 const VARIANTES: Record<Variante, string> = {
   default: 'border-line-2 bg-surface text-ink shadow-[0_2px_0_var(--color-line-2)] hover:border-ink-3',
-  primary: 'border-lila-borde bg-accent text-accent-ink shadow-[0_2px_0_var(--color-lila-borde)] hover:bg-accent-hover',
+  primary: 'border-accent-borde bg-accent text-accent-ink shadow-[0_2px_0_var(--color-accent-borde)] hover:bg-accent-hover',
   durazno: 'border-durazno-borde bg-durazno text-accent-ink shadow-[0_2px_0_var(--color-durazno-borde)] hover:brightness-105',
   danger: 'border-bad/50 bg-transparent text-bad hover:border-bad',
   ghost: 'border-transparent bg-transparent text-ink-2 hover:text-ink',

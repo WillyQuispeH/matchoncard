@@ -16,20 +16,20 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gasoek+One&family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 <style>
   :root {
     color-scheme: dark;
     --bg: #222324; --surface: #2A2B2D; --sunken: #1D1E20; --deep: #191A1C; --line: #36383B; --line-2: #46494D;
     --ink: #F7F5F3; --ink-2: #BCB7B3; --ink-3: #8B8E95;
-    --accent: #D1C3FE; --accent-edge: #927DD0; --accent-ink: #181614;
+    --accent: #5DB1D1; --accent-edge: #3B86A4; --accent-ink: #08161D;   /* azul del logo */
     --peach: #FFC19B; --peach-edge: #BA7A53;
     --ok: #7FD492; --warn: #F2C25B; --bad: #F08A97;
     --ending: #F07560; --bifur: #6F9CF2; --core: #3CC98E; --delta: #E8B04A;
-    --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --cond: "Geist", system-ui, sans-serif;
-    --display: "Gasoek One", "Geist", sans-serif;
-    --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --cond: "IBM Plex Sans", system-ui, sans-serif;
+    --display: "IBM Plex Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -184,7 +184,7 @@
   .logo { display: flex; align-items: center; gap: 10px; font: 700 18px var(--sans); letter-spacing: -0.02em; }
   .logo b { color: var(--accent); font-weight: 700; }
   .eyebrow { font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-  .display { font-family: var(--display) !important; font-weight: 400 !important; text-transform: uppercase; line-height: .98; letter-spacing: -0.01em !important; }
+  .display { font-family: var(--display) !important; font-weight: 600 !important; line-height: 1.08; letter-spacing: -0.02em !important; }
   .final-ico { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; }
   .final-ico.ok { background: rgba(127,212,146,.14); color: var(--ok); } .final-ico.warn { background: rgba(242,194,91,.14); color: var(--warn); } .final-ico.bad { background: rgba(240,138,151,.14); color: var(--bad); }
   .hero { display: grid; gap: 10px; padding-top: 6px; }
@@ -192,7 +192,7 @@
   .hero small { font: 12px var(--mono); color: var(--ink-3); }
   ol.steps li::before { font-weight: 600; }
   ol.steps li:nth-child(1)::before { background: rgba(255,193,155,.16); color: var(--peach); }
-  ol.steps li:nth-child(2)::before { background: rgba(209,195,254,.16); color: var(--accent); }
+  ol.steps li:nth-child(2)::before { background: rgba(93,177,209,.16); color: var(--accent); }
   ol.steps li:nth-child(3)::before { background: rgba(161,224,169,.16); color: #A1E0A9; }
   ol.steps li:nth-child(4)::before { background: rgba(250,215,121,.16); color: #FAD779; }
   ol.steps li:nth-child(5)::before { background: rgba(162,207,255,.16); color: #A2CFFF; }
@@ -212,11 +212,11 @@
   .feats li { display: flex; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: 14px; }
   .feats i { width: 34px; height: 34px; flex: none; border-radius: 10px; display: grid; place-items: center; font-style: normal; }
   .feats li:nth-child(1) i { background: rgba(255,193,155,.16); color: var(--peach); }
-  .feats li:nth-child(2) i { background: rgba(209,195,254,.16); color: var(--accent); }
+  .feats li:nth-child(2) i { background: rgba(93,177,209,.16); color: var(--accent); }
   .feats li:nth-child(3) i { background: rgba(161,224,169,.16); color: #A1E0A9; }
   .feats li:nth-child(4) i { background: rgba(250,215,121,.16); color: #FAD779; }
   .qrcard { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 28px 24px 22px; display: grid; gap: 14px; justify-items: center; text-align: center; box-shadow: 0 2px 0 var(--line-2); }
-  .qrcard .qr { width: 248px; height: 248px; background: #fff; border-radius: 16px; padding: 14px; display: grid; place-items: center; box-shadow: 0 0 0 6px rgba(209,195,254,.16); }
+  .qrcard .qr { width: 248px; height: 248px; background: #fff; border-radius: 16px; padding: 14px; display: grid; place-items: center; box-shadow: 0 0 0 6px rgba(93,177,209,.16); }
   .qrcard .qr svg { width: 100%; height: 100%; display: block; }
   .qrcard .qr .busy { color: #555; }
   .qrcard b { font-size: 17px; }
@@ -4393,7 +4393,7 @@
     og.fillStyle = S.screenLight ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.5)'; og.beginPath(); og.rect(0, 0, G.sw, G.sh); og.ellipse(o.cx, o.cy, o.rx, o.ry, 0, 0, Math.PI * 2); og.fill('evenodd');
     const ok = F && F.pts && F.stable > 0;
     og.lineWidth = 3; og.strokeStyle = ok ? '#3FD49A' : 'rgba(255,255,255,.9)'; og.beginPath(); og.ellipse(o.cx, o.cy, o.rx, o.ry, 0, 0, Math.PI * 2); og.stroke();
-    if (F && F.pts) { og.fillStyle = 'rgba(209,195,254,.85)'; for (const p of F.pts) { og.beginPath(); og.arc(toScreenX(G, p.x), p.y * G.k + G.oy, 1.6, 0, Math.PI * 2); og.fill(); } }
+    if (F && F.pts) { og.fillStyle = 'rgba(93,177,209,.85)'; for (const p of F.pts) { og.beginPath(); og.arc(toScreenX(G, p.x), p.y * G.k + G.oy, 1.6, 0, Math.PI * 2); og.fill(); } }
     if (F) { // progreso de la prueba de vida
       const n = (F.done ? F.done.length : 0) / 2; og.lineWidth = 6; og.strokeStyle = 'rgba(255,255,255,.16)'; og.beginPath(); og.ellipse(o.cx, o.cy, o.rx + 9, o.ry + 9, 0, 0, Math.PI * 2); og.stroke();
       og.strokeStyle = '#3FD49A'; og.beginPath(); og.ellipse(o.cx, o.cy, o.rx + 9, o.ry + 9, 0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * n); og.stroke();
@@ -5031,7 +5031,7 @@
       <defs><linearGradient id="skin" x1="0" x2="1"><stop offset="0" stop-color="#e9b597"/><stop offset="1" stop-color="#d99a7c"/></linearGradient></defs>
       <g class="ithumb"><path d="M28 118c-4-28 6-60 30-72 22-11 44 2 50 22 5 16 3 34-4 50z" fill="url(#skin)"/>
         <g stroke="#b97a5f" stroke-width="1.4" fill="none" opacity=".7"><path d="M52 70c10-8 26-6 32 6"/><path d="M47 80c12-11 34-9 40 8"/><path d="M45 92c12-12 38-10 44 10"/><path d="M47 104c11-10 33-9 39 6"/></g></g>
-      <g class="iphone"><rect x="214" y="22" width="78" height="130" rx="14" fill="#2A2B2D" stroke="#D1C3FE" stroke-width="2.5"/>
+      <g class="iphone"><rect x="214" y="22" width="78" height="130" rx="14" fill="#2A2B2D" stroke="#5DB1D1" stroke-width="2.5"/>
         <circle cx="236" cy="42" r="7" fill="#191A1C" stroke="#A9B6BF" stroke-width="1.5"/><circle cx="256" cy="42" r="3.5" fill="#F1B84B" class="iflash"/></g>
       <g class="irays" stroke="#F1B84B" stroke-width="2" stroke-linecap="round" opacity=".8"><path d="M205 38 176 30"/><path d="M205 46 172 50"/><path d="M205 54 178 68"/></g>
       <g stroke="#E8EEF1" stroke-width="2" fill="none" stroke-linecap="round"><path d="M118 150h86"/><path d="M118 150l8-5M118 150l8 5M204 150l-8-5M204 150l-8 5"/></g>
@@ -5071,7 +5071,7 @@
     // capa nueva con los surcos del fotograma (se revela desde el centro, como si se dibujara)
     const W = DUO.live.width, H = DUO.live.height, k = Math.min(W / rg.w, H / rg.h) * 0.94, ox = (W - rg.w * k) / 2, oy = (H - rg.h * k) / 2;
     const layer = document.createElement('canvas'); layer.width = W; layer.height = H; const g = layer.getContext('2d');
-    g.fillStyle = '#D1C3FE';
+    g.fillStyle = '#5DB1D1';
     for (let y = 0; y < rg.h; y++) for (let x = 0; x < rg.w; x++) if (rg.data[y * rg.w + x] === 2) g.fillRect(ox + x * k, oy + y * k, Math.max(1.2, k), Math.max(1.2, k));
     // lo anterior queda tenue debajo: se ve que la huella se va formando
     const lg = DUO.live.getContext('2d');
@@ -5201,7 +5201,7 @@
       apiConsentTexts(j.config);
       apiHomeMsg(j.nombre ? `Hola, ${j.nombre}. Esta validación confirma tu identidad para firmar tu documento.` : '');
       if (!j.nombre) $('#homeWarn').hidden = true;
-      else $('#homeWarn').style.cssText = 'background:rgba(209,195,254,.1);border:1px solid rgba(209,195,254,.3);color:var(--ink)';
+      else $('#homeWarn').style.cssText = 'background:rgba(93,177,209,.1);border:1px solid rgba(93,177,209,.3);color:var(--ink)';
       delete $('#start').dataset.api; $('#start').disabled = !$('#consent').checked;
     } catch (e) {
       if (e.status === 404 || e.status === 410) { apiLinkCerrado(e); return; }
@@ -5300,7 +5300,7 @@
   function apiBox(html, level) {
     let b = $('#apiBox');
     if (!b) { b = document.createElement('div'); b.id = 'apiBox'; b.style.cssText = 'margin-top:12px;display:grid;gap:10px'; $('#sumNote').insertAdjacentElement('afterend', b); }
-    const bg = level === 'ok' ? 'background:#143328;color:var(--ok)' : level === 'bad' ? '' : 'background:rgba(209,195,254,.1);border:1px solid rgba(209,195,254,.3);color:var(--ink)';
+    const bg = level === 'ok' ? 'background:#143328;color:var(--ok)' : level === 'bad' ? '' : 'background:rgba(93,177,209,.1);border:1px solid rgba(93,177,209,.3);color:var(--ink)';
     b.innerHTML = `<div class="notice${level === 'bad' ? ' bad' : ''}" style="${bg}">${html}</div>`;
     return b;
   }

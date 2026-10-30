@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from 'next';
-import { Gasoek_One, Geist, Geist_Mono } from 'next/font/google';
+import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
 import '@/styles/globals.css';
 
 // Fuentes descargadas al compilar y servidas desde el mismo origen (la CSP no permite fuentes externas).
-const sans = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' });
-const mono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', display: 'swap' });
-const display = Gasoek_One({ subsets: ['latin'], weight: '400', variable: '--font-gasoek', display: 'swap' });   // titulares grandes
+// IBM Plex, la misma del panel de administración: sobria y fácil de leer
+const sans = IBM_Plex_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-plex-sans', display: 'swap' });
+const mono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-plex-mono', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'MatchOnCard · Validación de identidad con la cédula',
@@ -16,7 +16,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, view
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`${sans.variable} ${mono.variable} ${display.variable}`}>
+    <html lang="es" className={`${sans.variable} ${mono.variable}`}>
       <body>{children}</body>
     </html>
   );

@@ -7,7 +7,7 @@ export function DemoCta() {
     <section id="demo" className="border-t border-line py-24 text-center max-[560px]:py-[72px]">
       <Wrap>
         <Eyebrow>Demo</Eyebrow>
-        <h2 className="mx-auto mb-[18px] mt-3.5 max-w-[18ch] text-balance font-display text-[clamp(34px,4.6vw,54px)] font-normal tracking-[-0.01em]">Pruébalo con tu propia cédula.</h2>
+        <h2 className="mx-auto mb-[18px] mt-3.5 max-w-[18ch] text-balance font-display text-[clamp(34px,4.6vw,54px)] font-semibold tracking-[-0.02em]">Pruébalo con tu propia cédula.</h2>
         <p className="mx-auto max-w-[46ch] text-[19px] text-ink-2">
           Necesitas tu cédula y unos 3 minutos. En la demo todo ocurre dentro de tu teléfono: nada se envía ni se guarda en nuestros servidores.
         </p>

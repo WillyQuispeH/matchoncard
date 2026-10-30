@@ -14,7 +14,7 @@ export function Integracion() {
       <Wrap className="grid grid-cols-[.9fr_1.1fr] items-center gap-12 max-[980px]:grid-cols-1">
         <div>
           <Eyebrow>Integración</Eyebrow>
-          <h2 className="mb-4 mt-3.5 font-display text-[clamp(32px,4vw,46px)] font-normal tracking-[-0.01em]">Una API para cualquier flujo de firma.</h2>
+          <h2 className="mb-4 mt-3.5 font-display text-[clamp(32px,4vw,46px)] font-semibold tracking-[-0.02em]">Una API para cualquier flujo de firma.</h2>
           <p className="text-[19px] text-ink-2">Tu plataforma crea la validación y envía el link al firmante. Cuando termina, recibes el resultado firmado en tu servidor.</p>
           <ul className="mt-[22px] grid list-none gap-2.5 p-0 text-ink-2">
             <li><Code>POST /v1/validaciones</Code>: crea la validación y entrega el link</li>
