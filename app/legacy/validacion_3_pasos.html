@@ -271,6 +271,14 @@
   .fpref img, .fpref canvas { height: 76px; width: 76px; object-fit: cover; border-radius: 8px; background: #F4F4F4; display: block; }
   .fpref canvas { background: var(--deep); border: 2px solid var(--line-2); box-sizing: border-box; transition: border-color .2s; }
   .fpref canvas.on { border-color: var(--ok); }
+  .fpref canvas.shot { background: #fff; }
+  .fpref canvas.bad { border-color: var(--warn); }
+  /* disparador de la foto del pulgar */
+  .shoot { width: 64px; height: 64px; border-radius: 50%; border: 4px solid #fff; background: rgba(255,255,255,.18); padding: 0; cursor: pointer; flex: none; }
+  .shoot:active { background: rgba(255,255,255,.45); }
+  .shoot:disabled { opacity: .4; }
+  .tools .btn.auto { flex: none; min-height: 40px; padding: 8px 14px; font-size: 14px; }
+  .tools .btn.auto[aria-pressed="true"] { border-color: var(--ok); color: var(--ok); }
   .fpref figcaption { font: 500 11px var(--sans); color: var(--ink-2); white-space: nowrap; }
   .fpref b { display: block; font-size: 14px; }
   .fpref .fptxt { min-width: 0; }
@@ -423,6 +431,8 @@
       <input type="range" id="zoom" min="1" max="1" step="0.1" value="1" hidden aria-label="Zoom de la cámara">
       <button class="btn primary" id="manual">Capturar ahora</button>
       <button class="btn primary" id="finishScan" hidden disabled>Terminar escaneo</button>
+      <button class="btn auto" id="autoBtn" aria-pressed="true" hidden>Auto</button>
+      <button class="shoot" id="shootBtn" aria-label="Tomar foto" hidden></button>
     </div>
     <button class="linkbtn" id="skipFinger" hidden style="justify-self:center">No puedo escanear mi huella</button>
     <button class="linkbtn" id="useBack" hidden style="justify-self:center">Usar la huella de la foto del reverso</button>
@@ -2481,7 +2491,8 @@
     const IDT = { s: 1, rot: 0, c: 1, sn: 0, tx: 0, ty: 0 };
     const FRAME_OPT = { scales: [0.9, 1, 1.1], tile: 72, peaks: 4, rotRange: 1.05 };
     const FRAME_OPT_SLOW = { scales: [0.92, 1.05], tile: 72, peaks: 3, rotRange: 0.9 };   // teléfonos más lentos
-    let mosaicJ = null;
+    let mosaicJ = null, photoMode = false;
+    const PHOTO_P = 0.995, PHOTO_CAP = 2.09;   // foto decisiva: cada foto concordante con P ≥ 99,5 %; con menos de 2, tope 89 %
     function session() {
       const a = frameSession(), m = mosaicJ && mosaicJ.fragments >= 4 ? { P: mosaicJ.P, logit: mosaicJ.logit, evidence: mosaicJ.evidence, mirror: mosaicJ.mirror, polarity: mosaicJ.polarity,
         rotationDeg: mosaicJ.rotationDeg, fragments: frames.length, agree: mosaicJ.positive, strong: mosaicJ.positive, inside: mosaicJ.inside, positive: mosaicJ.positive,
@@ -2496,8 +2507,10 @@
       // por cada fotograma adicional que concuerde (mismo espejo y rotación similar) con evidencia fuerte
       const W = frames.filter((f) => f.wide); if (!W.length) return null;
       const b = W.reduce((a, f) => (f.logit > a.logit ? f : a));
-      const agree = W.filter((f) => f.mirror === b.mirror && Math.abs(((f.rot - b.rot + 540) % 360) - 180) <= 30 && f.logit >= 3);
-      const logit = b.logit - Math.log(W.length) + 0.8 * Math.min(5, Math.max(0, agree.length - 1));
+      const agree = W.filter((f) => f.mirror === b.mirror && Math.abs(((f.rot - b.rot + 540) % 360) - 180) <= 30 && (photoMode ? f.P >= PHOTO_P : f.logit >= 3));
+      let logit = b.logit - Math.log(W.length) + 0.8 * Math.min(5, Math.max(0, agree.length - 1));
+      // foto decisiva: la probabilidad es la de la segunda foto concordante (dos fotos independientes deben coincidir)
+      if (photoMode) { const L = agree.map((f) => f.logit).sort((x, y) => y - x); logit = agree.length >= 2 ? L[1] : Math.min(b.logit, PHOTO_CAP); }
       const P = 1 / (1 + Math.exp(-logit));
       const G = b.covGrid, cov = G ? new Uint8Array(G.data.length) : null;
       if (G) for (const f of agree) if (f.covGrid && f.covGrid.data.length === cov.length) for (let k = 0; k < cov.length; k++) cov[k] |= f.covGrid.data[k];
@@ -2505,7 +2518,7 @@
       const cells = G ? b.coverage > 0 ? (G.data.reduce((a, v) => a + v, 0) / b.coverage) : 0 : 0;
       return { P: +P.toFixed(4), logit: +logit.toFixed(2), evidence: b.evidence, mirror: b.mirror, polarity: b.polarity, rotationDeg: b.rot,
         fragments: frames.length, agree: agree.length, strong: frames.filter((f) => f.logit >= 3).length, inside: b.inside, positive: b.positive,
-        coverage: cells ? +Math.min(1, cc / cells).toFixed(3) : b.coverage, covGrid: G ? { ...G, data: cov } : null, method: 'fotogramas' };
+        coverage: cells ? +Math.min(1, cc / cells).toFixed(3) : b.coverage, covGrid: G ? { ...G, data: cov } : null, method: photoMode ? 'foto' : 'fotogramas' };
     }
     return function handle(type, p) {
       if (type === 'locate') {
@@ -2547,7 +2560,7 @@
       }
       if (type === 'setCard') { card = p.tpl; return { ok: true }; }
       // ── cotejo por fotogramas: cada fotograma nítido del pulgar se compara por teselas con la cédula ──
-      if (type === 'frameStart') { frames = []; bestFrame = null; scan = E.createScan(); lastInterim = 0; mosaicJ = null; autoReset(); return { ok: true }; }
+      if (type === 'frameStart') { frames = []; bestFrame = null; scan = E.createScan(); lastInterim = 0; mosaicJ = null; photoMode = !!p.photo; autoReset(); return { ok: true }; }
       if (type === 'frameAdd') {
         const autoMode = p.invert === 'auto';
         if (p.rgba) {
@@ -2559,11 +2572,12 @@
         }
         // a) versión reducida (surco ≈ 12 px) para registrar los fotogramas entre sí (bloque)
         let ts = null;
-        if (autoMode) ts = analyzeSmallAuto(p.graySmall);
+        if (p.photo) { /* la foto decisiva no se registra en bloque */ }
+        else if (autoMode) ts = analyzeSmallAuto(p.graySmall);
         else try { ts = E.analyze(p.graySmall, { mirror: true, invert: p.invert }); } catch (e) {}
         // b) un fotograma que abarca buena parte del dedo se compara solo, a resolución completa;
         //    los parciales (acercamiento a una zona) se registran entre sí y se ubican en bloque
-        const wideGuess = ts && ts.areaPx >= 0.45 * card.areaPx;
+        const wideGuess = p.photo || (ts && ts.areaPx >= 0.45 * card.areaPx);   // la foto decisiva siempre se compara completa
         let blockAccepted = false;
         if (!wideGuess) try {
           const sa = scan.add(ts); blockAccepted = sa.accepted;
@@ -2587,7 +2601,17 @@
           for (let y = 0; y < t.h; y++) for (let x = 0; x < t.w; x++) { const i = y * t.w + x, o = ((y / k) | 0) * w + ((x / k) | 0); if (sk[i]) d[o] = 2; else if (mk[i] && !d[o]) d[o] = 1; }
           return { w, h, data: d };
         } catch (e) { return null; } })();
-        return { accepted: true, reason: 'evaluado', frame: { ...fr, covGrid: undefined }, session: session(), ridge, pts: t.minutiae.map((m) => ({ x: m.x / t.scale, y: m.y / t.scale })) };
+        // foto decisiva: surcos binarizados en blanco y negro (crestas negras), para mostrar a la persona
+        const bw = p.photo ? (() => { try {
+          const k = Math.max(1, Math.ceil(Math.max(t.w, t.h) / 200)), w = Math.ceil(t.w / k), h = Math.ceil(t.h / k), d = new Uint8Array(w * h), bn = t.images.bin, mk = t.images.mask;
+          for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+            let on = 0, n = 0, m = 0;
+            for (let yy = y * k; yy < Math.min(t.h, y * k + k); yy++) for (let xx = x * k; xx < Math.min(t.w, x * k + k); xx++) { const i = yy * t.w + xx; n++; if (mk[i]) { m++; if (bn[i]) on++; } }
+            d[y * w + x] = m * 2 < n ? 255 : Math.round(255 * (1 - on / m));
+          }
+          return { w, h, data: d };
+        } catch (e) { return null; } })() : null;
+        return { accepted: true, reason: 'evaluado', frame: { ...fr, covGrid: undefined }, session: session(), ridge, bw, pts: t.minutiae.map((m) => ({ x: m.x / t.scale, y: m.y / t.scale })) };
       }
       if (type === 'frameFinish') {
         if (!bestFrame) throw new Error('No hubo fotogramas nítidos suficientes.');
@@ -2800,7 +2824,8 @@
     return bottom - top > G.sh * 0.3 ? { top, bottom } : { top: 0, bottom: G.sh };   // sin espacio razonable: la pantalla completa
   }
   // mismo tamaño de siempre (el tamaño cambia cuántos surcos se ven); solo se achica si no cabe en la zona libre
-  function circleGuide(G) { const Z = stage(G), h = Z.bottom - Z.top, d = Math.min(G.sw * 0.74, G.sh * 0.46, h * 0.94); return { cx: G.sw / 2, cy: Z.top + h / 2, r: d / 2 }; }
+  // óvalo vertical, como la yema: alto = 1,32 × ancho (r = semiancho, se mantiene por compatibilidad)
+  function fingerGuide(G) { const Z = stage(G), h = Z.bottom - Z.top, w = Math.min(G.sw * 0.66, G.sh * 0.36, h * 0.94 / 1.32); return { cx: G.sw / 2, cy: Z.top + h / 2, r: w / 2, rx: w / 2, ry: w * 0.66 }; }
   // Copia una región del video (coords de video) a gris, escalada a maxDim
   function grab(r, maxDim, channel) {
     const x = Math.max(0, r.x), y = Math.max(0, r.y), w = Math.min(video.videoWidth - x, r.w), h = Math.min(video.videoHeight - y, r.h);
@@ -3243,7 +3268,7 @@
   const SCAN = { minGap: 150, doneCov: 0.95, minFinishCov: 0.35, timeout: 45, minPatches: 5, acceptP: 0.995, rejectP: 0.01, rejectAfter: 20 };
   // veredicto a partir de la probabilidad acumulada
   function verdictOf(J) {
-    if (!J || (J.method === 'bloque' ? J.inside < 4 : J.fragments < 3)) return { text: 'Muestra insuficiente', level: 'warn' };
+    if (!J || (J.method === 'bloque' ? J.inside < 4 : J.fragments < (J.method === 'foto' ? 2 : 3))) return { text: 'Muestra insuficiente', level: 'warn' };
     if (J.P >= 0.99) return { text: 'Coincide', level: 'ok' };
     if (J.P >= 0.9) return { text: 'Coincidencia probable', level: 'warn' };
     if (J.P >= 0.2) return { text: 'No concluyente', level: 'warn' };
@@ -3256,25 +3281,27 @@
     say('Iniciando cámara trasera…');
     fingerProfileOn();   // perfil de dispositivo: resolución, zoom y pausa de tareas de fondo
     await useCamera('environment');
-    await call('frameStart', {});
+    const photo = labAj('modo', 'foto') === 'foto';   // laboratorio: se puede volver a los fragmentos para comparar
+    await call('frameStart', { photo });
     S.attempts = []; S.best = null;
     if (S.raw) { S.raw.fragments = []; try { S.raw.video = S.track.getSettings(); } catch (e) {} }
     S.fp = { lastAssess: 0, lastFilter: 0, lastCap: 0, thumb: null, marks: null, busy: false, state: null, t0: performance.now(),
-      cov: 0, patches: 0, tried: 0, rejects: 0, preview: null, interim: null, flashBad: 0 };
-    $('#camTitle').textContent = 'Escanea tu pulgar'; $('#camSub').textContent = 'Paso 2 de 2 · Tú · recorre la yema con la cámara';
+      cov: 0, patches: 0, tried: 0, rejects: 0, preview: null, interim: null, flashBad: 0, photo, ready: 0, maxShots: SHOT.round, shotAt: 0 };
+    $('#camTitle').textContent = photo ? 'Foto de tu pulgar' : 'Escanea tu pulgar'; $('#camSub').textContent = photo ? 'Paso 2 de 2 · Tú · la foto se toma sola' : 'Paso 2 de 2 · Tú · recorre la yema con la cámara';
     $('#phases').hidden = true; $('#yoCam').hidden = false; yoEstado('finger', 'now', null);
     $('#flip').hidden = true; lightButton(true); await setLight(labAj('linterna', true));
     const z = $('#zoom'), zq = labAj('zoom', null);   // laboratorio: zoom elegido para comparar
     if (zq != null && !z.hidden) { const zt = Math.max(+z.min, Math.min(zq, +z.max)); z.value = zt; S.track.applyConstraints({ advanced: [{ zoom: zt }] }).then(keepFocus).catch(() => {}); }
     else if ((IS_IOS || PROFILE.zoom2) && !z.hidden && +z.value < 1.6 && +z.max >= 2) { z.value = 2; S.track.applyConstraints({ advanced: [{ zoom: 2 }] }).then(keepFocus).catch(() => {}); }
-    $('#scanRow').hidden = true; $('#finishScan').hidden = false; $('#manual').hidden = true; S.fp.joint = null;   // sin vista doble ni puntitos: el círculo queda libre
+    $('#scanRow').hidden = true; $('#finishScan').hidden = photo; $('#manual').hidden = true; S.fp.joint = null;   // sin vista doble ni puntitos: el óvalo queda libre
+    $('#shootBtn').hidden = !photo; $('#shootBtn').disabled = false; $('#autoBtn').hidden = !photo; autoBtnSync();
     $('#covPct').textContent = '—'; $('#covLbl').textContent = 'buscando fragmentos nítidos'; drawMini();
-    fingerRef();   // panel: huella de la cédula y lupa «Tu dedo»
-    say(FLAGS.zoomauto && !$('#zoom').hidden ? 'Pon la yema dentro del círculo, a un palmo (unos 15 cm) de la cámara. El zoom y el enfoque se ajustan solos' : PROFILE.zoom2 && !IS_IOS && !$('#zoom').hidden ? 'Zoom activado: pon la yema a unos 12–15 cm de la cámara' : 'Acerca la cámara a la yema hasta ver los surcos grandes');
+    fingerRef();   // panel: huella de la cédula y la última foto en blanco y negro
+    say(photo ? 'Pon la yema del pulgar dentro del óvalo, con la punta hacia arriba. La foto se toma sola' : FLAGS.zoomauto && !$('#zoom').hidden ? 'Pon la yema dentro del círculo, a un palmo (unos 15 cm) de la cámara. El zoom y el enfoque se ajustan solos' : PROFILE.zoom2 && !IS_IOS && !$('#zoom').hidden ? 'Zoom activado: pon la yema a unos 12–15 cm de la cámara' : 'Acerca la cámara a la yema hasta ver los surcos grandes');
     await fingerIntro();   // demostración animada (una vez)
     S.mode = 'finger';
   }
-  // panel bajo la barra: la huella de la cédula (el dedo que hay que escanear) junto a una lupa en vivo de la yema
+  // panel bajo la barra: la huella de la cédula (el dedo que hay que fotografiar) junto a la última foto, en blanco y negro
   async function fingerRef() {
     const el = $('#fpRef'), d = S.doc && S.doc.close;
     let ref = '';
@@ -3290,16 +3317,23 @@
       }
     }
     if (!/^finger/.test(S.mode || '')) return;
-    el.innerHTML = `${ref}<figure><canvas id="fpLive" width="160" height="160" aria-label="Tu dedo, ampliado"></canvas><figcaption id="fpLiveCap">Tu dedo</figcaption></figure>
-      <span class="fptxt"><b>Pulgar derecho</b><span class="muted">Vas bien cuando en «Tu dedo» se ven líneas nítidas, como en la cédula</span></span>`;
+    el.innerHTML = `${ref}<figure><canvas id="fpShot" width="160" height="160" aria-label="Tu última foto, en blanco y negro"></canvas><figcaption id="fpShotCap">Tu foto</figcaption></figure>
+      <span class="fptxt"><b>Pulgar derecho</b><span class="muted" id="fpShotTxt">Aquí verás los surcos de cada foto, para compararlos con tu cédula</span></span>`;
     el.hidden = false;
+    const g = $('#fpShot').getContext('2d'); g.fillStyle = '#191A1C'; g.fillRect(0, 0, 160, 160);
   }
-  // lupa: el centro de la yema, ampliado otra vez al doble (≈10 cuadros por segundo)
-  function drawLoupe(G, c, F, now) {
-    const L = $('#fpLive'); if (!L || now - (F.loupeAt || 0) < 100) return; F.loupeAt = now;
-    const s = c.r / G.k, x = (c.cx - G.ox) / G.k - s / 2, y = (c.cy - G.oy) / G.k - s / 2;
-    try { L.getContext('2d').drawImage(video, x, y, s, s, 0, 0, L.width, L.height); } catch (e) {}
-    const on = !!F.sharpNow; if (L.classList.contains('on') !== on) { L.classList.toggle('on', on); $('#fpLiveCap').textContent = on ? 'Tu dedo ✓' : 'Tu dedo'; }
+  // última foto: surcos binarizados (crestas negras sobre blanco) y si coincidió con la cédula
+  function shotThumb(bw, ok, cap, txt) {
+    const c = $('#fpShot'); if (!c) return;
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    if (bw) {
+      const t = document.createElement('canvas'); t.width = bw.w; t.height = bw.h; const tg = t.getContext('2d'), id = tg.createImageData(bw.w, bw.h);
+      for (let i = 0, j = 0; i < bw.w * bw.h; i++, j += 4) { id.data[j] = id.data[j + 1] = id.data[j + 2] = bw.data[i]; id.data[j + 3] = 255; }
+      tg.putImageData(id, 0, 0);
+      const s = Math.max(c.width / bw.w, c.height / bw.h); g.imageSmoothingEnabled = true; g.drawImage(t, (c.width - bw.w * s) / 2, (c.height - bw.h * s) / 2, bw.w * s, bw.h * s);
+    }
+    c.classList.add('shot'); c.classList.toggle('on', ok === true); c.classList.toggle('bad', ok === false);
+    $('#fpShotCap').textContent = cap; const tx = $('#fpShotTxt'); if (tx && txt) tx.textContent = txt;
   }
   // Prueba de vida básica: la piel refleja más rojo que azul; el papel o plástico de la cédula es neutro o azulado.
   const isSkin = ([r, g, b]) => r > 40 && r >= g && (r - b) / (r + 1) > 0.1;
@@ -3317,6 +3351,7 @@
   }
   function scanHint() {
     const F = S.fp, J = F.joint;
+    if (F.photo) return S.autoShot ? (F.patches ? 'Muy bien, no te muevas: tomamos otra foto…' : 'Muy bien, no te muevas…') : 'Listo: toca el disparador';
     if (!J) return 'Mantén la yema del pulgar dentro del círculo, quieta y enfocada';
     if (J.P < 0.5) return 'Sigue: acerca o gira levemente el dedo para otras tomas nítidas';
     if (J.P < 0.995) return 'Muy bien: unas tomas más para confirmar';
@@ -3324,24 +3359,30 @@
   }
 
   function tickFinger(G, now) {
-    const F = S.fp, c = circleGuide(G);
-    const vr = toVideo(G, { x: c.cx - c.r, y: c.cy - c.r, w: 2 * c.r, h: 2 * c.r });
+    const F = S.fp, c = fingerGuide(G);
+    const vr = toVideo(G, { x: c.cx - c.rx, y: c.cy - c.ry, w: 2 * c.rx, h: 2 * c.ry });
     if (now - F.lastFilter > S.perf.filterEvery) {
       F.lastFilter = now; const tStart = performance.now();
       const { gray, s, rgb } = grab(vr, S.perf.slow ? 160 : 200, 'gb');
       if (now - F.lastAssess > S.perf.assessEvery) {
         F.lastAssess = now;
         const a = E.assessFrame(gray); a.motion = E.motionBetween(a.thumb, F.thumb); F.thumb = a.thumb;
-        const periodVideo = a.period / s, across = a.period ? (2 * c.r / G.k) / periodVideo : 0;
+        const periodVideo = a.period / s, across = a.period ? (2 * c.rx / G.k) / periodVideo : 0;
         if (a.period) F.periodVideo = periodVideo;
         const [text, cls, ok] = gate(a, periodVideo, across, isSkin(rgb));
-        F.sharpNow = !!a.period && a.cohMean >= 0.34 && a.coverage >= 0.25;   // borde verde de la lupa «Tu dedo»
+        F.sharpNow = !!a.period && a.cohMean >= 0.34 && a.coverage >= 0.25;
         fingerAssist(F, now, ok, text, a, across, isSkin(rgb));   // zoom y enfoque automáticos, consejos
         F.state = ok ? 'ok' : cls;
+        if (F.photo) {
+          F.ready = ok && !F.busy ? F.ready + 1 : 0;
+          const agreeN = (F.joint && F.joint.agree) || 0;
+          progress(Math.min(1, (agreeN + Math.min(1, F.ready / SHOT.readyN) * 0.9) / SHOT.need));
+        }
         chips([['surcos ' + (a.period ? Math.round(across) : '—'), !!a.period && across >= 7 && across <= 48], ['nitidez ' + Math.round(a.cohMean * 100) + '%', a.cohMean >= 0.34],
-               ['fragmentos ' + F.patches, null]]);
-        if (now > (F.holdUntil || 0)) say(ok ? scanHint() : text, ok ? 'ok' : cls);
-        if (ok && !F.busy && now - F.lastCap > SCAN.minGap) captureFragment(vr);
+               F.photo ? ['fotos ' + F.patches + (F.joint && F.joint.agree ? ' · coinciden ' + F.joint.agree : ''), null] : ['fragmentos ' + F.patches, null]]);
+        if (now > (F.holdUntil || 0) && !F.busy) say(ok ? scanHint() : text, ok ? 'ok' : cls);
+        if (F.photo) { if (ok && S.autoShot && !F.busy && F.ready >= SHOT.readyN && now - F.lastCap > SHOT.gapMs) shootFinger(vr, false); }
+        else if (ok && !F.busy && now - F.lastCap > SCAN.minGap) captureFragment(vr);
         if (S.prueba) labRecolectar(G, c, F, now, { a, size: 0, ok, text, glare: 0, fase: null });   // laboratorio: cuadros para entrenar
         if ((now - F.t0) / 1000 > SCAN.timeout && !F.busy) fingerTimeUp(F, now);
       }
@@ -3356,19 +3397,18 @@
   function drawFingerOverlay(G, c) {
     const F = S.fp, now = performance.now();
     og.clearRect(0, 0, G.sw, G.sh);
-    og.fillStyle = 'rgba(0,0,0,.5)'; og.beginPath(); og.rect(0, 0, G.sw, G.sh); og.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); og.fill('evenodd');
-    if (F.marks && now - F.marks.t < 900) {
-      og.save(); og.globalAlpha = 1 - (now - F.marks.t) / 900; og.beginPath(); og.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); og.clip();
+    const shape = () => og.ellipse(c.cx, c.cy, c.rx, c.ry, 0, 0, Math.PI * 2);
+    og.fillStyle = 'rgba(0,0,0,.55)'; og.beginPath(); og.rect(0, 0, G.sw, G.sh); og.moveTo(c.cx + c.rx, c.cy); shape(); og.fill('evenodd');
+    // destello al tomar la foto
+    if (now - F.shotAt < 260) { og.fillStyle = `rgba(255,255,255,${0.75 * (1 - (now - F.shotAt) / 260)})`; og.fillRect(0, 0, G.sw, G.sh); }
+    if (!F.photo && F.marks && now - F.marks.t < 900) {
+      og.save(); og.globalAlpha = 1 - (now - F.marks.t) / 900; og.beginPath(); shape(); og.clip();
       og.strokeStyle = '#3FD49A'; og.lineWidth = 2; for (const m of F.marks.pts) { og.beginPath(); og.arc(m.x, m.y, 4.5, 0, Math.PI * 2); og.stroke(); }
       og.restore();
     }
     const bad = now - F.flashBad < 350;
     const col = bad ? '#F2786A' : F.state === 'ok' ? '#3FD49A' : F.state === 'warn' ? '#F1B84B' : '#F2786A';   // semáforo: rojo no se ve, amarillo casi, verde bien
-    // anillo = cobertura de la huella
-    og.lineWidth = 6; og.strokeStyle = 'rgba(255,255,255,.16)'; og.beginPath(); og.arc(c.cx, c.cy, c.r + 8, 0, Math.PI * 2); og.stroke();
-    og.strokeStyle = '#3FD49A'; og.beginPath(); og.arc(c.cx, c.cy, c.r + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * F.cov); og.stroke();
-    og.lineWidth = 5; og.strokeStyle = col; og.beginPath(); og.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); og.stroke();
-    if (S.mode === 'finger') drawLoupe(G, c, F, now);
+    og.lineWidth = 4; og.strokeStyle = F.busy ? '#FFFFFF' : col; og.beginPath(); shape(); og.stroke();
     duoDraw(now);
   }
   async function captureFragment(vr) {
@@ -3378,8 +3418,8 @@
     // copia sin procesar del cuadro (hasta 1100 px) para calibrar el motor con datos reales
     let raw = null;
     if (S.raw && S.raw.fragments.length < 80) {
-      const rw = Math.min(IS_IOS ? 1100 : 900, Math.round(vr.w)), c = document.createElement('canvas'); c.width = rw; c.height = rw;
-      c.getContext('2d').drawImage(video, vr.x, vr.y, vr.w, vr.h, 0, 0, rw, rw);
+      const rw = Math.min(IS_IOS ? 1100 : 900, Math.round(vr.w)), rh = Math.round(rw * vr.h / vr.w), c = document.createElement('canvas'); c.width = rw; c.height = rh;
+      c.getContext('2d').drawImage(video, vr.x, vr.y, vr.w, vr.h, 0, 0, rw, rh);
       raw = { i: S.raw.fragments.length, at: new Date().toISOString(), jpeg: null, size: rw, periodVideo: +(F.periodVideo || 0).toFixed(2), zoom: +($('#zoom').value || 1), torch: !!S.torchOn, tickMs: +S.perf.tickMs.toFixed(1) };
       // JPEG en segundo plano (toBlob no bloquea la cámara como toDataURL)
       c.toBlob((b) => { raw.blob = b; }, 'image/jpeg', 0.9);
@@ -3415,6 +3455,78 @@
       }
     } catch (e) { say(e.message, 'warn'); }
     finally { F.busy = false; }
+  }
+  // ── foto decisiva: con el dedo estable se toma una ráfaga de 7 cuadros y se compara solo el más nítido.
+  //    Se confirma cuando 2 fotos coinciden con la cédula (cada una ≥ 99,5 %, mismo espejo y giro parecido).
+  //    Una sola foto no basta: en pruebas, 2 % de las fotos de otra persona superaban 99 % (experimentos/huella-foto).
+  const SHOT = { readyN: 4, burst: 7, burstGap: 70, gapMs: 900, need: 2, round: 4, maxShots: 8 };
+  S.autoShot = true;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  function autoBtnSync() { const b = $('#autoBtn'); b.setAttribute('aria-pressed', String(S.autoShot)); b.textContent = S.autoShot ? 'Auto' : 'Manual'; }
+  $('#autoBtn').addEventListener('click', () => { S.autoShot = !S.autoShot; autoBtnSync(); if (S.fp) S.fp.ready = 0; });
+  $('#shootBtn').addEventListener('click', () => {
+    if (S.mode !== 'finger' || !S.fp || S.fp.busy || !video.videoWidth) return;
+    const G = geo(), c = fingerGuide(G); shootFinger(toVideo(G, { x: c.cx - c.rx, y: c.cy - c.ry, w: 2 * c.rx, h: 2 * c.ry }), true);
+  });
+  async function shootFinger(vr, manual) {
+    const F = S.fp; F.busy = true; F.ready = 0; F.lastCap = performance.now(); $('#shootBtn').disabled = true;
+    say('Tomando la foto… no te muevas', 'ok');
+    const x = Math.max(0, vr.x), y = Math.max(0, vr.y), w = Math.min(video.videoWidth - x, vr.w), h = Math.min(video.videoHeight - y, vr.h);
+    const k = Math.min(1, (S.perf.slow ? 600 : 720) / Math.max(w, h)), W = Math.round(w * k), H = Math.round(h * k);
+    const bc = document.createElement('canvas'); bc.width = W; bc.height = H; const bg = bc.getContext('2d', { willReadFrequently: true });
+    let best = -1; const nit = [];
+    try {
+      for (let i = 0; i < SHOT.burst; i++) {
+        const sh = E.assessDocument(grab(vr, 360, 'gb').gray).sharpness; nit.push(+sh.toFixed(4));
+        if (sh > best) { best = sh; bg.drawImage(video, x, y, w, h, 0, 0, W, H); }
+        if (i < SHOT.burst - 1) await sleep(SHOT.burstGap);
+      }
+      if (S.mode !== 'finger') return;
+      F.shotAt = performance.now(); uxGood();
+      const gray = E.fromRGBA(bg.getImageData(0, 0, W, H).data, W, H, 'gb');
+      let mean = 0; for (const v of gray.data) mean += v; mean /= gray.data.length;
+      for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < W; xx++) { const u = xx / W - 0.5, v = yy / H - 0.5; if (u * u + v * v > 0.25) gray.data[yy * W + xx] = mean; }   // fuera del óvalo: gris medio
+      let raw = null;
+      if (S.raw && S.raw.fragments.length < 80) {
+        raw = { i: S.raw.fragments.length, at: new Date().toISOString(), size: W, alto: H, foto: true, manual, nitidezRafaga: nit, periodVideo: +(F.periodVideo || 0).toFixed(2), zoom: +($('#zoom').value || 1), torch: !!S.torchOn };
+        bc.toBlob((b) => { raw.blob = b; }, 'image/jpeg', 0.9); S.raw.fragments.push(raw);
+      }
+      say('Comparando con tu cédula…', 'ok');
+      const r = await call('frameAdd', { gray, invert: true, slow: S.perf.slow, photo: true });
+      if (S.mode !== 'finger') return;
+      if (raw) Object.assign(raw, { accepted: r.accepted, reason: r.reason, frame: r.frame || null });
+      F.tried++;
+      if (!r.accepted) {
+        F.rejects++; F.flashBad = performance.now();
+        shotThumb(null, false, 'Borrosa', 'La foto salió borrosa: mantén el dedo quieto y a la distancia en que el óvalo se pone verde');
+        say('La foto salió borrosa. Mantén el dedo quieto, tomamos otra', 'warn'); F.holdUntil = performance.now() + 1600;
+        if (F.tried >= SHOT.maxShots + 4) photoSheet(F);
+        return;
+      }
+      F.patches++; if (!F.firstAt) F.firstAt = performance.now();
+      yoPulgar(vr); uxGoodShot(F);
+      const fr = r.frame, J = r.session, hit = fr && fr.P >= 0.995;
+      F.joint = J; F.cov = J ? J.P : 0;
+      shotThumb(r.bw, hit, `Foto ${F.patches}${hit ? ' ✓' : ''}`, hit ? 'Esta foto coincide con tu cédula' : 'Esta foto no coincide lo suficiente: revisa que sea el pulgar derecho, con la punta hacia arriba');
+      if (J && J.agree >= SHOT.need && J.P >= SCAN.acceptP) { S.mode = 'finger-done'; $('#shootBtn').hidden = true; $('#autoBtn').hidden = true; say('Coincidencia confirmada', 'ok'); setTimeout(endScan, 500); return; }
+      if (F.patches >= F.maxShots) { photoSheet(F); return; }
+      say(hit ? 'Muy bien: una foto más para confirmar' : 'Tomamos otra foto: pulgar derecho, quieto y con la punta hacia arriba', hit ? 'ok' : 'warn'); F.holdUntil = performance.now() + 1400;
+    } catch (e) { say(e.message, 'warn'); }
+    finally { F.busy = false; F.lastCap = performance.now(); $('#shootBtn').disabled = false; }
+  }
+  // sin confirmar tras una tanda: se ofrece otra tanda o seguir con lo que hay (tope: SHOT.maxShots fotos)
+  function photoSheet(F) {
+    if (!F.patches) { S.mode = 'finger'; skipSheet(true); return; }   // ninguna foto nítida: intentar de nuevo o seguir sin huella
+    if (F.patches >= SHOT.maxShots || F.tried >= SHOT.maxShots + 4) { S.mode = 'finger-done'; say('Listo, seguimos con lo que tenemos', 'ok'); setTimeout(endScan, 500); return; }
+    S.mode = 'finger-pause'; voiceStop();
+    const sh = $('#sheet'), una = !!(F.joint && F.joint.agree === 1); sh.hidden = false; $('#camBottom').hidden = true;
+    sh.innerHTML = `<b style="font-size:18px">Aún no confirmamos tu huella</b>
+      <p class="muted" style="font-size:15px">${una ? 'Una foto coincide con tu cédula; falta otra para confirmar.' : 'Las fotos no coincidieron lo suficiente con la huella de tu cédula.'} Usa el <b>pulgar derecho</b>, con la punta hacia arriba, y mantenlo quieto hasta que se tome la foto.</p>
+      <button class="btn primary" id="shotMore" style="width:100%">Tomar más fotos</button>
+      <button class="btn" id="shotGo" style="width:100%">Continuar así</button>`;
+    voice('Aún no confirmamos tu huella. Usa el pulgar derecho, con la punta hacia arriba.');
+    $('#shotMore').onclick = () => { sh.hidden = true; $('#camBottom').hidden = false; voiceStop(); F.maxShots = SHOT.maxShots; F.ready = 0; F.t0 = performance.now(); S.mode = 'finger'; };
+    $('#shotGo').onclick = () => { sh.hidden = true; $('#camBottom').hidden = false; voiceStop(); S.mode = 'finger-done'; endScan(); };
   }
   function showConfidence(J) {
     $('#covPct').textContent = pct(J.P) + '%';
@@ -3475,7 +3587,7 @@
     if (S.mode === 'card' || S.mode === 'card-busy') { if (!S.perf.drawEvery || now - S.perf.lastDraw >= S.perf.drawEvery) { S.perf.lastDraw = now; drawCardOverlay(G); } if (S.mode === 'card') tickCard(G, now); }
     else if (S.mode === 'card-done') { og.clearRect(0, 0, G.sw, G.sh); }
     else if (S.mode === 'finger') tickFinger(G, now);
-    else if (S.mode === 'finger-done') drawFingerOverlay(G, circleGuide(G));
+    else if (S.mode === 'finger-done') drawFingerOverlay(G, fingerGuide(G));
     else if (S.mode === 'face') tickFace(G, now);
     else if (S.mode === 'face-done') drawFaceOverlay(G);
     else og.clearRect(0, 0, G.sw, G.sh);
@@ -4921,13 +5033,13 @@
     return new Promise((resolve) => {
       const prev = S.mode; S.mode = 'finger-intro';
       const sh = $('#sheet'); sh.hidden = false; $('#camBottom').hidden = true;
-      sh.innerHTML = `<b style="font-size:18px">Así se escanea tu pulgar</b>${INTRO_SVG}
+      sh.innerHTML = `<b style="font-size:18px">Así se fotografía tu pulgar</b>${INTRO_SVG}
         <ol class="introsteps"><li>Pon la <b>yema del pulgar</b> frente a la cámara de atrás, a <b>un palmo</b>.</li>
-        <li>La <b>luz</b> se enciende sola. Mantén el dedo <b>quieto</b> dentro del círculo.</li>
-        <li>Cuando el círculo se ponga <b style="color:var(--ok)">verde</b> y suene un tono, vas bien.</li></ol>
+        <li>La <b>luz</b> se enciende sola. Mantén el dedo <b>quieto</b> dentro del óvalo, con la punta hacia arriba.</li>
+        <li>Cuando el óvalo se ponga <b style="color:var(--ok)">verde</b>, la foto se toma sola. Con <b>2 fotos que coincidan</b> con tu cédula, listo.</li></ol>
         <p class="muted" style="font-size:14px">Tranquilo: esto toma menos de un minuto.</p>
         <button class="btn primary" id="introOk" style="width:100%">Entendido, empezar</button>`;
-      voice('Así se escanea tu pulgar. Pon la yema frente a la cámara de atrás, a un palmo. Mantén el dedo quieto dentro del círculo. Cuando se ponga verde y suene un tono, vas bien.');
+      voice('Así se fotografía tu pulgar. Pon la yema frente a la cámara de atrás, a un palmo. Mantén el dedo quieto dentro del óvalo. Cuando se ponga verde, la foto se toma sola.');
       $('#introOk').onclick = () => { uxUnlock(); UX.introSeen = true; sh.hidden = true; $('#camBottom').hidden = false; voiceStop();
         S.mode = prev === 'finger-intro' ? 'finger' : prev; if (S.fp) { S.fp.t0 = performance.now(); S.fp.lastCap = performance.now(); } resolve(); };
     });
@@ -5000,7 +5112,7 @@
     $('#duoBar').style.width = Math.round(info * 100) + '%';
     $('#duoCap').textContent = J && J.P >= 0.99 ? 'Cédula ✓' : 'Cédula ' + Math.round(info * 100) + '%';
   }
-  function uxFingerOff() { $('#fpRef').hidden = true; $('#cam').classList.remove('simple'); $('#helpBtn').hidden = true; $('#simpleProg').hidden = true; $('#skipFinger').hidden = true; if ($('#duo')) $('#duo').hidden = true; }
+  function uxFingerOff() { $('#fpRef').hidden = true; $('#shootBtn').hidden = true; $('#autoBtn').hidden = true; $('#cam').classList.remove('simple'); $('#helpBtn').hidden = true; $('#simpleProg').hidden = true; $('#skipFinger').hidden = true; if ($('#duo')) $('#duo').hidden = true; }
 
   // ── menos fricción en la huella (no cambia el FPEngine, solo cuándo se termina) ──
   //  · 99 % sostenido 8 s → se termina; tope de 45 s: con 3+ fotos nítidas se sigue con lo que hay.
@@ -5008,6 +5120,7 @@
   //    La validación exige 2 de 3 factores: sin huella, el rostro y la firma deben coincidir.
   const SKIP_AFTER_MS = 25000;
   function fingerTimeUp(F, now) {
+    if (F.photo && F.patches) { F.t0 = now; photoSheet(F); return; }
     if (F.patches >= 3) { S.mode = 'finger-done'; say('Listo, ya tenemos suficiente. Seguimos con tu rostro', 'ok'); setTimeout(endScan, 500); return; }
     F.t0 = now; skipSheet(true);
   }
@@ -5020,7 +5133,7 @@
       <button class="btn primary" id="skipRetry" style="width:100%">Intentar de nuevo</button>
       <button class="btn" id="skipGo" style="width:100%">Continuar sin huella</button>`;
     voice(porTiempo ? 'No logramos leer tu huella. Puedes intentarlo otra vez o continuar sin huella.' : 'Puedes intentarlo otra vez o continuar sin huella.');
-    $('#skipRetry').onclick = () => { sh.hidden = true; $('#camBottom').hidden = false; voiceStop(); if (S.fp) { S.fp.t0 = performance.now(); } S.mode = 'finger'; say('Pon la yema dentro del círculo, quieta, a un palmo de la cámara', ''); };
+    $('#skipRetry').onclick = () => { sh.hidden = true; $('#camBottom').hidden = false; voiceStop(); if (S.fp) { S.fp.t0 = performance.now(); } S.mode = 'finger'; say('Pon la yema dentro del óvalo, quieta, a un palmo de la cámara', ''); };
     $('#skipGo').onclick = () => { sh.hidden = true; $('#camBottom').hidden = false; voiceStop(); skipFinger(porTiempo ? 'sin_fotos_nitidas' : 'omitida_por_usuario'); };
   }
   function skipFinger(motivo) {
@@ -5036,7 +5149,7 @@
 
   // 5) mensajes que dan calma cuando tarda (reemplazan los consejos técnicos)
   FTIPS.splice(0, FTIPS.length,
-    'Tranquilo, lo estás haciendo bien. Mantén el dedo quieto dentro del círculo',
+    'Tranquilo, lo estás haciendo bien. Mantén el dedo quieto dentro del óvalo',
     'Acércate a una luz o busca un lugar más iluminado',
     'Limpia suavemente el lente de la cámara con tu ropa',
     'Si tu dedo está muy seco, frótalo un poco con la otra mano',
@@ -5328,6 +5441,7 @@
   const LAB_REF_NOMBRE = { front: 'Frente', close: 'Huella de cerca' };
   // ajustes del pulgar para comparar (A/B); fuera del laboratorio rigen los valores por defecto
   const LAB_AJ = [
+    { k: 'modo', n: 'Captura del pulgar', ops: [['foto', 'Foto decisiva (actual)'], ['fragmentos', 'Fragmentos (anterior)']] },
     { k: 'zoom', n: 'Zoom de la cámara', ops: [[null, 'Según el teléfono (actual)'], [1, '1×'], [1.5, '1,5×'], [2, '2×']] },
     { k: 'linterna', n: 'Linterna', ops: [[true, 'Encendida (actual)'], [false, 'Apagada']] },
   ];
@@ -5541,7 +5655,7 @@
     const img = (sx, sy) => [((sx - G.ox) / G.k) * k, ((sy - G.oy) / G.k) * k], [gx, gy] = img(c.cx, c.cy), [vx0, vy0] = img(0, 0), [vx1, vy1] = img(G.sw, G.sh);
     const r3 = (v) => (v == null ? null : +(+v).toFixed(3));
     const meta = { sesion: P.recSesion, i, at: new Date().toISOString(), persona: R.persona, dedo: R.dedo, titular: !!R.titular, w: W, h: H,
-      guia: { cx: +gx.toFixed(1), cy: +gy.toFixed(1), r: +(c.r / G.k * k).toFixed(1) },   // yema de la silueta (lo que se analiza)
+      guia: { cx: +gx.toFixed(1), cy: +gy.toFixed(1), r: +(c.r / G.k * k).toFixed(1), ry: +((c.ry || c.r) / G.k * k).toFixed(1) },   // óvalo de la yema (lo que se analiza)
       visible: { x: +vx0.toFixed(1), y: +vy0.toFixed(1), w: +(vx1 - vx0).toFixed(1), h: +(vy1 - vy0).toFixed(1) },   // lo que veía la persona en pantalla
       camara: { zoom: F.zoom || null, vista: F.dz || null, linterna: !!S.torchOn, etiqueta: S.camLabel || null, modelo: PROFILE.model || null },
       logica: { tamano: r3(info.size), nitido: !!F.sharpNow, sirve: !!info.ok, mensaje: info.text || '', fase: info.fase, movimiento: r3(info.a.motion),
