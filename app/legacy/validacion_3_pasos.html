@@ -2438,6 +2438,46 @@
       return best === 'punta' ? 'la punta del dedo' : best === 'base' ? 'la parte baja de la yema' : best === 'costados' ? 'los costados' : null;
     }
     let frames = [], bestFrame = null;
+    // ── análisis automático del pulgar (herramienta «Foto de huella»): canal de color, polaridad y máscara ──
+    // Se eligen por la calidad de la propia foto del pulgar, sin mirar la cédula. Las primeras tomas prueban
+    // todas las opciones; luego la elección queda fija para el resto del escaneo (mismo costo que antes).
+    const CHN = { luma: [0.299, 0.587, 0.114], r: [1, 0, 0], g: [0, 1, 0], b: [0, 0, 1] };
+    const RELAX = { maskCoh: 0.22, maskStd: 0.05, maskPer: 0.2 };   // máscara permisiva calibrada con pulgares reales
+    let auto = null;
+    const autoReset = () => { auto = { chanAcc: { luma: 0, r: 0, g: 0, b: 0 }, chanN: 0, chan: null, cfgAcc: {}, cfgN: 0, cfg: null, polAcc: { true: 0, false: 0 }, polN: 0, pol: null }; };
+    autoReset();
+    function chanGray(rgba, w, h, k) { const o = new Float32Array(w * h); for (let i = 0, j = 0; i < w * h; i++, j += 4) o[i] = (k[0] * rgba[j] + k[1] * rgba[j + 1] + k[2] * rgba[j + 2]) / 255; return { w, h, data: o }; }
+    function pickChannel(rgba, w, h) {
+      if (auto.chan) return auto.chan;
+      const sc = Math.min(1, 420 / Math.max(w, h));
+      for (const ch of Object.keys(CHN)) {
+        let g = chanGray(rgba, w, h, CHN[ch]); if (sc < 1) g = E.resize(g, w * sc, h * sc);
+        let a; try { a = E.assessFrame(g); } catch (e) { a = { coverage: 0, cohMean: 0, period: 0 }; }
+        auto.chanAcc[ch] += a.coverage * a.cohMean * (a.period ? 1 : 0.5);
+      }
+      auto.chanN++;
+      const best = Object.keys(auto.chanAcc).sort((a, b) => auto.chanAcc[b] - auto.chanAcc[a])[0];
+      if (auto.chanN >= 3) auto.chan = best;
+      return best;
+    }
+    function analyzeSmallAuto(g) {
+      // versión reducida (registro entre fotogramas): máscara normal, polaridad automática
+      const pols = auto.pol !== null ? [auto.pol] : [true, false]; let best = null;
+      for (const inv of pols) { try { const t = E.analyze(g, { mirror: true, invert: inv }); if (!best || t.quality > best.quality) best = t; } catch (e) {} }
+      if (best && auto.pol === null) { auto.polAcc[best.invert] += best.quality; if (++auto.polN >= 3) auto.pol = auto.polAcc.true >= auto.polAcc.false; }
+      return best;
+    }
+    function analyzeWideAuto(g) {
+      // fotograma amplio: ambas polaridades × máscara normal y permisiva; se queda con la de mayor calidad
+      const cfgs = auto.cfg ? [auto.cfg] : [{ inv: true, relax: false }, { inv: true, relax: true }, { inv: false, relax: false }, { inv: false, relax: true }];
+      let best = null;
+      for (const c of cfgs) { try { const t = E.analyze(g, { mirror: true, invert: c.inv, ...(c.relax ? RELAX : {}) }); if (!best || t.quality > best.t.quality) best = { t, c }; } catch (e) {} }
+      if (best && !auto.cfg) {
+        const k = best.c.inv + '|' + best.c.relax; auto.cfgAcc[k] = (auto.cfgAcc[k] || 0) + best.t.quality;
+        if (++auto.cfgN >= 2) { const [inv, relax] = Object.keys(auto.cfgAcc).sort((a, b) => auto.cfgAcc[b] - auto.cfgAcc[a])[0].split('|'); auto.cfg = { inv: inv === 'true', relax: relax === 'true' }; }
+      }
+      return best;
+    }
     const IDT = { s: 1, rot: 0, c: 1, sn: 0, tx: 0, ty: 0 };
     const FRAME_OPT = { scales: [0.9, 1, 1.1], tile: 72, peaks: 4, rotRange: 1.05 };
     const FRAME_OPT_SLOW = { scales: [0.92, 1.05], tile: 72, peaks: 3, rotRange: 0.9 };   // teléfonos más lentos
@@ -2507,10 +2547,20 @@
       }
       if (type === 'setCard') { card = p.tpl; return { ok: true }; }
       // ── cotejo por fotogramas: cada fotograma nítido del pulgar se compara por teselas con la cédula ──
-      if (type === 'frameStart') { frames = []; bestFrame = null; scan = E.createScan(); lastInterim = 0; mosaicJ = null; return { ok: true }; }
+      if (type === 'frameStart') { frames = []; bestFrame = null; scan = E.createScan(); lastInterim = 0; mosaicJ = null; autoReset(); return { ok: true }; }
       if (type === 'frameAdd') {
+        const autoMode = p.invert === 'auto';
+        if (p.rgba) {
+          // el cuadro llega en color: se elige el canal que mejor muestra los surcos
+          const ch = pickChannel(p.rgba, p.w, p.h), gray = chanGray(p.rgba, p.w, p.h, CHN[ch]);
+          let mean = 0; for (const v of gray.data) mean += v; mean /= gray.data.length;
+          for (let y = 0; y < gray.h; y++) for (let x = 0; x < gray.w; x++) { const u = x / gray.w - 0.5, v = y / gray.h - 0.5; if (u * u + v * v > 0.25) gray.data[y * gray.w + x] = mean; }
+          p = { ...p, rgba: null, chan: ch, gray, graySmall: E.resize(gray, p.dimS * gray.w / p.dim, p.dimS * gray.h / p.dim) };
+        }
         // a) versión reducida (surco ≈ 12 px) para registrar los fotogramas entre sí (bloque)
-        let ts = null; try { ts = E.analyze(p.graySmall, { mirror: true, invert: p.invert }); } catch (e) {}
+        let ts = null;
+        if (autoMode) ts = analyzeSmallAuto(p.graySmall);
+        else try { ts = E.analyze(p.graySmall, { mirror: true, invert: p.invert }); } catch (e) {}
         // b) un fotograma que abarca buena parte del dedo se compara solo, a resolución completa;
         //    los parciales (acercamiento a una zona) se registran entre sí y se ubican en bloque
         const wideGuess = ts && ts.areaPx >= 0.45 * card.areaPx;
@@ -2520,13 +2570,16 @@
           if (sa.accepted && sa.patches >= 4 && sa.patches - lastInterim >= 3) { lastInterim = sa.patches; mosaicJ = E.jointVerify(card, scan.fragments(), { peaks: 4, scales: [0.9, 1, 1.1] }); }
         } catch (e) {}
         let t = null;
-        if (wideGuess) { try { t = E.analyze(p.gray, { mirror: true, invert: p.invert, maskCoh: 0.22, maskStd: 0.05, maskPer: 0.2 }); } catch (e) {} }
+        let cfg = null;
+        if (wideGuess && autoMode) { const b = analyzeWideAuto(p.gray); if (b) { t = b.t; cfg = b.c; } }
+        else if (wideGuess) { try { t = E.analyze(p.gray, { mirror: true, invert: p.invert, maskCoh: 0.22, maskStd: 0.05, maskPer: 0.2 }); } catch (e) {} }
         if (!t) t = ts;
         if (!t || t.quality < 50 || t.minutiae.length < 8) return { accepted: blockAccepted, reason: blockAccepted ? 'bloque' : 'fotograma pobre', session: session() };
         const wide = !!wideGuess && t !== ts;
         const J = wide ? E.jointVerify(card, [{ tpl: t, T: IDT }], p.slow ? FRAME_OPT_SLOW : FRAME_OPT) : { P: 0, logit: -9, evidence: 0, mirror: false, polarity: 1, rotationDeg: 0, positive: 0, inside: 0, coverage: 0, covGrid: null, alternatives: [], per: [] };
         const fr = { wide, i: frames.length, quality: t.quality, P: J.P, logit: J.logit, evidence: J.evidence, mirror: J.mirror, polarity: J.polarity, rot: J.rotationDeg,
-          positive: J.positive, inside: J.inside, coverage: J.coverage, covGrid: J.covGrid, alternatives: J.alternatives };
+          positive: J.positive, inside: J.inside, coverage: J.coverage, covGrid: J.covGrid, alternatives: J.alternatives,
+          analisis: { canal: p.chan || 'gb', crestasClaras: t.invert, mascara: cfg ? (cfg.relax ? 'permisiva' : 'normal') : wide ? 'permisiva' : 'normal' } };
         frames.push(fr);
         if (!bestFrame || fr.logit > bestFrame.fr.logit || (!bestFrame.fr.wide && t.quality > bestFrame.tpl.quality)) bestFrame = { fr, tpl: t, J };
         const ridge = (() => { try {
@@ -2758,6 +2811,13 @@
     let r0 = 0, g0 = 0, b0 = 0, n0 = 0;
     for (let yy = dh >> 2; yy < dh - (dh >> 2); yy += 3) for (let xx = dw >> 2; xx < dw - (dw >> 2); xx += 3) { const i = 4 * (yy * dw + xx); r0 += px[i]; g0 += px[i + 1]; b0 += px[i + 2]; n0++; }
     return { gray: E.fromRGBA(px, dw, dh, channel), src: { x, y, w, h }, s, rgb: [r0 / n0, g0 / n0, b0 / n0] };
+  }
+  // Copia una región del video en color (RGBA), escalada a maxDim: el worker elige el canal
+  function grabRGBA(r, maxDim) {
+    const x = Math.max(0, r.x), y = Math.max(0, r.y), w = Math.min(video.videoWidth - x, r.w), h = Math.min(video.videoHeight - y, r.h);
+    const s = Math.min(1, maxDim / Math.max(w, h)), dw = Math.max(8, Math.round(w * s)), dh = Math.max(8, Math.round(h * s));
+    grabC.width = dw; grabC.height = dh; grabG.drawImage(video, x, y, w, h, 0, 0, dw, dh);
+    return { rgba: grabG.getImageData(0, 0, dw, dh).data, w: dw, h: dh, src: { x, y, w, h } };
   }
   function sizeOverlay() {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -3325,12 +3385,10 @@
       c.toBlob((b) => { raw.blob = b; }, 'image/jpeg', 0.9);
       S.raw.fragments.push(raw);
     }
-    const { gray, src } = grab(vr, dim, 'gb');
-    let mean = 0; for (const v of gray.data) mean += v; mean /= gray.data.length;
-    for (let y = 0; y < gray.h; y++) for (let x = 0; x < gray.w; x++) { const u = x / gray.w - 0.5, v = y / gray.h - 0.5; if (u * u + v * v > 0.25) gray.data[y * gray.w + x] = mean; }
+    const px = grabRGBA(vr, dim), src = px.src, gray = { w: px.w, h: px.h };
     try {
-      const gs = E.resize(gray, dimS * gray.w / dim, dimS * gray.h / dim);
-      const r = await call('frameAdd', { gray, graySmall: gs, invert: true, slow: S.perf.slow });
+      // análisis automático (canal, polaridad y máscara) en el worker; la comparación no cambia
+      const r = await call('frameAdd', { rgba: px.rgba, w: px.w, h: px.h, dim, dimS, invert: 'auto', slow: S.perf.slow });
       if (S.mode !== 'finger') return;
       if (raw) Object.assign(raw, { accepted: r.accepted, reason: r.reason, frame: r.frame || null });
       F.tried++; if (r.accepted) F.patches++;
